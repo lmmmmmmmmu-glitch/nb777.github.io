@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>批量号码生成与文件分割工具</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -540,7 +542,6 @@
             text-decoration: none;
             font-weight: 600;
             transition: all 0.3s;
-            box-shadow: 0 3px 8px rgba(52, 168, 83, 0.3);
             display: inline-block;
             margin-top: 15px;
         }
@@ -1096,11 +1097,12 @@
         </div>
         
         <div class="example-section">
-            <div class="example-title">输入格式示例：</div>
+            <div class="example-title">输入格式示例（以下格式均可）：</div>
             <div class="example-content">开头:0455
-730-739 (等同于730一直加到739)
-720~729 (等同于720一直加到729)
-750至759 (等同于750一直加到759)
+730-739 
+720~729 
+750至759 
+760一直加到770
 
 开头:0453
 301-309
@@ -1115,7 +1117,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script>
         // 格式自动修正函数
         function normalizeInputFormat(inputText) {
@@ -1228,15 +1229,12 @@
             return shuffled;
         }
         
-        // 创建Excel文件
+        // 创建Excel文件（去掉表头）
         function createExcelFile(numbers, fileName) {
-            // 将数字数组转换为工作表数据
+            // 将数字数组转换为工作表数据（直接使用号码，不添加表头）
             const worksheetData = numbers.map(number => [number]);
             
-            // 添加表头
-            worksheetData.unshift(['手机号码']);
-            
-            // 创建工作表
+            // 创建工作表（不添加表头）
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             
             // 设置列宽
@@ -1399,19 +1397,10 @@
         
         // 重置功能
         function resetApp() {
-            document.getElementById('filenameInput').value = '0455安达市-0453穆陵市';
+            document.getElementById('filenameInput').value = '';
             document.getElementById('numbersPerFile').value = '40';
-            document.getElementById('dataInput').value = `开头:0455
-730-739
-720~729
-750至759
-
-开头:0453
-301-309
-310~319
-501
-583
-660`;
+            document.getElementById('dataInput').value = `开头:
+`;
             
             document.getElementById('statusText').textContent = '等待生成...';
             document.getElementById('progressBar').style.width = '0%';
@@ -1492,31 +1481,43 @@
                             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                             
                             // 提取第一列数据
-                            numbers = jsonData.slice(1).map(row => row[0] ? row[0].toString() : '').filter(num => num);
-                        } else {
+                            numbers = jsonData.map(row => row[0] ? row[0].toString() : '').filter(num => num);
+                        } else if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
                             // 处理文本文件
-                            const content = e.target.result;
-                            numbers = content.split('\n').map(line => line.trim()).filter(line => line);
+                            const text = e.target.result;
+                            numbers = text.split('\n')
+                                .map(line => line.trim())
+                                .filter(line => line && /^\d+$/.test(line));
+                        } else {
+                            throw new Error('不支持的文件格式');
                         }
                         
-                        // 去重处理
-                        const uniqueNumbers = [...new Set(numbers)];
-                        const duplicateCount = numbers.length - uniqueNumbers.length;
+                        if (numbers.length === 0) {
+                            throw new Error('文件中没有找到有效数据');
+                        }
+                        
+                        // 去重
+                        const originalCount = numbers.length;
+                        cleanNumbers = [...new Set(numbers)];
+                        const duplicateCount = originalCount - cleanNumbers.length;
                         
                         // 更新UI
                         document.getElementById('uploadFileName').textContent = file.name;
-                        document.getElementById('originalCount').textContent = numbers.length.toLocaleString();
+                        document.getElementById('originalCount').textContent = originalCount.toLocaleString();
                         document.getElementById('duplicateCount').textContent = duplicateCount.toLocaleString();
-                        document.getElementById('cleanCount').textContent = uniqueNumbers.length.toLocaleString();
+                        document.getElementById('cleanCount').textContent = cleanNumbers.length.toLocaleString();
                         
-                        cleanNumbers = uniqueNumbers;
-                        uploadResults.style.display = 'block';
                         uploadStatus.textContent = '文件处理完成！';
+                        uploadResults.style.display = 'block';
                         
                     } catch (error) {
+                        uploadStatus.textContent = '处理失败: ' + error.message;
                         console.error('文件处理错误:', error);
-                        uploadStatus.textContent = '文件处理失败: ' + error.message;
                     }
+                };
+                
+                reader.onerror = function() {
+                    uploadStatus.textContent = '读取文件失败';
                 };
                 
                 if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
@@ -1535,9 +1536,8 @@
                     return;
                 }
                 
-                // 创建Excel文件
+                // 创建Excel文件（不添加表头）
                 const worksheetData = cleanNumbers.map(number => [number]);
-                worksheetData.unshift(['手机号码']);
                 
                 const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
                 worksheet['!cols'] = [{ wch: 15 }];
@@ -1555,7 +1555,7 @@
                 XLSX.writeFile(workbook, fileName);
             });
             
-            // 分类功能变量
+            // 分类功能
             const classifyFileInput = document.getElementById('classifyFileInput');
             const classificationArea = document.getElementById('classificationArea');
             const classificationStatus = document.getElementById('classificationStatus');
@@ -1563,17 +1563,16 @@
             const selectClassifyFileBtn = document.getElementById('selectClassifyFileBtn');
             const downloadAllClassifyBtn = document.getElementById('downloadAllClassifyBtn');
             const resetClassifyBtn = document.getElementById('resetClassifyBtn');
-            const prefixLengthSelect = document.getElementById('prefixLength');
             
-            let classificationData = {}; // 存储分类数据
-            let originalFileName = '';   // 存储原始文件名
+            let classificationData = {};
+            let originalFileName = '';
             
             // 点击分类区域触发文件选择
             classificationArea.addEventListener('click', function() {
                 classifyFileInput.click();
             });
             
-            // 选择文件按钮
+            // 选择分类文件按钮
             selectClassifyFileBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 classifyFileInput.click();
@@ -1582,8 +1581,8 @@
             // 拖放功能
             classificationArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                classificationArea.style.borderColor = '#ea4335';
-                classificationArea.style.backgroundColor = '#fef5f5';
+                classificationArea.style.borderColor = '#4d90fe';
+                classificationArea.style.backgroundColor = '#f5f7fa';
             });
             
             classificationArea.addEventListener('dragleave', function() {
@@ -1609,21 +1608,8 @@
                 }
             });
             
-            // 重置分类按钮
-            resetClassifyBtn.addEventListener('click', function() {
-                resetClassification();
-            });
-            
-            // 前缀长度选择变化
-            prefixLengthSelect.addEventListener('change', function() {
-                if (Object.keys(classificationData).length > 0) {
-                    reprocessClassification();
-                }
-            });
-            
-            // 处理文件分类上传
+            // 处理分类文件上传
             function handleClassifyFileUpload(file) {
-                originalFileName = file.name;
                 classificationStatus.textContent = '正在处理文件...';
                 classificationResults.style.display = 'none';
                 
@@ -1641,24 +1627,110 @@
                             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                             
                             // 提取第一列数据
-                            numbers = jsonData.slice(1)
-                                .map(row => row[0] ? row[0].toString().trim() : '')
-                                .filter(num => num && /^\d+$/.test(num));
-                        } else {
+                            numbers = jsonData.map(row => row[0] ? row[0].toString() : '').filter(num => num);
+                        } else if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
                             // 处理文本文件
-                            const content = e.target.result;
-                            numbers = content.split('\n')
+                            const text = e.target.result;
+                            numbers = text.split('\n')
                                 .map(line => line.trim())
                                 .filter(line => line && /^\d+$/.test(line));
+                        } else {
+                            throw new Error('不支持的文件格式');
                         }
                         
-                        // 分类处理
-                        classifyNumbers(numbers);
+                        if (numbers.length === 0) {
+                            throw new Error('文件中没有找到有效数据');
+                        }
+                        
+                        // 获取前缀长度
+                        const prefixLength = parseInt(document.getElementById('prefixLength').value);
+                        
+                        // 按前缀分类
+                        classificationData = {};
+                        const includeFullNumber = document.getElementById('includeFullNumber').checked;
+                        
+                        numbers.forEach(number => {
+                            const prefix = number.substring(0, prefixLength);
+                            const suffix = number.substring(prefixLength);
+                            
+                            if (!classificationData[prefix]) {
+                                classificationData[prefix] = [];
+                            }
+                            
+                            classificationData[prefix].push(includeFullNumber ? number : suffix);
+                        });
+                        
+                        // 统计信息
+                        const totalNumbers = numbers.length;
+                        const uniquePrefixes = Object.keys(classificationData).length;
+                        
+                        // 找出最多号码的前缀
+                        let maxPrefix = '';
+                        let maxCount = 0;
+                        for (const [prefix, numbers] of Object.entries(classificationData)) {
+                            if (numbers.length > maxCount) {
+                                maxCount = numbers.length;
+                                maxPrefix = prefix;
+                            }
+                        }
+                        
+                        // 更新UI
+                        document.getElementById('classifyFileName').textContent = file.name;
+                        document.getElementById('totalNumbersCount').textContent = totalNumbers.toLocaleString();
+                        document.getElementById('uniquePrefixesCount').textContent = uniquePrefixes.toLocaleString();
+                        document.getElementById('maxNumbersPrefix').textContent = maxPrefix ? `${maxPrefix} (${maxCount.toLocaleString()})` : '-';
+                        
+                        // 更新前缀列表
+                        const classificationList = document.getElementById('classificationList');
+                        classificationList.innerHTML = '';
+                        
+                        // 按数量降序排序前缀
+                        const sortedPrefixes = Object.entries(classificationData)
+                            .sort((a, b) => b[1].length - a[1].length);
+                        
+                        sortedPrefixes.forEach(([prefix, numbers]) => {
+                            const item = document.createElement('div');
+                            item.className = 'classification-item';
+                            
+                            item.innerHTML = `
+                                <div class="prefix-info">
+                                    <div class="prefix-badge">${prefix}</div>
+                                    <div class="prefix-count">${numbers.length.toLocaleString()} 条</div>
+                                </div>
+                                <a href="#" class="download-classify-btn" data-prefix="${prefix}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    下载
+                                </a>
+                            `;
+                            
+                            classificationList.appendChild(item);
+                        });
+                        
+                        // 为下载按钮添加事件
+                        document.querySelectorAll('.download-classify-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const prefix = this.getAttribute('data-prefix');
+                                downloadPrefixFile(prefix);
+                            });
+                        });
+                        
+                        originalFileName = file.name;
+                        classificationStatus.textContent = '文件分类完成！';
+                        classificationResults.style.display = 'block';
                         
                     } catch (error) {
-                        console.error('文件处理错误:', error);
-                        classificationStatus.textContent = '文件处理失败: ' + error.message;
+                        classificationStatus.textContent = '处理失败: ' + error.message;
+                        console.error('文件分类错误:', error);
                     }
+                };
+                
+                reader.onerror = function() {
+                    classificationStatus.textContent = '读取文件失败';
                 };
                 
                 if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
@@ -1666,124 +1738,6 @@
                 } else {
                     reader.readAsText(file);
                 }
-            }
-            
-            // 分类号码函数
-            function classifyNumbers(numbers) {
-                const prefixLength = parseInt(prefixLengthSelect.value);
-                const includeFullNumber = document.getElementById('includeFullNumber').checked;
-                
-                classificationData = {};
-                
-                // 统计每个前缀
-                numbers.forEach(number => {
-                    if (number.length >= prefixLength) {
-                        const prefix = number.substring(0, prefixLength);
-                        const suffix = includeFullNumber ? number : number.substring(prefixLength);
-                        
-                        if (!classificationData[prefix]) {
-                            classificationData[prefix] = [];
-                        }
-                        
-                        classificationData[prefix].push(suffix);
-                    } else {
-                        // 如果号码长度不足前缀长度，使用完整号码
-                        if (!classificationData['other']) {
-                            classificationData['other'] = [];
-                        }
-                        classificationData['other'].push(number);
-                    }
-                });
-                
-                // 更新UI显示结果
-                updateClassificationResults(numbers.length);
-            }
-            
-            // 重新处理分类（当选项改变时）
-            function reprocessClassification() {
-                if (Object.keys(classificationData).length === 0) return;
-                
-                // 重新组合所有号码
-                let allNumbers = [];
-                for (const [prefix, suffixes] of Object.entries(classificationData)) {
-                    const includeFullNumber = document.getElementById('includeFullNumber').checked;
-                    allNumbers = allNumbers.concat(suffixes.map(suffix => 
-                        includeFullNumber ? prefix + suffix : prefix + suffix
-                    ));
-                }
-                
-                // 重新分类
-                classifyNumbers(allNumbers);
-            }
-            
-            // 更新分类结果显示
-            function updateClassificationResults(totalCount) {
-                const prefixLength = parseInt(prefixLengthSelect.value);
-                const prefixes = Object.keys(classificationData);
-                const uniquePrefixCount = prefixes.length;
-                
-                // 找到号码最多的前缀
-                let maxPrefix = '';
-                let maxCount = 0;
-                
-                prefixes.forEach(prefix => {
-                    const count = classificationData[prefix].length;
-                    if (count > maxCount) {
-                        maxCount = count;
-                        maxPrefix = prefix;
-                    }
-                });
-                
-                // 更新统计信息
-                document.getElementById('classifyFileName').textContent = originalFileName;
-                document.getElementById('totalNumbersCount').textContent = totalCount.toLocaleString();
-                document.getElementById('uniquePrefixesCount').textContent = uniquePrefixCount.toLocaleString();
-                document.getElementById('maxNumbersPrefix').textContent = maxPrefix ? `${maxPrefix} (${maxCount}个)` : '-';
-                
-                // 更新前缀列表
-                const classificationList = document.getElementById('classificationList');
-                classificationList.innerHTML = '';
-                
-                // 按数量降序排序前缀
-                const sortedPrefixes = [...prefixes].filter(p => p !== 'other');
-                sortedPrefixes.sort((a, b) => classificationData[b].length - classificationData[a].length);
-                
-                // 如果存在"other"组，放到最后
-                if (classificationData['other']) {
-                    sortedPrefixes.push('other');
-                }
-                
-                sortedPrefixes.forEach((prefix, index) => {
-                    const count = classificationData[prefix].length;
-                    const percentage = ((count / totalCount) * 100).toFixed(1);
-                    
-                    const item = document.createElement('div');
-                    item.className = 'classification-item';
-                    item.innerHTML = `
-                        <div class="prefix-info">
-                            <div class="prefix-badge">${prefix === 'other' ? '其他' : prefix}</div>
-                            <div class="prefix-count">${count.toLocaleString()} 个号码 (${percentage}%)</div>
-                        </div>
-                        <a href="#" class="download-classify-btn" data-prefix="${prefix}">
-                            下载
-                        </a>
-                    `;
-                    
-                    classificationList.appendChild(item);
-                });
-                
-                // 为每个下载按钮添加事件
-                classificationList.querySelectorAll('.download-classify-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const prefix = this.getAttribute('data-prefix');
-                        downloadPrefixFile(prefix);
-                    });
-                });
-                
-                // 显示结果区域
-                classificationResults.style.display = 'block';
-                classificationStatus.textContent = '分类完成！';
             }
             
             // 下载单个前缀文件
@@ -1801,9 +1755,8 @@
                     numbers : 
                     numbers.map(suffix => prefix === 'other' ? suffix : prefix + suffix);
                 
-                // 创建Excel文件
+                // 创建Excel文件（不添加表头）
                 const worksheetData = processedNumbers.map(number => [number]);
-                worksheetData.unshift(['手机号码']);
                 
                 const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
                 worksheet['!cols'] = [{ wch: 15 }];
@@ -1848,9 +1801,8 @@
                                 numbers : 
                                 numbers.map(suffix => prefix === 'other' ? suffix : prefix + suffix);
                             
-                            // 创建Excel文件
+                            // 创建Excel文件（不添加表头）
                             const worksheetData = processedNumbers.map(number => [number]);
-                            worksheetData.unshift(['手机号码']);
                             
                             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
                             worksheet['!cols'] = [{ wch: 15 }];
@@ -1876,14 +1828,7 @@
                             originalFileName;
                         const zipFileName = `${baseName}_分类文件.zip`;
                         
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(content);
-                        link.download = zipFileName;
-                        link.click();
-                        
-                        setTimeout(() => {
-                            URL.revokeObjectURL(link.href);
-                        }, 100);
+                        saveAs(content, zipFileName);
                     });
                 }
                 
@@ -1913,9 +1858,8 @@
                                 numbers : 
                                 numbers.map(suffix => prefix === 'other' ? suffix : prefix + suffix);
                             
-                            // 创建Excel文件
+                            // 创建Excel文件（不添加表头）
                             const worksheetData = processedNumbers.map(number => [number]);
-                            worksheetData.unshift(['手机号码']);
                             
                             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
                             worksheet['!cols'] = [{ wch: 15 }];
@@ -1939,28 +1883,25 @@
                 }
             });
             
-            // 重置分类功能
-            function resetClassification() {
+            // 重置分类
+            resetClassifyBtn.addEventListener('click', function() {
                 classificationData = {};
-                classificationResults.style.display = 'none';
-                classificationStatus.textContent = '等待上传文件...';
-                document.getElementById('classificationList').innerHTML = '';
-                classifyFileInput.value = '';
-                
-                // 重置统计信息
+                originalFileName = '';
                 document.getElementById('classifyFileName').textContent = '-';
                 document.getElementById('totalNumbersCount').textContent = '0';
                 document.getElementById('uniquePrefixesCount').textContent = '0';
                 document.getElementById('maxNumbersPrefix').textContent = '-';
-            }
+                document.getElementById('classificationList').innerHTML = '';
+                document.getElementById('classificationResults').style.display = 'none';
+                document.getElementById('classificationStatus').textContent = '等待上传文件...';
+            });
+            
+            // 绑定生成按钮事件
+            document.getElementById('generateBtn').addEventListener('click', generateFiles);
+            
+            // 绑定重置按钮事件
+            document.getElementById('resetBtn').addEventListener('click', resetApp);
         });
-        
-        // 事件监听
-        document.getElementById('generateBtn').addEventListener('click', generateFiles);
-        document.getElementById('resetBtn').addEventListener('click', resetApp);
-        
-        // 初始化统计信息
-        updateStats(0, 0, 0, 0, 40);
     </script>
 </body>
 </html>
