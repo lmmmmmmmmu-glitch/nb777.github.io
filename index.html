@@ -203,6 +203,21 @@
             transform: translateY(-1px);
         }
         
+        .filter-btn {
+            background: linear-gradient(135deg, #ea4335, #d93025);
+            color: white;
+            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.3);
+        }
+        
+        .filter-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(234, 67, 53, 0.4);
+        }
+        
+        .filter-btn:active {
+            transform: translateY(-1px);
+        }
+        
         .reset-btn {
             background: linear-gradient(135deg, #f1f3f4, #e0e0e0);
             color: #444;
@@ -369,6 +384,15 @@
             font-size: 15px;
             color: #666;
             font-weight: 600;
+        }
+        
+        .filter-stat-box {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border-color: #ef9a9a;
+        }
+        
+        .filter-stat-value {
+            color: #d32f2f;
         }
         
         .loading {
@@ -612,6 +636,33 @@
             outline: none;
         }
         
+        /* 排序按钮样式 */
+        .sort-btn {
+            padding: 10px 20px;
+            border: 2px solid #4d90fe;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: white;
+            color: #4d90fe;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sort-btn:hover {
+            background-color: #f0f7ff;
+            border-color: #357ae8;
+        }
+        
+        .sort-btn.active {
+            background: linear-gradient(135deg, #4d90fe, #357ae8);
+            color: white;
+            box-shadow: 0 3px 8px rgba(77, 144, 254, 0.3);
+        }
+        
         .classification-area {
             border: 2px dashed #c3cfe2;
             border-radius: 10px;
@@ -796,9 +847,181 @@
             margin-top: 20px;
         }
         
+        /* 双文件重复删除工具样式 */
+        .duplicate-removal-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
+            border-radius: 12px;
+            border: 1px solid #eaeaea;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .duplicate-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .duplicate-title {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        
+        #duplicateStatus {
+            font-weight: 600;
+            color: #4d90fe;
+        }
+        
+        .duplicate-upload-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .duplicate-upload-box {
+            flex: 1;
+            min-width: 300px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .duplicate-upload-box:hover {
+            border-color: #ff6b6b;
+            background-color: #fff5f5;
+        }
+        
+        .duplicate-upload-box.dragover {
+            border-color: #ff6b6b;
+            background-color: #fff5f5;
+            transform: scale(1.02);
+        }
+        
+        .duplicate-upload-icon {
+            font-size: 3em;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        
+        .duplicate-upload-text {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .duplicate-file-name {
+            font-size: 0.9em;
+            color: #333;
+            margin-top: 10px;
+            word-break: break-all;
+            min-height: 20px;
+        }
+        
+        .duplicate-controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .duplicate-btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            margin: 0 10px;
+        }
+        
+        .duplicate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(78, 205, 196, 0.3);
+        }
+        
+        .duplicate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .duplicate-download-section {
+            display: none;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .duplicate-download-section.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .duplicate-download-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .duplicate-download-btns {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .duplicate-download-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: #333;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .duplicate-download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(168, 237, 234, 0.4);
+        }
+        
+        .duplicate-info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        
+        .duplicate-error-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         @media (max-width: 768px) {
@@ -835,6 +1058,29 @@
                 width: 100%;
                 justify-content: center;
             }
+            
+            .duplicate-upload-section {
+                flex-direction: column;
+            }
+            
+            .duplicate-upload-box {
+                min-width: 100%;
+            }
+            
+            .duplicate-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .duplicate-btn {
+                width: 200px;
+                margin: 5px 0;
+            }
+            
+            .duplicate-download-btns {
+                flex-direction: column;
+                align-items: center;
+            }
         }
         
         @media (max-width: 480px) {
@@ -864,7 +1110,7 @@
         <h1>批量号码生成与文件分割工具</h1>
         
         <div class="description">
-            <p><strong>功能说明：</strong> 本工具根据您提供的号码段规则，自动生成完整的号码序列。您可以自定义每个文件包含的数据量。生成的文件将按照您指定的格式命名。</p>
+            <p><strong>功能说明：</strong> 本工具根据您提供的号码段规则，自动生成完整的号码序列。您可以自定义每个文件包含的数据量。生成的文件将按照您指定的格式命名。支持去除尾缀为110的号码。</p>
         </div>
         
         <div class="input-section">
@@ -904,6 +1150,12 @@
                 </svg>
                 开始生成文件
             </button>
+            <button class="filter-btn" id="generateFilteredBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                生成并去除尾缀110号码
+            </button>
             <button class="reset-btn" id="resetBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -938,6 +1190,10 @@
                 <div class="stat-box">
                     <div class="stat-value" id="uniqueCount">0</div>
                     <div class="stat-label">去重后数量</div>
+                </div>
+                <div class="stat-box filter-stat-box">
+                    <div class="stat-value filter-stat-value" id="filteredCount">0</div>
+                    <div class="stat-label">去除尾缀110数量</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-value" id="fileSize">40万</div>
@@ -1032,10 +1288,14 @@
                     <label for="includeFullNumber" class="option-label">包含完整号码（不勾选则只保留前缀后的数字）</label>
                 </div>
                 
-                <!-- 新增：文件自动排序功能选择 -->
+                <!-- 新增排序选择按钮 -->
                 <div class="option-group">
-                    <input type="checkbox" id="sortNumbers" checked>
-                    <label for="sortNumbers" class="option-label">号码自动从小到大排序</label>
+                    <button id="sortAscBtn" class="sort-btn active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                        从小到大排序
+                    </button>
                 </div>
             </div>
             
@@ -1102,6 +1362,51 @@
             </div>
         </div>
         
+        <!-- 双文件重复号码删除工具 -->
+        <div class="duplicate-removal-section">
+            <div class="duplicate-header">
+                <div class="duplicate-title">双文件重复号码删除工具</div>
+                <div id="duplicateStatus">等待上传文件...</div>
+            </div>
+            
+            <div class="duplicate-info-box">
+                <strong>📋 功能说明：</strong> 支持上传.txt/.csv/.xlsx文件（每行或每单元格一个号码），工具会自动删除两个文件中均出现的重复号码（所有重复号码全部删除），处理完成后直接提供下载按钮，无需显示数据。
+            </div>
+            
+            <div class="duplicate-upload-section">
+                <div class="duplicate-upload-box" id="duplicateUploadBox1" onclick="document.getElementById('duplicateFile1Input').click()">
+                    <div class="duplicate-upload-icon">📁</div>
+                    <div class="duplicate-upload-text">点击上传文件1</div>
+                    <div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div>
+                    <div class="duplicate-error-message" id="duplicateError1"></div>
+                </div>
+                <div class="duplicate-upload-box" id="duplicateUploadBox2" onclick="document.getElementById('duplicateFile2Input').click()">
+                    <div class="duplicate-upload-icon">📁</div>
+                    <div class="duplicate-upload-text">点击上传文件2</div>
+                    <div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div>
+                    <div class="duplicate-error-message" id="duplicateError2"></div>
+                </div>
+            </div>
+            
+            <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" onchange="handleDuplicateFileSelect(event, 1)" style="display: none;">
+            <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" onchange="handleDuplicateFileSelect(event, 2)" style="display: none;">
+            
+            <div class="duplicate-controls">
+                <button class="duplicate-btn" id="duplicateProcessBtn" onclick="processDuplicateFiles()" disabled>🔍 处理并生成下载</button>
+                <button class="duplicate-btn" onclick="clearDuplicateFiles()" style="background: linear-gradient(135deg, #ff9a9e, #fecfef);">🗑️ 清空</button>
+            </div>
+            
+            <div class="duplicate-download-section" id="duplicateDownloadSection">
+                <div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div>
+                <div class="duplicate-download-btns">
+                    <a class="duplicate-download-btn" id="duplicateDownload1Txt" href="#" download="file1_unique.txt">⬇️ 下载文件1（TXT）</a>
+                    <a class="duplicate-download-btn" id="duplicateDownload1Excel" href="#" download="file1_unique.xlsx">⬇️ 下载文件1（Excel）</a>
+                    <a class="duplicate-download-btn" id="duplicateDownload2Txt" href="#" download="file2_unique.txt">⬇️ 下载文件2（TXT）</a>
+                    <a class="duplicate-download-btn" id="duplicateDownload2Excel" href="#" download="file2_unique.xlsx">⬇️ 下载文件2（Excel）</a>
+                </div>
+            </div>
+        </div>
+        
         <div class="example-section">
             <div class="example-title">输入格式示例（以下格式均可）：</div>
             <div class="example-content">开头:0455
@@ -1118,10 +1423,16 @@
         </div>
         
         <div class="note">
-            注意：由于浏览器限制，生成大量数据可能需要一些时间。每个Excel文件包含的数据量可自定义，所有数据已打乱顺序，无重复。
+            注意：由于浏览器限制，生成大量数据可能需要一些时间。每个Excel文件包含的数据量可自定义，所有数据已打乱顺序，无重复。点击"生成并去除尾缀110号码"将自动过滤所有以110结尾的号码。
         </div>
     </div>
     <script>
+        // 全局变量存储双文件处理数据
+        let duplicateFileData = {
+            file1: { name: '', data: [] },
+            file2: { name: '', data: [] }
+        };
+        
         // 格式自动修正函数
         function normalizeInputFormat(inputText) {
             const lines = inputText.split('\n');
@@ -1233,22 +1544,27 @@
             return shuffled;
         }
         
-        // 创建Excel文件（核心修改：确保仅A列填充纯号码，无任何表头/额外名称）
+        // 过滤尾缀为110的号码
+        function filterSuffix110(numbers) {
+            return numbers.filter(number => !number.endsWith('110'));
+        }
+        
+        // 创建Excel文件（去掉表头）
         function createExcelFile(numbers, fileName) {
-            // 直接将号码转为二维数组（每个元素是长度为1的数组，对应Excel的A列）
-            const worksheetData = numbers.map(number => [number]); // 每个号码单独占A列一行，无其他列数据
+            // 将数字数组转换为工作表数据（直接使用号码，不添加表头）
+            const worksheetData = numbers.map(number => [number]);
             
-            // 创建工作表，不添加任何表头行
+            // 创建工作表（不添加表头）
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             
-            // 固定A列宽度为15，保证号码完整显示
-            worksheet['!cols'] = [{ wch: 15 }]; // 仅配置A列，无其他列
+            // 设置列宽
+            worksheet['!cols'] = [{ wch: 15 }];
             
             // 创建工作簿
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "数据"); // 工作表名称不影响单元格数据，仅作标识
+            XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
             
-            // 写入并下载Excel文件
+            // 写入文件
             XLSX.writeFile(workbook, fileName);
             
             return {
@@ -1265,11 +1581,12 @@
         }
         
         // 更新统计信息
-        function updateStats(total, files, groups, unique, fileSize) {
+        function updateStats(total, files, groups, unique, filtered, fileSize) {
             document.getElementById('totalCount').textContent = total.toLocaleString();
             document.getElementById('fileCount').textContent = files.toLocaleString();
             document.getElementById('groupCount').textContent = groups.toLocaleString();
             document.getElementById('uniqueCount').textContent = unique.toLocaleString();
+            document.getElementById('filteredCount').textContent = filtered.toLocaleString();
             
             // 格式化文件大小显示
             document.getElementById('fileSize').textContent = fileSize + '万';
@@ -1299,8 +1616,8 @@
             fileList.appendChild(fileItem);
         }
         
-        // 主生成函数
-        function generateFiles() {
+        // 主生成函数（通用，支持是否过滤尾缀110）
+        function generateFilesCore(filterSuffix = false) {
             const inputText = document.getElementById('dataInput').value;
             const filename = document.getElementById('filenameInput').value || '号码数据';
             const numbersPerFileInput = document.getElementById('numbersPerFile');
@@ -1358,16 +1675,25 @@
             
             // 去重
             updateStatus('正在去除重复数据...', 70);
-            const uniqueNumbers = [...new Set(shuffledNumbers)];
+            let uniqueNumbers = [...new Set(shuffledNumbers)];
+            
+            // 过滤尾缀110号码（如果需要）
+            let filteredCount = 0;
+            if (filterSuffix) {
+                updateStatus('正在过滤尾缀110号码...', 80);
+                const originalUniqueCount = uniqueNumbers.length;
+                uniqueNumbers = filterSuffix110(uniqueNumbers);
+                filteredCount = originalUniqueCount - uniqueNumbers.length;
+            }
             
             // 计算文件数量
             const totalFiles = Math.ceil(uniqueNumbers.length / numbersPerFileInCount);
             
             // 更新统计信息
-            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, numbersPerFile);
+            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, filteredCount, numbersPerFile);
             
             // 创建Excel文件
-            updateStatus('正在创建Excel文件...', 90);
+            updateStatus(filterSuffix ? '正在创建过滤后的Excel文件...' : '正在创建Excel文件...', 90);
             
             // 模拟创建文件（在浏览器中实际生成）
             setTimeout(() => {
@@ -1376,471 +1702,256 @@
                     const endIdx = Math.min(startIdx + numbersPerFileInCount, uniqueNumbers.length);
                     const fileNumbers = uniqueNumbers.slice(startIdx, endIdx);
                     
-                    // 生成文件名
+                    // 生成文件名（过滤后文件添加标识）
+                    const fileSuffix = filterSuffix ? '_无尾缀110' : '';
                     const fileName = i === 0 ? 
-                        `${filename}.xlsx` : 
-                        `${filename}_${i+1}.xlsx`;
+                        `${filename}${fileSuffix}.xlsx` : 
+                        `${filename}${fileSuffix}_${i+1}.xlsx`;
                     
                     // 创建并下载文件
                     const file = createExcelFile(fileNumbers, fileName);
                     addFileToList(file, i);
                     
                     // 更新进度
-                    updateStatus(`正在生成文件 ${i+1}/${totalFiles}...`, 90 + (i+1)/totalFiles * 10);
+                    updateStatus(filterSuffix ? 
+                        `正在生成过滤文件 ${i+1}/${totalFiles}...` : 
+                        `正在生成文件 ${i+1}/${totalFiles}...`, 
+                        90 + (i+1)/totalFiles * 10
+                    );
                 }
                 
                 // 完成
-                updateStatus('文件生成完成！', 100);
+                const completeText = filterSuffix ? 
+                    `文件生成完成！已过滤 ${filteredCount.toLocaleString()} 条尾缀110号码` : 
+                    '文件生成完成！';
+                updateStatus(completeText, 100);
                 loadingIndicator.style.display = 'none';
                 
                 // 提示用户
-                alert(`文件生成完成！共创建了 ${totalFiles} 个Excel文件，每个文件包含 ${Math.min(numbersPerFileInCount, uniqueNumbers.length).toLocaleString()} 条数据，总计 ${uniqueNumbers.length.toLocaleString()} 条不重复数据。`);
-                
-            }, 1000); // 添加短暂延迟以便UI更新
+                alert(`${completeText} 共创建了 ${totalFiles} 个文件。`);
+            }, 500);
         }
         
-        // 重置功能
-        function resetApp() {
+        // 重置表单
+        function resetForm() {
             document.getElementById('filenameInput').value = '';
-            document.getElementById('numbersPerFile').value = '40';
-            document.getElementById('dataInput').value = `开头:
-`;
-            
-            document.getElementById('statusText').textContent = '等待生成...';
-            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('numbersPerFile').value = 40;
+            document.getElementById('dataInput').value = '开头:\n000-000\n000';
             document.getElementById('fileList').innerHTML = '';
-            document.getElementById('loadingIndicator').style.display = 'none';
-            
-            updateStats(0, 0, 0, 0, 40);
+            updateStats(0, 0, 0, 0, 0, 40);
+            updateStatus('等待生成...', 0);
         }
         
-        // 页面加载完成后绑定所有事件
-        document.addEventListener('DOMContentLoaded', function() {
-            // 绑定生成按钮和重置按钮事件
-            document.getElementById('generateBtn').addEventListener('click', generateFiles);
-            document.getElementById('resetBtn').addEventListener('click', resetApp);
+        // 解析上传的文件数据
+        function parseUploadedFile(file, callback) {
+            const reader = new FileReader();
+            const fileExt = file.name.split('.').pop().toLowerCase();
             
-            // 上传文件功能（去重工具）
-            const fileInput = document.getElementById('fileInput');
-            const uploadArea = document.getElementById('uploadArea');
-            const uploadStatus = document.getElementById('uploadStatus');
-            const uploadResults = document.getElementById('uploadResults');
-            const selectFileBtn = document.getElementById('selectFileBtn');
-            const downloadCleanBtn = document.getElementById('downloadCleanBtn');
-            
-            let cleanNumbers = [];
-            
-            // 点击上传区域触发文件选择
-            uploadArea.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            // 选择文件按钮
-            selectFileBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                fileInput.click();
-            });
-            
-            // 拖放功能
-            uploadArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#4d90fe';
-                uploadArea.style.backgroundColor = '#f5f7fa';
-            });
-            
-            uploadArea.addEventListener('dragleave', function() {
-                uploadArea.style.borderColor = '#c3cfe2';
-                uploadArea.style.backgroundColor = '';
-            });
-            
-            uploadArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#c3cfe2';
-                uploadArea.style.backgroundColor = '';
-                
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    handleFileUpload(fileInput.files[0]);
-                }
-            });
-            
-            // 文件选择变化
-            fileInput.addEventListener('change', function() {
-                if (fileInput.files.length) {
-                    handleFileUpload(fileInput.files[0]);
-                }
-            });
-            
-            // 处理文件上传（去重工具）
-            function handleFileUpload(file) {
-                uploadStatus.textContent = '正在处理文件...';
-                uploadResults.style.display = 'none';
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        let numbers = [];
+            reader.onload = function(e) {
+                try {
+                    let data = [];
+                    
+                    if (fileExt === 'xlsx' || fileExt === 'xls') {
+                        // 处理Excel文件
+                        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
                         
-                        // 检查文件类型
-                        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                            // 处理Excel文件
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            
-                            // 提取第一列数据
-                            numbers = jsonData.map(row => row[0] ? row[0].toString() : '').filter(num => num);
-                        } else if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-                            // 处理文本文件
-                            const text = e.target.result;
-                            numbers = text.split('\n')
-                                .map(line => line.trim())
-                                .filter(line => line && /^\d+$/.test(line));
-                        } else {
-                            throw new Error('不支持的文件格式');
-                        }
-                        
-                        if (numbers.length === 0) {
-                            throw new Error('文件中没有找到有效数据');
-                        }
-                        
-                        // 去重
-                        const originalCount = numbers.length;
-                        cleanNumbers = [...new Set(numbers)];
-                        const duplicateCount = originalCount - cleanNumbers.length;
-                        
-                        // 更新UI
-                        document.getElementById('uploadFileName').textContent = file.name;
-                        document.getElementById('originalCount').textContent = originalCount.toLocaleString();
-                        document.getElementById('duplicateCount').textContent = duplicateCount.toLocaleString();
-                        document.getElementById('cleanCount').textContent = cleanNumbers.length.toLocaleString();
-                        
-                        uploadStatus.textContent = '文件处理完成！';
-                        uploadResults.style.display = 'block';
-                        
-                    } catch (error) {
-                        uploadStatus.textContent = '处理失败: ' + error.message;
-                        console.error('文件处理错误:', error);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    uploadStatus.textContent = '读取文件失败';
-                };
-                
-                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    reader.readAsArrayBuffer(file);
-                } else {
-                    reader.readAsText(file);
-                }
-            }
-            
-            // 下载去重后的数据（同步修改：仅A列，无表头）
-            downloadCleanBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                if (cleanNumbers.length === 0) {
-                    alert('没有可下载的数据！');
-                    return;
-                }
-                
-                // 创建Excel文件（仅A列纯数据，无表头）
-                const worksheetData = cleanNumbers.map(number => [number]);
-                
-                const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-                worksheet['!cols'] = [{ wch: 15 }];
-                
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "去重数据");
-                
-                // 生成文件名
-                const originalName = document.getElementById('uploadFileName').textContent;
-                const fileName = originalName.includes('.') ? 
-                    originalName.replace(/\.[^/.]+$/, '') + '_去重.xlsx' : 
-                    originalName + '_去重.xlsx';
-                
-                // 下载文件
-                XLSX.writeFile(workbook, fileName);
-            });
-            
-            // 分类功能
-            const classifyFileInput = document.getElementById('classifyFileInput');
-            const classificationArea = document.getElementById('classificationArea');
-            const classificationStatus = document.getElementById('classificationStatus');
-            const classificationResults = document.getElementById('classificationResults');
-            const selectClassifyFileBtn = document.getElementById('selectClassifyFileBtn');
-            const downloadAllClassifyBtn = document.getElementById('downloadAllClassifyBtn');
-            const resetClassifyBtn = document.getElementById('resetClassifyBtn');
-            
-            let classificationData = {};
-            let originalFileName = '';
-            
-            // 点击分类区域触发文件选择
-            classificationArea.addEventListener('click', function() {
-                classifyFileInput.click();
-            });
-            
-            // 选择分类文件按钮
-            selectClassifyFileBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                classifyFileInput.click();
-            });
-            
-            // 拖放功能
-            classificationArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                classificationArea.style.borderColor = '#4d90fe';
-                classificationArea.style.backgroundColor = '#f5f7fa';
-            });
-            
-            classificationArea.addEventListener('dragleave', function() {
-                classificationArea.style.borderColor = '#c3cfe2';
-                classificationArea.style.backgroundColor = '';
-            });
-            
-            classificationArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                classificationArea.style.borderColor = '#c3cfe2';
-                classificationArea.style.backgroundColor = '';
-                
-                if (e.dataTransfer.files.length) {
-                    classifyFileInput.files = e.dataTransfer.files;
-                    handleClassifyFileUpload(classifyFileInput.files[0]);
-                }
-            });
-            
-            // 文件选择变化
-            classifyFileInput.addEventListener('change', function() {
-                if (classifyFileInput.files.length) {
-                    handleClassifyFileUpload(classifyFileInput.files[0]);
-                }
-            });
-            
-            // 自定义字符串数字排序函数（兼容超长号码，避免BigInt转换错误）
-            function sortNumberStrings(a, b) {
-                // 先按长度排序，长度长的数字更大
-                if (a.length !== b.length) {
-                    return a.length - b.length;
-                }
-                // 长度相同则逐位比较
-                for (let i = 0; i < a.length; i++) {
-                    const digitA = parseInt(a[i], 10);
-                    const digitB = parseInt(b[i], 10);
-                    if (digitA !== digitB) {
-                        return digitA - digitB;
-                    }
-                }
-                return 0; // 两个数字完全相同
-            }
-            
-            // 处理分类文件上传
-            function handleClassifyFileUpload(file) {
-                classificationStatus.textContent = '正在处理文件...';
-                classificationResults.style.display = 'none';
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        let numbers = [];
-                        
-                        // 检查文件类型
-                        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                            // 处理Excel文件
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            
-                            // 提取第一列数据
-                            numbers = jsonData.map(row => row[0] ? row[0].toString() : '').filter(num => num);
-                        } else if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-                            // 处理文本文件
-                            const text = e.target.result;
-                            numbers = text.split('\n')
-                                .map(line => line.trim())
-                                .filter(line => line && /^\d+$/.test(line));
-                        } else {
-                            throw new Error('不支持的文件格式');
-                        }
-                        
-                        if (numbers.length === 0) {
-                            throw new Error('文件中没有找到有效数据');
-                        }
-                        
-                        // 获取前缀长度
-                        const prefixLength = parseInt(document.getElementById('prefixLength').value);
-                        // 获取排序选项
-                        const sortNumbers = document.getElementById('sortNumbers').checked;
-                        
-                        // 按前缀分类
-                        classificationData = {};
-                        const includeFullNumber = document.getElementById('includeFullNumber').checked;
-                        
-                        numbers.forEach(number => {
-                            const prefix = number.substring(0, prefixLength);
-                            const suffix = number.substring(prefixLength);
-                            
-                            if (!classificationData[prefix]) {
-                                classificationData[prefix] = [];
-                            }
-                            
-                            classificationData[prefix].push(includeFullNumber ? number : suffix);
-                        });
-                        
-                        // 如果需要排序，对每个前缀下的号码进行从小到大排序（使用兼容的字符串排序）
-                        if (sortNumbers) {
-                            for (const prefix in classificationData) {
-                                classificationData[prefix].sort(sortNumberStrings);
-                            }
-                        }
-                        
-                        // 统计信息
-                        const totalNumbers = numbers.length;
-                        const uniquePrefixes = Object.keys(classificationData).length;
-                        
-                        // 找出最多号码的前缀
-                        let maxPrefix = '';
-                        let maxCount = 0;
-                        for (const [prefix, numbersArr] of Object.entries(classificationData)) {
-                            if (numbersArr.length > maxCount) {
-                                maxCount = numbersArr.length;
-                                maxPrefix = prefix;
-                            }
-                        }
-                        
-                        // 更新UI
-                        document.getElementById('classifyFileName').textContent = file.name;
-                        document.getElementById('totalNumbersCount').textContent = totalNumbers.toLocaleString();
-                        document.getElementById('uniquePrefixesCount').textContent = uniquePrefixes.toLocaleString();
-                        document.getElementById('maxNumbersPrefix').textContent = maxPrefix ? `${maxPrefix} (${maxCount.toLocaleString()})` : '-';
-                        
-                        // 更新前缀列表
-                        const classificationList = document.getElementById('classificationList');
-                        classificationList.innerHTML = '';
-                        
-                        // 按数量降序排序前缀
-                        const sortedPrefixes = Object.entries(classificationData)
-                            .sort((a, b) => b[1].length - a[1].length);
-                        
-                        sortedPrefixes.forEach(([prefix, numbersArr]) => {
-                            const item = document.createElement('div');
-                            item.className = 'classification-item';
-                            
-                            item.innerHTML = `
-                                <div class="prefix-info">
-                                    <div class="prefix-badge">${prefix}</div>
-                                    <div class="prefix-count">${numbersArr.length.toLocaleString()} 条</div>
-                                </div>
-                                <a href="#" class="download-classify-btn" data-prefix="${prefix}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    下载
-                                </a>
-                            `;
-                            
-                            classificationList.appendChild(item);
-                        });
-                        
-                        // 为下载按钮添加事件
-                        document.querySelectorAll('.download-classify-btn').forEach(btn => {
-                            btn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                const prefix = this.getAttribute('data-prefix');
-                                downloadPrefixFile(prefix);
+                        // 提取所有非空单元格数据
+                        aoa.forEach(row => {
+                            row.forEach(cell => {
+                                if (cell !== undefined && cell !== null && cell.toString().trim() !== '') {
+                                    data.push(cell.toString().trim());
+                                }
                             });
                         });
-                        
-                        originalFileName = file.name;
-                        classificationStatus.textContent = '文件分类完成！';
-                        classificationResults.style.display = 'block';
-                        
-                    } catch (error) {
-                        classificationStatus.textContent = '处理失败: ' + error.message;
-                        console.error('文件分类错误:', error);
+                    } else {
+                        // 处理文本文件
+                        const text = e.target.result;
+                        const lines = text.split(/\r\n|\n|\r/);
+                        data = lines.filter(line => line.trim() !== '').map(line => line.trim());
                     }
-                };
-                
-                reader.onerror = function() {
-                    classificationStatus.textContent = '读取文件失败';
-                };
-                
-                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    reader.readAsArrayBuffer(file);
+                    
+                    callback(null, data);
+                } catch (error) {
+                    callback(error, null);
+                }
+            };
+            
+            if (fileExt === 'xlsx' || fileExt === 'xls') {
+                reader.readAsBinaryString(file);
+            } else {
+                reader.readAsText(file);
+            }
+        }
+        
+        // 双文件选择处理
+        function handleDuplicateFileSelect(event, fileNum) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const fileId = `duplicateFile${fileNum}`;
+            const nameId = `duplicateFile${fileNum}Name`;
+            const errorId = `duplicateError${fileNum}`;
+            
+            // 更新文件名显示
+            document.getElementById(nameId).textContent = file.name;
+            document.getElementById(errorId).style.display = 'none';
+            
+            // 解析文件
+            parseUploadedFile(file, (error, fileData) => {
+                if (error) {
+                    document.getElementById(errorId).textContent = '文件解析失败，请检查文件格式！';
+                    document.getElementById(errorId).style.display = 'block';
+                    duplicateFileData[`file${fileNum}`] = { name: '', data: [] };
                 } else {
-                    reader.readAsText(file);
-                }
-            }
-            
-            // 下载单个前缀文件（同步修改：仅A列，无表头，修复截断问题）
-            function downloadPrefixFile(prefix) {
-                const includeFullNumber = document.getElementById('includeFullNumber').checked;
-                const numbers = classificationData[prefix];
-                
-                if (!numbers || numbers.length === 0) {
-                    alert('没有数据可下载！');
-                    return;
+                    duplicateFileData[`file${fileNum}`] = {
+                        name: file.name,
+                        data: [...new Set(fileData)] // 先去重自身重复数据
+                    };
                 }
                 
-                // 处理号码（如果勾选了包含完整号码，则直接使用，否则补全前缀）
-                const processedNumbers = includeFullNumber ? 
-                    numbers : 
-                    numbers.map(suffix => prefix + suffix);
-                
-                // 创建Excel文件（仅A列纯数据，无表头）
-                const worksheetData = processedNumbers.map(number => [number]);
-                const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-                
-                // 设置A列宽度
-                worksheet['!cols'] = [{ wch: 15 }];
-                
-                // 创建工作簿并写入数据
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "分类数据");
-                
-                // 生成文件名
-                const baseName = originalFileName.includes('.') ? originalFileName.replace(/\.[^/.]+$/, '') : originalFileName;
-                const fileName = `${baseName}_前缀${prefix}.xlsx`;
-                
-                // 下载文件
-                XLSX.writeFile(workbook, fileName);
-            }
+                // 更新按钮状态
+                updateDuplicateBtnStatus();
+                // 更新状态提示
+                updateDuplicateStatus();
+            });
+        }
+        
+        // 更新双文件处理按钮状态
+        function updateDuplicateBtnStatus() {
+            const btn = document.getElementById('duplicateProcessBtn');
+            const hasFile1 = duplicateFileData.file1.data.length > 0;
+            const hasFile2 = duplicateFileData.file2.data.length > 0;
             
-            // 重置分类功能
-            resetClassifyBtn.addEventListener('click', function() {
-                classificationData = {};
-                originalFileName = '';
-                classificationStatus.textContent = '等待上传文件...';
-                classificationResults.style.display = 'none';
-                document.getElementById('classificationList').innerHTML = '';
-                
-                // 重置统计信息
-                document.getElementById('classifyFileName').textContent = '-';
-                document.getElementById('totalNumbersCount').textContent = '0';
-                document.getElementById('uniquePrefixesCount').textContent = '0';
-                document.getElementById('maxNumbersPrefix').textContent = '-';
+            btn.disabled = !(hasFile1 && hasFile2);
+        }
+        
+        // 更新双文件处理状态提示
+        function updateDuplicateStatus() {
+            const statusEl = document.getElementById('duplicateStatus');
+            const count1 = duplicateFileData.file1.data.length;
+            const count2 = duplicateFileData.file2.data.length;
+            
+            if (count1 > 0 && count2 > 0) {
+                statusEl.textContent = `已上传2个文件 | 文件1：${count1}条 | 文件2：${count2}条`;
+                statusEl.style.color = '#34a853';
+            } else if (count1 > 0) {
+                statusEl.textContent = `已上传1个文件 | 文件1：${count1}条 | 等待上传文件2`;
+                statusEl.style.color = '#fbbc05';
+            } else if (count2 > 0) {
+                statusEl.textContent = `已上传1个文件 | 文件2：${count2}条 | 等待上传文件1`;
+                statusEl.style.color = '#fbbc05';
+            } else {
+                statusEl.textContent = '等待上传文件...';
+                statusEl.style.color = '#4d90fe';
+            }
+        }
+        
+        // 处理双文件去重
+        function processDuplicateFiles() {
+            const data1 = duplicateFileData.file1.data;
+            const data2 = duplicateFileData.file2.data;
+            
+            // 创建集合用于快速查找
+            const set1 = new Set(data1);
+            const set2 = new Set(data2);
+            
+            // 找出共同重复数据
+            const commonData = new Set();
+            set1.forEach(item => {
+                if (set2.has(item)) {
+                    commonData.add(item);
+                }
             });
             
-            // 下载所有分类文件（简易实现，批量下载需压缩包，浏览器原生不支持多文件同时下载）
-            downloadAllClassifyBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                if (Object.keys(classificationData).length === 0) {
-                    alert('没有分类数据可下载！');
-                    return;
-                }
-                
-                alert('即将开始下载所有分类文件，每个前缀对应一个Excel文件，请留意浏览器下载提示。');
-                
-                // 遍历所有前缀并下载
-                Object.keys(classificationData).forEach((prefix, index) => {
-                    setTimeout(() => {
-                        downloadPrefixFile(prefix);
-                    }, 500 * index); // 延迟下载，避免浏览器拦截，按索引递增延迟
-                });
+            // 过滤掉共同重复数据
+            const uniqueData1 = data1.filter(item => !commonData.has(item));
+            const uniqueData2 = data2.filter(item => !commonData.has(item));
+            
+            // 生成下载链接
+            generateDuplicateDownloadLinks(uniqueData1, uniqueData2);
+            
+            // 显示下载区域
+            document.getElementById('duplicateDownloadSection').classList.add('show');
+            
+            // 更新状态
+            document.getElementById('duplicateStatus').textContent = `处理完成！共移除 ${commonData.size} 条重复数据`;
+            document.getElementById('duplicateStatus').style.color = '#34a853';
+        }
+        
+        // 生成双文件处理后的下载链接
+        function generateDuplicateDownloadLinks(data1, data2) {
+            // 生成TXT文件下载链接
+            const blob1Txt = new Blob([data1.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const blob2Txt = new Blob([data2.join('\n')], { type: 'text/plain;charset=utf-8' });
+            
+            document.getElementById('duplicateDownload1Txt').href = URL.createObjectURL(blob1Txt);
+            document.getElementById('duplicateDownload2Txt').href = URL.createObjectURL(blob2Txt);
+            
+            // 生成Excel文件下载链接
+            const createExcelBlob = (data) => {
+                const worksheetData = data.map(item => [item]);
+                const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "去重后数据");
+                const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                return new Blob([wbout], { type: 'application/octet-stream' });
+            };
+            
+            const blob1Excel = createExcelBlob(data1);
+            const blob2Excel = createExcelBlob(data2);
+            
+            document.getElementById('duplicateDownload1Excel').href = URL.createObjectURL(blob1Excel);
+            document.getElementById('duplicateDownload2Excel').href = URL.createObjectURL(blob2Excel);
+        }
+        
+        // 清空双文件上传数据
+        function clearDuplicateFiles() {
+            duplicateFileData = {
+                file1: { name: '', data: [] },
+                file2: { name: '', data: [] }
+            };
+            
+            document.getElementById('duplicateFile1Name').textContent = '未选择文件';
+            document.getElementById('duplicateFile2Name').textContent = '未选择文件';
+            document.getElementById('duplicateError1').style.display = 'none';
+            document.getElementById('duplicateError2').style.display = 'none';
+            document.getElementById('duplicateProcessBtn').disabled = true;
+            document.getElementById('duplicateDownloadSection').classList.remove('show');
+            
+            // 重置文件输入
+            document.getElementById('duplicateFile1Input').value = '';
+            document.getElementById('duplicateFile2Input').value = '';
+            
+            // 更新状态
+            updateDuplicateStatus();
+        }
+        
+        // 绑定事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成按钮
+            document.getElementById('generateBtn').addEventListener('click', () => generateFilesCore(false));
+            document.getElementById('generateFilteredBtn').addEventListener('click', () => generateFilesCore(true));
+            
+            // 重置按钮
+            document.getElementById('resetBtn').addEventListener('click', resetForm);
+            
+            // 上传文件按钮
+            document.getElementById('selectFileBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            
+            // 分类文件选择按钮
+            document.getElementById('selectClassifyFileBtn').addEventListener('click', () => {
+                document.getElementById('classifyFileInput').click();
+            });
+            
+            // 每文件数据量变化时更新统计
+            document.getElementById('numbersPerFile').addEventListener('change', function() {
+                const value = parseInt(this.value) || 40;
+                document.getElementById('fileSize').textContent = value + '万';
             });
         });
     </script>
