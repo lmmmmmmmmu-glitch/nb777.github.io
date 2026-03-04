@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>批量号码生成与文件分割工具 · 修复版</title>
+    <title>批量号码生成与数据处理工具套件</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -74,6 +73,48 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
         }
         
+        /* 工具标签页样式 */
+        .tool-tabs {
+            display: flex;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tool-tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: #666;
+        }
+        
+        .tool-tab:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .tool-tab.active {
+            background-color: white;
+            color: #4d90fe;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-panel {
+            display: none;
+        }
+        
+        .tool-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* 通用输入样式 */
         .input-section {
             margin-bottom: 30px;
         }
@@ -82,10 +123,12 @@
             display: flex;
             gap: 20px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         .input-group {
             flex: 1;
+            min-width: 250px;
         }
         
         .input-label {
@@ -96,27 +139,9 @@
             font-size: 16px;
         }
         
-        .input-label i {
-            color: #4d90fe;
-            margin-right: 8px;
-        }
-        
-        .input-with-unit {
-            position: relative;
-        }
-        
-        .unit-label {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-size: 16px;
-        }
-        
         .filename-input, .number-input {
             width: 100%;
-            padding: 15px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 16px;
@@ -133,28 +158,50 @@
             font-size: 13px;
             color: #666;
             margin-top: 8px;
-            padding-left: 5px;
         }
         
-        .filename-example {
-            background-color: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            color: #555;
-            margin-top: 5px;
-            border-left: 3px solid #4d90fe;
+        /* 快捷数量按钮组 */
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
         }
         
+        .quick-btn {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #d0d7de;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background: linear-gradient(135deg, #e2e6ea, #d0d7de);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .quick-btn.active {
+            background: linear-gradient(135deg, #4d90fe, #357ae8);
+            color: white;
+            border-color: #4d90fe;
+        }
+        
+        /* 扩大号码段规则输入框 */
         textarea {
             width: 100%;
-            min-height: 400px;
-            padding: 20px;
+            min-height: 250px; /* 从150px增加到250px */
+            padding: 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            line-height: 1.6;
+            line-height: 1.5;
             resize: vertical;
             transition: all 0.3s;
         }
@@ -165,6 +212,7 @@
             outline: none;
         }
         
+        /* 控制按钮样式 */
         .controls {
             display: flex;
             justify-content: center;
@@ -174,81 +222,81 @@
         }
         
         button {
-            padding: 14px 32px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            min-width: 160px;
+            gap: 8px;
         }
         
-        .generate-btn {
-            background: linear-gradient(135deg, #4d90fe, #357ae8);
-            color: white;
-            box-shadow: 0 4px 12px rgba(77, 144, 254, 0.3);
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        .generate-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(77, 144, 254, 0.4);
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
-        .generate-btn:active {
-            transform: translateY(-1px);
+        .generate-btn, .download-btn, .upload-btn { 
+            background: linear-gradient(135deg, #4d90fe, #357ae8); 
+            color: white; 
         }
         
-        .filter-btn {
-            background: linear-gradient(135deg, #ea4335, #d93025);
-            color: white;
-            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.3);
+        .filter-btn, .classification-btn { 
+            background: linear-gradient(135deg, #ea4335, #d93025); 
+            color: white; 
         }
         
-        .filter-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(234, 67, 53, 0.4);
+        .reset-btn { 
+            background: white; 
+            color: #444; 
+            border: 2px solid #e0e0e0; 
         }
         
-        .filter-btn:active {
-            transform: translateY(-1px);
+        .sort-btn { 
+            background: white; 
+            color: #444; 
+            border: 2px solid #e0e0e0; 
         }
         
-        .reset-btn {
-            background: linear-gradient(135deg, #f1f3f4, #e0e0e0);
-            color: #444;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        .sort-btn.active { 
+            background: linear-gradient(135deg, #4d90fe, #357ae8); 
+            color: white; 
+            border-color: #4d90fe; 
         }
         
-        .reset-btn:hover {
-            background: linear-gradient(135deg, #e8eaed, #d5d5d5);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        .duplicate-btn { 
+            background: linear-gradient(135deg, #4ecdc4, #44a08d); 
+            color: white; 
         }
         
+        .download-clean-btn, .download-all-btn { 
+            background: linear-gradient(135deg, #34a853, #2e8b47); 
+            color: white; 
+        }
+        
+        /* 状态区域样式 */
         .status-section {
-            background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border: 1px solid #eaeaea;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-top: 30px;
         }
         
         .status-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         
         .status-title {
             font-weight: 700;
             color: #2c3e50;
-            font-size: 18px;
         }
         
         #statusText {
@@ -257,12 +305,11 @@
         }
         
         .progress-container {
-            height: 12px;
+            height: 10px;
             background-color: #e0e0e0;
-            border-radius: 6px;
+            border-radius: 5px;
             overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin: 15px 0;
         }
         
         .progress-bar {
@@ -270,120 +317,35 @@
             background: linear-gradient(90deg, #4d90fe, #34a853);
             width: 0%;
             transition: width 0.5s ease;
-            border-radius: 6px;
+            border-radius: 5px;
         }
         
-        .file-list {
-            margin-top: 25px;
-        }
-        
-        .file-list-header {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: 18px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            transition: all 0.2s;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .file-item:hover {
-            background-color: #f9f9f9;
-            transform: translateX(5px);
-        }
-        
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .file-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4d90fe, #34a853);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-        
-        .file-details {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .file-name {
-            font-weight: 600;
-            font-size: 16px;
-        }
-        
-        .file-size {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .download-btn {
-            background: linear-gradient(135deg, #34a853, #2e8b47);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 15px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 3px 8px rgba(52, 168, 83, 0.3);
-        }
-        
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(52, 168, 83, 0.4);
-        }
-        
+        /* 统计信息样式 */
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
         
         .stat-box {
             background: linear-gradient(135deg, #f8f9fa, #f0f2f5);
-            padding: 20px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
             border: 1px solid #eaeaea;
-            transition: all 0.3s;
-        }
-        
-        .stat-box:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
         
         .stat-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
             color: #4d90fe;
             margin-bottom: 5px;
         }
         
         .stat-label {
-            font-size: 15px;
+            font-size: 14px;
             color: #666;
-            font-weight: 600;
         }
         
         .filter-stat-box {
@@ -395,92 +357,91 @@
             color: #d32f2f;
         }
         
+        /* 加载指示器 */
         .loading {
             display: none;
             text-align: center;
-            padding: 30px;
+            padding: 20px;
         }
         
         .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #4d90fe;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4d90fe;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+            margin: 0 auto 15px auto;
         }
         
         .loading-text {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #444;
         }
         
-        .note {
-            font-size: 14px;
-            color: #888;
+        /* 文件列表样式 */
+        .file-list {
             margin-top: 25px;
-            text-align: center;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border-left: 4px solid #fbbc05;
         }
         
-        .example-section {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #34a853;
-        }
-        
-        .example-title {
-            font-weight: 600;
+        .file-list-header {
+            font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 10px;
             font-size: 16px;
+            margin-bottom: 15px;
         }
         
-        .example-content {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 6px;
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.2s;
+        }
+        
+        .file-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-name {
+            font-weight: 600;
+        }
+        
+        .file-size {
+            color: #666;
             font-size: 14px;
-            line-height: 1.5;
-            overflow-x: auto;
         }
         
         /* 上传区域样式 */
-        .upload-section {
+        .upload-section, .classification-section, .duplicate-removal-section {
             margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-            border-radius: 12px;
-            border: 1px solid #eaeaea;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
         }
         
-        .upload-header {
+        .upload-header, .classification-header, .duplicate-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         
-        .upload-title {
+        .upload-title, .classification-title, .duplicate-title {
             font-weight: 700;
             color: #2c3e50;
-            font-size: 18px;
         }
         
-        #uploadStatus {
+        #uploadStatus, #classificationStatus, #duplicateStatus {
             font-weight: 600;
             color: #4d90fe;
         }
         
-        .upload-area {
+        .upload-area, .classification-area, .duplicate-upload-box {
             border: 2px dashed #c3cfe2;
             border-radius: 10px;
             padding: 30px;
@@ -490,55 +451,66 @@
             margin-bottom: 20px;
         }
         
-        .upload-area:hover {
+        .upload-area:hover, .classification-area:hover, .duplicate-upload-box:hover {
             border-color: #4d90fe;
             background-color: #f5f7fa;
         }
         
-        .upload-icon {
+        .upload-icon, .classification-icon, .duplicate-upload-icon {
             font-size: 48px;
-            color: #4d90fe;
             margin-bottom: 15px;
         }
         
-        .upload-text {
+        .upload-icon { color: #4d90fe; }
+        .classification-icon { color: #ea4335; }
+        .duplicate-upload-icon { color: #ccc; }
+        
+        .upload-text, .classification-text, .duplicate-upload-text {
             font-size: 16px;
             color: #666;
             margin-bottom: 10px;
         }
         
-        .upload-hint {
+        .upload-hint, .classification-hint {
             font-size: 14px;
             color: #888;
         }
         
-        .upload-btn {
-            background: linear-gradient(135deg, #fbbc05, #f9ab00);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 3px 8px rgba(251, 188, 5, 0.3);
-            margin-top: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
+        .duplicate-file-name {
+            font-size: 14px;
+            color: #333;
+            margin-top: 10px;
         }
         
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(251, 188, 5, 0.4);
-        }
-        
-        .upload-results {
+        /* 上传结果样式 */
+        .upload-results, .duplicate-download-section {
             margin-top: 20px;
-            padding: 15px;
-            background-color: white;
+            padding: 20px;
+            background-color: #f8f9fa;
             border-radius: 8px;
             border-left: 4px solid #34a853;
+        }
+        
+        /* 分类结果区域 - 默认隐藏 */
+        .classification-results {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #34a853;
+            display: none;
+        }
+        
+        .classification-results.show { 
+            display: block; 
+        }
+        
+        .duplicate-download-section { 
+            display: none; 
+        }
+        
+        .duplicate-download-section.show { 
+            display: block; 
         }
         
         .result-item {
@@ -557,51 +529,7 @@
             color: #4d90fe;
         }
         
-        .download-clean-btn {
-            background: linear-gradient(135deg, #34a853, #2e8b47);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 15px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: inline-block;
-            margin-top: 15px;
-        }
-        
-        .download-clean-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(52, 168, 83, 0.4);
-        }
-        
-        /* 新增的分类工具样式 */
-        .classification-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-            border-radius: 12px;
-            border: 1px solid #eaeaea;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        
-        .classification-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .classification-title {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: 18px;
-        }
-        
-        #classificationStatus {
-            font-weight: 600;
-            color: #4d90fe;
-        }
-        
+        /* 分类工具样式增强 - 支持TXT/Excel双按钮 */
         .classification-options {
             display: flex;
             gap: 20px;
@@ -627,111 +555,6 @@
             font-size: 16px;
             background-color: white;
             cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .prefix-length-select:focus {
-            border-color: #4d90fe;
-            box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
-            outline: none;
-        }
-        
-        /* 排序按钮样式 */
-        .sort-btn {
-            padding: 10px 20px;
-            border: 2px solid #4d90fe;
-            border-radius: 8px;
-            font-size: 16px;
-            background-color: white;
-            color: #4d90fe;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .sort-btn:hover {
-            background-color: #f0f7ff;
-            border-color: #357ae8;
-        }
-        
-        .sort-btn.active {
-            background: linear-gradient(135deg, #4d90fe, #357ae8);
-            color: white;
-            box-shadow: 0 3px 8px rgba(77, 144, 254, 0.3);
-        }
-        
-        .classification-area {
-            border: 2px dashed #c3cfe2;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        .classification-area:hover {
-            border-color: #4d90fe;
-            background-color: #f5f7fa;
-        }
-        
-        .classification-icon {
-            font-size: 48px;
-            color: #ea4335;
-            margin-bottom: 15px;
-        }
-        
-        .classification-text {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .classification-hint {
-            font-size: 14px;
-            color: #888;
-        }
-        
-        .classification-btn {
-            background: linear-gradient(135deg, #ea4335, #d93025);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 3px 8px rgba(234, 67, 53, 0.3);
-            margin-top: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .classification-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(234, 67, 53, 0.4);
-        }
-        
-        .classification-results {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            border-left: 4px solid #34a853;
-            display: none;
-        }
-        
-        .results-header {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: 18px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
         }
         
         .classification-stats {
@@ -750,7 +573,7 @@
         }
         
         .stat-number {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
             color: #ea4335;
             margin-bottom: 5px;
@@ -762,7 +585,7 @@
         }
         
         .classification-list {
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
             border: 1px solid #eaeaea;
             border-radius: 8px;
@@ -775,23 +598,25 @@
             align-items: center;
             padding: 12px 15px;
             border-bottom: 1px solid #eee;
-            transition: all 0.2s;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
-        .classification-item:hover {
-            background-color: #f9f9f9;
+        .classification-item:last-child {
+            border-bottom: none;
         }
         
         .prefix-info {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
         }
         
         .prefix-badge {
             background: linear-gradient(135deg, #4d90fe, #357ae8);
             color: white;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 6px;
             font-weight: 600;
             min-width: 60px;
@@ -803,41 +628,36 @@
             color: #444;
         }
         
-        .download-classify-btn {
-            background: linear-gradient(135deg, #ea4335, #d93025);
-            color: white;
-            padding: 8px 16px;
+        /* 双按钮组样式 */
+        .download-buttons-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .download-classify-btn-txt, .download-classify-btn-xlsx {
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 14px;
-            text-decoration: none;
+            font-size: 13px;
             font-weight: 600;
-            transition: all 0.3s;
-            display: inline-block;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
         }
         
-        .download-classify-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(234, 67, 53, 0.4);
-        }
-        
-        .download-all-btn {
-            background: linear-gradient(135deg, #fbbc05, #f9ab00);
+        .download-classify-btn-txt {
+            background: #4d90fe;
             color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
         }
         
-        .download-all-btn:hover {
+        .download-classify-btn-xlsx {
+            background: #34a853;
+            color: white;
+        }
+        
+        .download-classify-btn-txt:hover, .download-classify-btn-xlsx:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(251, 188, 5, 0.4);
+            filter: brightness(1.1);
         }
         
         .actions-row {
@@ -845,158 +665,11 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 20px;
-        }
-        
-        /* 双文件重复删除工具样式 */
-        .duplicate-removal-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
-            border-radius: 12px;
-            border: 1px solid #eaeaea;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        
-        .duplicate-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .duplicate-title {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: 18px;
-        }
-        
-        #duplicateStatus {
-            font-weight: 600;
-            color: #4d90fe;
-        }
-        
-        .duplicate-upload-section {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 30px;
             flex-wrap: wrap;
+            gap: 15px;
         }
         
-        .duplicate-upload-box {
-            flex: 1;
-            min-width: 300px;
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .duplicate-upload-box:hover {
-            border-color: #ff6b6b;
-            background-color: #fff5f5;
-        }
-        
-        .duplicate-upload-box.dragover {
-            border-color: #ff6b6b;
-            background-color: #fff5f5;
-            transform: scale(1.02);
-        }
-        
-        .duplicate-upload-icon {
-            font-size: 3em;
-            color: #ccc;
-            margin-bottom: 15px;
-        }
-        
-        .duplicate-upload-text {
-            font-size: 1.1em;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .duplicate-file-name {
-            font-size: 0.9em;
-            color: #333;
-            margin-top: 10px;
-            word-break: break-all;
-            min-height: 20px;
-        }
-        
-        .duplicate-controls {
-            text-align: center;
-            margin: 30px 0;
-        }
-        
-        .duplicate-btn {
-            padding: 14px 35px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-            margin: 0 10px;
-        }
-        
-        .duplicate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(78, 205, 196, 0.3);
-        }
-        
-        .duplicate-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .duplicate-download-section {
-            display: none;
-            margin-top: 30px;
-            text-align: center;
-        }
-        
-        .duplicate-download-section.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .duplicate-download-title {
-            font-size: 1.3em;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        
-        .duplicate-download-btns {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .duplicate-download-btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #a8edea, #fed6e3);
-            color: #333;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .duplicate-download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(168, 237, 234, 0.4);
-        }
-        
+        /* 双文件去重工具样式 */
         .duplicate-info-box {
             background: #d1ecf1;
             border: 1px solid #bee5eb;
@@ -1004,414 +677,415 @@
             padding: 15px;
             border-radius: 8px;
             margin: 20px 0;
-            font-size: 0.95em;
+        }
+        
+        .duplicate-upload-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .duplicate-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .duplicate-download-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .duplicate-download-btn {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
         }
         
         .duplicate-error-message {
             color: #dc3545;
-            font-size: 0.9em;
+            font-size: 14px;
             margin-top: 10px;
-            display: none;
         }
         
+        .example-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #34a853;
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .example-content {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .note {
+            font-size: 14px;
+            color: #888;
+            margin-top: 25px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #fbbc05;
+        }
+        
+        /* 动画 */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
+        /* 响应式设计 */
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
             }
             
-            .input-row {
+            .tool-tab {
+                min-width: 120px;
+                padding: 12px 15px;
+            }
+            
+            .input-row, .controls, .classification-options, .duplicate-upload-section, .duplicate-download-btns, .actions-row {
                 flex-direction: column;
                 gap: 15px;
             }
             
-            button {
-                min-width: 140px;
-                padding: 12px 20px;
-            }
-            
-            .stats {
+            .stats, .classification-stats {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .classification-options {
+            .file-item, .actions-row {
                 flex-direction: column;
-                gap: 15px;
-            }
-            
-            .actions-row {
-                flex-direction: column;
-                gap: 15px;
                 align-items: stretch;
+                gap: 15px;
             }
             
-            .download-all-btn, .reset-btn {
+            .download-btn, .download-all-btn, .reset-btn {
                 width: 100%;
                 justify-content: center;
             }
             
-            .duplicate-upload-section {
+            .classification-item {
                 flex-direction: column;
+                align-items: flex-start;
             }
             
-            .duplicate-upload-box {
-                min-width: 100%;
-            }
-            
-            .duplicate-controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .duplicate-btn {
-                width: 200px;
-                margin: 5px 0;
-            }
-            
-            .duplicate-download-btns {
-                flex-direction: column;
-                align-items: center;
+            .download-buttons-group {
+                align-self: flex-end;
             }
         }
         
         @media (max-width: 480px) {
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .stats {
+            .stats, .classification-stats {
                 grid-template-columns: 1fr;
             }
             
-            .file-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
+            h1 {
+                font-size: 24px;
             }
             
-            .download-btn {
-                align-self: flex-end;
+            .tool-tabs {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>批量号码生成与文件分割工具</h1>
+        <h1>批量号码生成与数据处理工具套件</h1>
         
         <div class="description">
-            <p><strong>功能说明：</strong> 本工具根据您提供的号码段规则，自动生成完整的号码序列。您可以自定义每个文件包含的数据量。生成的文件将按照您指定的格式命名。支持去除尾缀为110的号码。</p>
+            <p><strong>集成功能说明：</strong> 本工具集提供批量号码生成、数据去重、按前缀自动分类、双文件重复删除等一站式数据处理功能。您可以通过下方标签页切换不同工具。</p>
         </div>
         
-        <div class="input-section">
-            <div class="input-row">
+        <!-- 工具标签页 -->
+        <div class="tool-tabs">
+            <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
+            <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
+            <div class="tool-tab" data-tool="classify">📂 前缀分类</div>
+            <div class="tool-tab" data-tool="duplicate">🔄 双文件去重</div>
+        </div>
+        
+        <!-- 面板1: 批量号码生成 (新增快捷按钮) -->
+        <div id="panel-generate" class="tool-panel active">
+            <div class="input-section">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">📁 输出文件名称：</label>
+                        <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 0455安达市-0453穆陵市" value="">
+                        <div class="filename-hint">请输入生成文件的基本名称，系统会自动添加序号。</div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">🔢 每文件数据量：</label>
+                        <input type="number" id="numbersPerFile" class="number-input" min="1" max="100" value="40" step="1">
+                        <div class="filename-hint">设置每个Excel文件包含的数据量（建议1-100万）。</div>
+                        <!-- 新增快捷按钮组 -->
+                        <div class="quick-buttons">
+                            <span class="quick-btn" data-value="5">5万</span>
+                            <span class="quick-btn" data-value="10">10万</span>
+                            <span class="quick-btn" data-value="20">20万</span>
+                            <span class="quick-btn" data-value="30">30万</span>
+                            <span class="quick-btn active" data-value="40">40万</span>
+                            <span class="quick-btn" data-value="50">50万</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="input-group">
-                    <label class="input-label"><i>📁</i> 输出文件名称：</label>
-                    <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 0455安达市-0453穆陵市" value="">
-                    <div class="filename-hint">请输入生成文件的基本名称，系统会自动添加序号（如：文件名_1.xlsx）</div>
-                    <div class="filename-example">示例：输入"测试数据"将生成"测试数据.xlsx"、"测试数据_2.xlsx"等</div>
+                    <label class="input-label">📝 请输入号码段规则（输入框已扩大）：</label>
+                    <textarea id="dataInput" placeholder="开头:0455&#10;730-739 &#10;720~729 &#10;750至759 &#10;开头:0453&#10;301-309">开头:
+000-000
+000</textarea>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="generate-btn" id="generateBtn">▶️ 开始生成文件</button>
+                <button class="filter-btn" id="generateFilteredBtn">🚫 生成并去除尾缀110</button>
+                <button class="reset-btn" id="resetBtn">🔄 重置</button>
+            </div>
+            
+            <div class="status-section">
+                <div class="status-header">
+                    <div class="status-title">生成状态</div>
+                    <div id="statusText">等待生成...</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
                 </div>
                 
-                <div class="input-group">
-                    <label class="input-label"><i>🔢</i> 每文件数据量：</label>
-                    <div class="input-with-unit">
-                        <input type="number" id="numbersPerFile" class="number-input" min="1" value="10" step="1">
-                        <div class="unit-label">万/文件</div>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalCount">0</div>
+                        <div class="stat-label">总数据量</div>
                     </div>
-                    <div class="filename-hint">设置每个Excel文件包含的数据量（无上限，按输入数值*1万条）</div>
-                    <div class="filename-example">默认：10万/文件，可任意设置</div>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label"><i>📝</i> 请输入号码段规则：</label>
-                <textarea id="dataInput">开头:
-</textarea>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button class="generate-btn" id="generateBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                开始生成文件
-            </button>
-            <button class="filter-btn" id="generateFilteredBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                生成并去除尾缀110号码
-            </button>
-            <button class="reset-btn" id="resetBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                    <path d="M3 3v5h5"></path>
-                </svg>
-                重置
-            </button>
-        </div>
-        
-        <div class="status-section">
-            <div class="status-header">
-                <div class="status-title">生成状态</div>
-                <div id="statusText">等待生成...</div>
-            </div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-value" id="totalCount">0</div>
-                    <div class="stat-label">总数据量</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="fileCount">0</div>
-                    <div class="stat-label">文件数量</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="groupCount">0</div>
-                    <div class="stat-label">号码组数</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="uniqueCount">0</div>
-                    <div class="stat-label">去重后数量</div>
-                </div>
-                <div class="stat-box filter-stat-box">
-                    <div class="stat-value filter-stat-value" id="filteredCount">0</div>
-                    <div class="stat-label">去除尾缀110数量</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="fileSize">40万</div>
-                    <div class="stat-label">每文件数据量</div>
-                </div>
-            </div>
-            
-            <div class="loading" id="loadingIndicator">
-                <div class="spinner"></div>
-                <div class="loading-text">正在生成数据，请稍候...</div>
-            </div>
-        </div>
-        
-        <div class="file-list">
-            <div class="file-list-header">生成的文件列表</div>
-            <div id="fileList">
-                <!-- 生成的文件列表将显示在这里 -->
-            </div>
-        </div>
-        
-        <!-- 数据去重工具 (修复版) -->
-        <div class="upload-section">
-            <div class="upload-header">
-                <div class="upload-title">数据去重工具</div>
-                <div id="uploadStatus">等待上传文件...</div>
-            </div>
-            
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📤</div>
-                <div class="upload-text">点击或拖拽文件到此处上传</div>
-                <div class="upload-hint">支持Excel(.xlsx, .xls)或文本文件(.txt, .csv)</div>
-                <button class="upload-btn" id="selectFileBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    选择文件
-                </button>
-                <input type="file" id="fileInput" accept=".xlsx,.xls,.txt,.csv" style="display: none;">
-            </div>
-            
-            <div class="upload-results" id="uploadResults" style="display: none;">
-                <div class="result-item">
-                    <span class="result-label">文件名：</span>
-                    <span class="result-value" id="uploadFileName"></span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">原始数据量：</span>
-                    <span class="result-value" id="originalCount">0</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">重复数据量：</span>
-                    <span class="result-value" id="duplicateCount">0</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">去重后数量：</span>
-                    <span class="result-value" id="cleanCount">0</span>
-                </div>
-                <a href="#" class="download-clean-btn" id="downloadCleanBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    下载去重后数据
-                </a>
-            </div>
-        </div>
-        
-        <!-- 按号码开头自动分类文件工具 (修复版) -->
-        <div class="classification-section">
-            <div class="classification-header">
-                <div class="classification-title">按号码开头自动分类文件工具</div>
-                <div id="classificationStatus">等待上传文件...</div>
-            </div>
-            
-            <div class="classification-options">
-                <div class="option-group">
-                    <span class="option-label">号码前缀长度：</span>
-                    <select id="prefixLength" class="prefix-length-select">
-                        <option value="3">3位 (如: 046)</option>
-                        <option value="4" selected>4位 (如: 0462)</option>
-                        <option value="5">5位 (如: 04620)</option>
-                        <option value="6">6位 (如: 046207)</option>
-                        <option value="7">7位 (如: 0462077)</option>
-                    </select>
-                </div>
-                
-                <div class="option-group">
-                    <input type="checkbox" id="includeFullNumber" checked>
-                    <label for="includeFullNumber" class="option-label">包含完整号码（不勾选则只保留前缀后的数字）</label>
-                </div>
-                
-                <!-- 新增排序选择按钮 -->
-                <div class="option-group">
-                    <button id="sortAscBtn" class="sort-btn active">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                        从小到大排序
-                    </button>
-                </div>
-            </div>
-            
-            <div class="classification-area" id="classificationArea">
-                <div class="classification-icon">📁</div>
-                <div class="classification-text">点击或拖拽文件到此处上传</div>
-                <div class="classification-hint">支持Excel(.xlsx, .xls)或文本文件(.txt, .csv)，将按号码开头自动分类</div>
-                <button class="classification-btn" id="selectClassifyFileBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    选择分类文件
-                </button>
-                <input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" style="display: none;">
-            </div>
-            
-            <div class="classification-results" id="classificationResults">
-                <div class="results-header">分类结果</div>
-                
-                <div class="classification-stats">
-                    <div class="classification-stat">
-                        <div class="stat-number" id="classifyFileName">-</div>
-                        <div class="stat-desc">文件名</div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="fileCount">0</div>
+                        <div class="stat-label">文件数量</div>
                     </div>
-                    <div class="classification-stat">
-                        <div class="stat-number" id="totalNumbersCount">0</div>
-                        <div class="stat-desc">总号码数</div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="groupCount">0</div>
+                        <div class="stat-label">号码组数</div>
                     </div>
-                    <div class="classification-stat">
-                        <div class="stat-number" id="uniquePrefixesCount">0</div>
-                        <div class="stat-desc">不同前缀数</div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="uniqueCount">0</div>
+                        <div class="stat-label">去重后</div>
                     </div>
-                    <div class="classification-stat">
-                        <div class="stat-number" id="maxNumbersPrefix">-</div>
-                        <div class="stat-desc">最多号码前缀</div>
+                    <div class="stat-box filter-stat-box">
+                        <div class="stat-value filter-stat-value" id="filteredCount">0</div>
+                        <div class="stat-label">去除尾缀110</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="fileSize">40万</div>
+                        <div class="stat-label">每文件量</div>
                     </div>
                 </div>
                 
-                <div class="results-header">前缀分类详情</div>
-                <div class="classification-list" id="classificationList">
-                    <!-- 前缀列表将动态生成在这里 -->
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <div class="loading-text">正在生成数据，请稍候...</div>
+                </div>
+            </div>
+            
+            <div class="file-list">
+                <div class="file-list-header">生成的文件列表</div>
+                <div id="fileList">
+                    <!-- 生成的文件列表将显示在这里 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 面板2: 单文件去重 -->
+        <div id="panel-deduplicate" class="tool-panel">
+            <div class="upload-section">
+                <div class="upload-header">
+                    <div class="upload-title">数据去重工具</div>
+                    <div id="uploadStatus">等待上传文件...</div>
                 </div>
                 
-                <div class="actions-row">
-                    <a href="#" class="download-all-btn" id="downloadAllClassifyBtn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        下载所有分类文件
-                    </a>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">点击或拖拽文件到此处上传</div>
+                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)</div>
+                    <button class="upload-btn" id="selectFileBtn">📁 选择文件</button>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.txt,.csv" style="display:none;">
+                </div>
+                
+                <div class="upload-results" id="uploadResults" style="display:none;">
+                    <div class="result-item">
+                        <span class="result-label">文件名：</span>
+                        <span class="result-value" id="uploadFileName">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">原始数据量：</span>
+                        <span class="result-value" id="originalCount">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">重复数据量：</span>
+                        <span class="result-value" id="duplicateCount">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">去重后数量：</span>
+                        <span class="result-value" id="cleanCount">0</span>
+                    </div>
+                    <a href="#" class="download-clean-btn" id="downloadCleanBtn">⬇️ 下载去重后数据</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 面板3: 按前缀自动分类 (增强: TXT/Excel双下载按钮) -->
+        <div id="panel-classify" class="tool-panel">
+            <div class="classification-section">
+                <div class="classification-header">
+                    <div class="classification-title">按号码开头自动分类文件工具</div>
+                    <div id="classificationStatus">等待上传文件...</div>
+                </div>
+                
+                <div class="classification-options">
+                    <div class="option-group">
+                        <span class="option-label">号码前缀长度：</span>
+                        <select id="prefixLength" class="prefix-length-select">
+                            <option value="3">3位 (如: 046)</option>
+                            <option value="4" selected>4位 (如: 0462)</option>
+                            <option value="5">5位 (如: 04620)</option>
+                            <option value="6">6位 (如: 046207)</option>
+                            <option value="7">7位 (如: 0462077)</option>
+                        </select>
+                    </div>
                     
-                    <button class="reset-btn" id="resetClassifyBtn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                            <path d="M3 3v5h5"></path>
-                        </svg>
-                        重置分类
-                    </button>
+                    <div class="option-group">
+                        <input type="checkbox" id="includeFullNumber" checked>
+                        <label for="includeFullNumber" class="option-label">包含完整号码</label>
+                    </div>
+                    
+                    <div class="option-group">
+                        <button id="sortAscBtn" class="sort-btn active">⬆️ 从小到大</button>
+                        <button id="sortDescBtn" class="sort-btn">⬇️ 从大到小</button>
+                    </div>
+                </div>
+                
+                <div class="classification-area" id="classificationArea">
+                    <div class="classification-icon">📁</div>
+                    <div class="classification-text">点击或拖拽文件到此处上传</div>
+                    <div class="classification-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)</div>
+                    <button class="classification-btn" id="selectClassifyFileBtn">📁 选择分类文件</button>
+                    <input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" style="display:none;">
+                </div>
+                
+                <div class="classification-results" id="classificationResults">
+                    <div class="results-header">分类结果</div>
+                    
+                    <div class="classification-stats">
+                        <div class="classification-stat">
+                            <div class="stat-number" id="classifyFileName">-</div>
+                            <div class="stat-desc">文件名</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="totalNumbersCount">0</div>
+                            <div class="stat-desc">总号码数</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="uniquePrefixesCount">0</div>
+                            <div class="stat-desc">不同前缀数</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="maxNumbersPrefix">-</div>
+                            <div class="stat-desc">最多号码前缀</div>
+                        </div>
+                    </div>
+                    
+                    <div class="results-header">前缀分类详情（点击按钮下载TXT或Excel）</div>
+                    <div class="classification-list" id="classificationList">
+                        <!-- 前缀列表将动态生成在这里，包含TXT和Excel双按钮 -->
+                    </div>
+                    
+                    <div class="actions-row">
+                        <button class="download-all-btn" id="downloadAllClassifyBtnTxt">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllClassifyBtnXlsx">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetClassifyBtn">🔄 重置分类</button>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- 双文件重复号码删除工具 (已修复) -->
-        <div class="duplicate-removal-section">
-            <div class="duplicate-header">
-                <div class="duplicate-title">双文件重复号码删除工具</div>
-                <div id="duplicateStatus">等待上传文件...</div>
-            </div>
-            
-            <div class="duplicate-info-box">
-                <strong>📋 功能说明：</strong> 支持上传.txt/.csv/.xlsx文件（每行或每单元格一个号码），工具会自动删除两个文件中均出现的重复号码（所有重复号码全部删除），处理完成后直接提供下载按钮，无需显示数据。
-            </div>
-            
-            <div class="duplicate-upload-section">
-                <div class="duplicate-upload-box" id="duplicateUploadBox1" onclick="document.getElementById('duplicateFile1Input').click()">
-                    <div class="duplicate-upload-icon">📁</div>
-                    <div class="duplicate-upload-text">点击上传文件1</div>
-                    <div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div>
-                    <div class="duplicate-error-message" id="duplicateError1"></div>
+        <!-- 面板4: 双文件重复删除 -->
+        <div id="panel-duplicate" class="tool-panel">
+            <div class="duplicate-removal-section">
+                <div class="duplicate-header">
+                    <div class="duplicate-title">双文件重复号码删除工具</div>
+                    <div id="duplicateStatus">等待上传文件...</div>
                 </div>
-                <div class="duplicate-upload-box" id="duplicateUploadBox2" onclick="document.getElementById('duplicateFile2Input').click()">
-                    <div class="duplicate-upload-icon">📁</div>
-                    <div class="duplicate-upload-text">点击上传文件2</div>
-                    <div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div>
-                    <div class="duplicate-error-message" id="duplicateError2"></div>
+                
+                <div class="duplicate-info-box">
+                    <strong>📋 功能说明：</strong> 上传两个文件，工具会自动删除两个文件中均出现的重复号码（所有重复号码全部删除），处理完成后提供下载。
                 </div>
-            </div>
-            
-            <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display: none;">
-            <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display: none;">
-            
-            <div class="duplicate-controls">
-                <button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成下载</button>
-                <button class="duplicate-btn" id="duplicateClearBtn" style="background: linear-gradient(135deg, #ff9a9e, #fecfef);">🗑️ 清空</button>
-            </div>
-            
-            <div class="duplicate-download-section" id="duplicateDownloadSection">
-                <div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div>
-                <div class="duplicate-download-btns">
-                    <a class="duplicate-download-btn" id="duplicateDownload1Txt" href="#" download="file1_unique.txt">⬇️ 下载文件1（TXT）</a>
-                    <a class="duplicate-download-btn" id="duplicateDownload1Excel" href="#" download="file1_unique.xlsx">⬇️ 下载文件1（Excel）</a>
-                    <a class="duplicate-download-btn" id="duplicateDownload2Txt" href="#" download="file2_unique.txt">⬇️ 下载文件2（TXT）</a>
-                    <a class="duplicate-download-btn" id="duplicateDownload2Excel" href="#" download="file2_unique.xlsx">⬇️ 下载文件2（Excel）</a>
+                
+                <div class="duplicate-upload-section">
+                    <div class="duplicate-upload-box" id="duplicateUploadBox1">
+                        <div class="duplicate-upload-icon">📁</div>
+                        <div class="duplicate-upload-text">点击上传文件1</div>
+                        <div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div>
+                        <div class="duplicate-error-message" id="duplicateError1"></div>
+                    </div>
+                    <div class="duplicate-upload-box" id="duplicateUploadBox2">
+                        <div class="duplicate-upload-icon">📁</div>
+                        <div class="duplicate-upload-text">点击上传文件2</div>
+                        <div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div>
+                        <div class="duplicate-error-message" id="duplicateError2"></div>
+                    </div>
+                </div>
+                
+                <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display:none;">
+                <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display:none;">
+                
+                <div class="duplicate-controls">
+                    <button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成下载</button>
+                    <button class="duplicate-btn" id="duplicateClearBtn">🗑️ 清空</button>
+                </div>
+                
+                <div class="duplicate-download-section" id="duplicateDownloadSection">
+                    <div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div>
+                    <div class="duplicate-download-btns">
+                        <a class="duplicate-download-btn" id="duplicateDownload1Txt" download="file1_unique.txt">⬇️ 文件1 (TXT)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload1Excel" download="file1_unique.xlsx">⬇️ 文件1 (Excel)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload2Txt" download="file2_unique.txt">⬇️ 文件2 (TXT)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload2Excel" download="file2_unique.xlsx">⬇️ 文件2 (Excel)</a>
+                    </div>
                 </div>
             </div>
         </div>
         
+        <!-- 公共示例和说明 -->
         <div class="example-section">
             <div class="example-title">输入格式示例（以下格式均可）：</div>
             <div class="example-content">开头:0455
-730-739 
-720~729 
-750至759 
+730-739
+720~729
+750至759
 760一直加到770
 开头:0453
 301-309
@@ -1422,257 +1096,100 @@
         </div>
         
         <div class="note">
-            注意：由于浏览器限制，生成大量数据可能需要一些时间。每个Excel文件包含的数据量可自定义，所有数据已打乱顺序，无重复。点击"生成并去除尾缀110号码"将自动过滤所有以110结尾的号码。
+            注意：由于浏览器限制，生成大量数据可能需要一些时间。每个Excel文件包含的数据量可自定义，所有数据已打乱顺序，无重复。
         </div>
     </div>
+
     <script>
-        // ==================== 全局变量 ====================
-        // 双文件处理数据
-        let duplicateFileData = {
-            file1: { name: '', data: [] },
-            file2: { name: '', data: [] }
-        };
+        // ========== 全局变量与工具函数 ==========
+        let duplicateFileData = { file1: { name: '', data: [] }, file2: { name: '', data: [] } };
+        let classifyFileData = [];
+        let currentTool = 'generate';
 
-        // 分类工具数据缓存
-        let classifyResultCache = null; // 存储分类后的数据 { prefix: [numbers] }
-        let classifyFileNameCache = '';
-        let sortAsc = true; // 排序方式
+        // 工具面板切换
+        document.querySelectorAll('.tool-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tool = tab.dataset.tool;
+                if (tool === currentTool) return;
+                document.querySelector('.tool-tab.active').classList.remove('active');
+                document.querySelector('.tool-panel.active').classList.remove('active');
+                tab.classList.add('active');
+                document.getElementById(`panel-${tool}`).classList.add('active');
+                currentTool = tool;
+            });
+        });
 
-        // ==================== 工具函数 ====================
-        // 解析上传的文件数据 (通用)
-        function parseUploadedFile(file, callback) {
-            const reader = new FileReader();
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            
-            reader.onload = function(e) {
-                try {
-                    let data = [];
-                    
-                    if (fileExt === 'xlsx' || fileExt === 'xls') {
-                        // 处理Excel文件
-                        const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-                        
-                        // 提取所有非空单元格数据
-                        aoa.forEach(row => {
-                            if (Array.isArray(row)) {
-                                row.forEach(cell => {
-                                    if (cell !== undefined && cell !== null && cell.toString().trim() !== '') {
-                                        data.push(cell.toString().trim());
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        // 处理文本文件
-                        const text = e.target.result;
-                        const lines = text.split(/\r\n|\n|\r/);
-                        data = lines.filter(line => line.trim() !== '').map(line => line.trim());
-                    }
-                    
-                    callback(null, data);
-                } catch (error) {
-                    callback(error, null);
-                }
-            };
-            
-            reader.onerror = function() {
-                callback(new Error('文件读取失败'), null);
-            };
-            
-            if (fileExt === 'xlsx' || fileExt === 'xls') {
-                reader.readAsBinaryString(file);
-            } else {
-                reader.readAsText(file, 'UTF-8');
-            }
-        }
+        // ========== 新增快捷按钮功能 ==========
+        const quickBtns = document.querySelectorAll('.quick-btn');
+        const numbersPerFileInput = document.getElementById('numbersPerFile');
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有按钮的active类
+                quickBtns.forEach(b => b.classList.remove('active'));
+                // 为当前按钮添加active类
+                this.classList.add('active');
+                // 设置输入框的值
+                const value = parseInt(this.dataset.value);
+                numbersPerFileInput.value = value;
+                // 更新统计显示中的每文件量
+                document.getElementById('fileSize').textContent = value + '万';
+            });
+        });
 
-        // 创建Excel Blob (无表头)
-        function createExcelBlob(numbersArray) {
-            const worksheetData = numbersArray.map(num => [num]);
-            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
-            const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            return new Blob([wbout], { type: 'application/octet-stream' });
-        }
-
-        // ==================== 生成文件核心 (修复无限制) ====================
-        function generateFilesCore(filterSuffix = false) {
-            const inputText = document.getElementById('dataInput').value;
-            const filename = document.getElementById('filenameInput').value || '号码数据';
-            const numbersPerFileInput = document.getElementById('numbersPerFile');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const fileList = document.getElementById('fileList');
-            
-            // 验证文件名
-            if (!filename.trim()) {
-                alert('请输入有效的文件名！');
-                document.getElementById('filenameInput').focus();
-                return;
-            }
-            
-            // 获取每文件数据量（万），允许任意正整数，不设上限
-            let numbersPerFile = parseInt(numbersPerFileInput.value);
-            if (isNaN(numbersPerFile) || numbersPerFile < 1) {
-                alert('每文件数据量必须是大于等于1的数字！');
-                numbersPerFileInput.focus();
-                return;
-            }
-            
-            // 转换为实际条数
-            const numbersPerFileInCount = numbersPerFile * 10000;
-            
-            // 显示加载指示器
-            loadingIndicator.style.display = 'block';
-            fileList.innerHTML = '';
-            
-            // 解析输入数据
-            updateStatus('正在解析输入数据...', 10);
-            const parsedData = parseInputData(inputText);
-            
-            // 计算总组数
-            let totalGroups = 0;
-            for (const middles of Object.values(parsedData)) {
-                totalGroups += middles.length;
-            }
-            
-            // 生成所有号码
-            updateStatus('正在生成号码序列...', 30);
-            const allNumbers = generateAllNumbers(parsedData);
-            
-            // 打乱顺序
-            updateStatus('正在打乱数据顺序...', 50);
-            const shuffledNumbers = shuffleArray(allNumbers);
-            
-            // 去重
-            updateStatus('正在去除重复数据...', 70);
-            let uniqueNumbers = [...new Set(shuffledNumbers)];
-            
-            // 过滤尾缀110号码（如果需要）
-            let filteredCount = 0;
-            if (filterSuffix) {
-                updateStatus('正在过滤尾缀110号码...', 80);
-                const originalUniqueCount = uniqueNumbers.length;
-                uniqueNumbers = uniqueNumbers.filter(number => !number.endsWith('110'));
-                filteredCount = originalUniqueCount - uniqueNumbers.length;
-            }
-            
-            // 计算文件数量
-            const totalFiles = Math.ceil(uniqueNumbers.length / numbersPerFileInCount);
-            
-            // 更新统计信息
-            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, filteredCount, numbersPerFile);
-            
-            // 创建Excel文件
-            updateStatus(filterSuffix ? '正在创建过滤后的Excel文件...' : '正在创建Excel文件...', 90);
-            
-            // 使用setTimeout避免UI卡死，并立即下载
-            setTimeout(() => {
-                for (let i = 0; i < totalFiles; i++) {
-                    const startIdx = i * numbersPerFileInCount;
-                    const endIdx = Math.min(startIdx + numbersPerFileInCount, uniqueNumbers.length);
-                    const fileNumbers = uniqueNumbers.slice(startIdx, endIdx);
-                    
-                    const fileSuffix = filterSuffix ? '_无尾缀110' : '';
-                    const fileName = i === 0 ? 
-                        `${filename}${fileSuffix}.xlsx` : 
-                        `${filename}${fileSuffix}_${i+1}.xlsx`;
-                    
-                    // 创建并触发下载 (使用FileSaver或直接创建Blob链接)
-                    const blob = createExcelBlob(fileNumbers);
-                    saveAs(blob, fileName);  // FileSaver.js 全局函数
-                    
-                    // 添加到列表
-                    addFileToList({ name: fileName, size: fileNumbers.length }, i);
-                    
-                    updateStatus(filterSuffix ? 
-                        `正在生成过滤文件 ${i+1}/${totalFiles}...` : 
-                        `正在生成文件 ${i+1}/${totalFiles}...`, 
-                        90 + ((i+1)/totalFiles) * 10
-                    );
-                }
-                
-                updateStatus(filterSuffix ? `文件生成完成！已过滤 ${filteredCount.toLocaleString()} 条尾缀110号码` : '文件生成完成！', 100);
-                loadingIndicator.style.display = 'none';
-                alert(`生成完成！共创建了 ${totalFiles} 个文件，已自动下载。`);
-            }, 100);
-        }
-
-        // 解析输入数据 (复用原逻辑)
+        // 格式标准化函数
         function normalizeInputFormat(inputText) {
-            const lines = inputText.split('\n');
-            const normalizedLines = [];
-            for (const line of lines) {
-                let normalizedLine = line.trim();
-                const rangeMatch = normalizedLine.match(/^(\d+)\s*-\s*(\d+)$/);
-                if (rangeMatch) {
-                    const start = rangeMatch[1];
-                    const end = rangeMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
+            return inputText.split('\n').map(line => {
+                let l = line.trim();
+                const rangeMatch = l.match(/^(\d+)\s*-\s*(\d+)$/);
+                const tildeMatch = l.match(/^(\d+)\s*~\s*(\d+)$/);
+                const chineseMatch = l.match(/^(\d+)\s*至\s*(\d+)$/);
+                if (rangeMatch || tildeMatch || chineseMatch) {
+                    const match = rangeMatch || tildeMatch || chineseMatch;
+                    return `${match[1]}一直加到${match[2]}`;
                 }
-                const tildeMatch = normalizedLine.match(/^(\d+)\s*~\s*(\d+)$/);
-                if (tildeMatch) {
-                    const start = tildeMatch[1];
-                    const end = tildeMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
-                }
-                const chineseMatch = normalizedLine.match(/^(\d+)\s*至\s*(\d+)$/);
-                if (chineseMatch) {
-                    const start = chineseMatch[1];
-                    const end = chineseMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
-                }
-                normalizedLines.push(normalizedLine);
-            }
-            return normalizedLines.join('\n');
+                return l;
+            }).join('\n');
         }
 
+        // 解析输入数据
         function parseInputData(inputText) {
             const normalizedText = normalizeInputFormat(inputText);
-            const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line);
+            const lines = normalizedText.split('\n').map(l => l.trim()).filter(l => l);
             const data = {};
             let currentPrefix = null;
-            
             lines.forEach(line => {
                 if (line.startsWith('开头:')) {
                     currentPrefix = line.replace('开头:', '').trim();
-                    if (!data[currentPrefix]) {
-                        data[currentPrefix] = [];
-                    }
+                    if (!data[currentPrefix]) data[currentPrefix] = [];
                 } else if (line.includes('一直加到')) {
-                    if (!currentPrefix) return;
+                    if (!currentPrefix) { console.error('错误: 在指定前缀之前发现了范围数据'); return; }
                     const rangeMatch = line.match(/(\d+)\s*一直加到\s*(\d+)/);
                     if (rangeMatch) {
-                        const start = parseInt(rangeMatch[1]);
-                        const end = parseInt(rangeMatch[2]);
-                        for (let i = start; i <= end; i++) {
-                            data[currentPrefix].push(i.toString().padStart(3, '0'));
-                        }
+                        const start = parseInt(rangeMatch[1]), end = parseInt(rangeMatch[2]);
+                        for (let i = start; i <= end; i++) data[currentPrefix].push(i.toString().padStart(3, '0'));
                     }
                 } else if (/^\d+$/.test(line)) {
-                    if (!currentPrefix) return;
+                    if (!currentPrefix) { console.error('错误: 在指定前缀之前发现了数字'); return; }
                     data[currentPrefix].push(line.padStart(3, '0'));
                 }
             });
             return data;
         }
 
+        // 生成所有号码
         function generateAllNumbers(data) {
             const allNumbers = [];
             for (const [prefix, middles] of Object.entries(data)) {
                 for (const middle of middles) {
                     for (let i = 1; i <= 9999; i++) {
-                        const suffix = i.toString().padStart(4, '0');
-                        allNumbers.push(prefix + middle + suffix);
+                        allNumbers.push(prefix + middle + i.toString().padStart(4, '0'));
                     }
                 }
             }
             return allNumbers;
         }
 
+        // 打乱数组
         function shuffleArray(array) {
             const shuffled = [...array];
             for (let i = shuffled.length - 1; i > 0; i--) {
@@ -1682,11 +1199,53 @@
             return shuffled;
         }
 
+        // 过滤尾缀110
+        function filterSuffix110(numbers) {
+            return numbers.filter(num => !num.endsWith('110'));
+        }
+
+        // 创建Excel文件（无表头）
+        function createExcelFile(numbers, fileName) {
+            const worksheetData = numbers.map(num => [num]);
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            worksheet['!cols'] = [{ wch: 15 }];
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
+            XLSX.writeFile(workbook, fileName);
+            return { name: fileName, size: numbers.length, url: "#" };
+        }
+
+        // 解析上传的文件
+        function parseUploadedFile(file, callback) {
+            const reader = new FileReader();
+            const ext = file.name.split('.').pop().toLowerCase();
+            reader.onload = function(e) {
+                try {
+                    let data = [];
+                    if (ext === 'xlsx' || ext === 'xls') {
+                        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                        aoa.forEach(row => row.forEach(cell => {
+                            if (cell != null && cell.toString().trim() !== '') data.push(cell.toString().trim());
+                        }));
+                    } else {
+                        const text = e.target.result;
+                        data = text.split(/\r\n|\n|\r/).filter(line => line.trim() !== '').map(line => line.trim());
+                    }
+                    callback(null, data);
+                } catch (err) { callback(err, null); }
+            };
+            if (ext === 'xlsx' || ext === 'xls') reader.readAsBinaryString(file);
+            else reader.readAsText(file);
+        }
+
+        // 更新UI状态
         function updateStatus(text, progress) {
             document.getElementById('statusText').textContent = text;
             document.getElementById('progressBar').style.width = `${progress}%`;
         }
-
+        
         function updateStats(total, files, groups, unique, filtered, fileSize) {
             document.getElementById('totalCount').textContent = total.toLocaleString();
             document.getElementById('fileCount').textContent = files.toLocaleString();
@@ -1695,321 +1254,409 @@
             document.getElementById('filteredCount').textContent = filtered.toLocaleString();
             document.getElementById('fileSize').textContent = fileSize + '万';
         }
-
-        function addFileToList(file, fileIndex) {
+        
+        function addFileToList(file, index) {
             const fileList = document.getElementById('fileList');
+            const icons = ['📊', '📈', '📉', '📇', '📁'];
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
-            const fileTypes = ['📊', '📈', '📉', '📇', '📁', '📂', '📅', '📆'];
-            const fileIcon = fileTypes[fileIndex % fileTypes.length];
             fileItem.innerHTML = `
                 <div class="file-info">
-                    <div class="file-icon">${fileIcon}</div>
-                    <div class="file-details">
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-size">${file.size.toLocaleString()} 条数据</div>
-                    </div>
+                    <div class="file-icon">${icons[index % icons.length]}</div>
+                    <div class="file-details"><div class="file-name">${file.name}</div><div class="file-size">${file.size.toLocaleString()} 条</div></div>
                 </div>
-                <a href="#" class="download-btn" onclick="(function(){ var blob = createExcelBlob([${JSON.stringify(file.size)}]); saveAs(blob, '${file.name}'); })(); return false;">下载文件</a>
+                <a href="${file.url}" download="${file.name}" class="download-btn">⬇️ 下载</a>
             `;
             fileList.appendChild(fileItem);
         }
 
-        // ==================== 数据去重工具修复 ====================
-        document.getElementById('selectFileBtn').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
+        // ========== 功能1: 批量号码生成 ==========
+        function generateFilesCore(filterSuffix = false) {
+            const inputText = document.getElementById('dataInput').value;
+            const filename = document.getElementById('filenameInput').value.trim() || '号码数据';
+            const numbersPerFile = parseInt(document.getElementById('numbersPerFile').value) || 40;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const fileList = document.getElementById('fileList');
+
+            if (!filename) { alert('请输入有效的文件名！'); document.getElementById('filenameInput').focus(); return; }
+            if (numbersPerFile < 1 || numbersPerFile > 100) { alert('每文件数据量必须是1-100万！'); return; }
+            const numbersPerFileInCount = numbersPerFile * 10000;
+
+            loadingIndicator.style.display = 'block';
+            fileList.innerHTML = '';
+            updateStatus('正在解析输入数据...', 10);
+            const parsedData = parseInputData(inputText);
+            let totalGroups = 0;
+            for (const middles of Object.values(parsedData)) totalGroups += middles.length;
+
+            updateStatus('正在生成号码序列...', 30);
+            const allNumbers = generateAllNumbers(parsedData);
+            updateStatus('正在打乱数据顺序...', 50);
+            const shuffledNumbers = shuffleArray(allNumbers);
+            updateStatus('正在去除重复数据...', 70);
+            let uniqueNumbers = [...new Set(shuffledNumbers)];
+            let filteredCount = 0;
+            if (filterSuffix) {
+                updateStatus('正在过滤尾缀110号码...', 80);
+                const originalCount = uniqueNumbers.length;
+                uniqueNumbers = filterSuffix110(uniqueNumbers);
+                filteredCount = originalCount - uniqueNumbers.length;
+            }
+            const totalFiles = Math.ceil(uniqueNumbers.length / numbersPerFileInCount);
+            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, filteredCount, numbersPerFile);
+            updateStatus(filterSuffix ? '正在创建过滤后的Excel文件...' : '正在创建Excel文件...', 90);
+
+            setTimeout(() => {
+                for (let i = 0; i < totalFiles; i++) {
+                    const startIdx = i * numbersPerFileInCount;
+                    const endIdx = Math.min(startIdx + numbersPerFileInCount, uniqueNumbers.length);
+                    const fileNumbers = uniqueNumbers.slice(startIdx, endIdx);
+                    const fileSuffix = filterSuffix ? '_无尾缀110' : '';
+                    const fileName = i === 0 ? `${filename}${fileSuffix}.xlsx` : `${filename}${fileSuffix}_${i+1}.xlsx`;
+                    const file = createExcelFile(fileNumbers, fileName);
+                    addFileToList(file, i);
+                    updateStatus(`${filterSuffix ? '过滤文件' : '文件'} ${i+1}/${totalFiles}...`, 90 + ((i+1)/totalFiles*10));
+                }
+                updateStatus(filterSuffix ? `完成！已过滤 ${filteredCount} 条尾缀110` : '文件生成完成！', 100);
+                loadingIndicator.style.display = 'none';
+                alert(`共创建了 ${totalFiles} 个文件。`);
+            }, 100);
+        }
+        
+        function resetForm() {
+            document.getElementById('filenameInput').value = '';
+            document.getElementById('numbersPerFile').value = 40;
+            // 重置快捷按钮高亮
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                if (btn.dataset.value === '40') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            document.getElementById('dataInput').value = '开头:\n000-000\n000';
+            document.getElementById('fileList').innerHTML = '';
+            updateStats(0, 0, 0, 0, 0, 40);
+            updateStatus('等待生成...', 0);
+        }
+        
+        document.getElementById('generateBtn').addEventListener('click', () => generateFilesCore(false));
+        document.getElementById('generateFilteredBtn').addEventListener('click', () => generateFilesCore(true));
+        document.getElementById('resetBtn').addEventListener('click', resetForm);
+        document.getElementById('numbersPerFile').addEventListener('change', function() {
+            const value = parseInt(this.value) || 40;
+            document.getElementById('fileSize').textContent = value + '万';
+            // 同步快捷按钮高亮
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                if (parseInt(btn.dataset.value) === value) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
         });
 
+        // ========== 功能2: 单文件去重 ==========
+        document.getElementById('selectFileBtn').addEventListener('click', () => document.getElementById('fileInput').click());
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
-            document.getElementById('uploadStatus').textContent = '正在解析...';
             parseUploadedFile(file, (err, data) => {
-                if (err) {
-                    document.getElementById('uploadStatus').textContent = '解析失败';
-                    alert('文件解析失败');
-                    return;
-                }
-                const original = data.length;
-                const unique = [...new Set(data)];
-                const duplicateCount = original - unique.length;
-                
+                if (err) { alert('文件解析失败！'); return; }
+                const originalCount = data.length;
+                const uniqueData = [...new Set(data)];
+                const duplicateCount = originalCount - uniqueData.length;
                 document.getElementById('uploadFileName').textContent = file.name;
-                document.getElementById('originalCount').textContent = original;
-                document.getElementById('duplicateCount').textContent = duplicateCount;
-                document.getElementById('cleanCount').textContent = unique.length;
+                document.getElementById('originalCount').textContent = originalCount.toLocaleString();
+                document.getElementById('duplicateCount').textContent = duplicateCount.toLocaleString();
+                document.getElementById('cleanCount').textContent = uniqueData.length.toLocaleString();
                 document.getElementById('uploadResults').style.display = 'block';
-                document.getElementById('uploadStatus').textContent = '解析完成';
-                
-                // 绑定下载
-                const cleanBlob = new Blob([unique.join('\n')], { type: 'text/plain;charset=utf-8' });
-                const downloadBtn = document.getElementById('downloadCleanBtn');
-                downloadBtn.href = URL.createObjectURL(cleanBlob);
-                downloadBtn.download = file.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
+                document.getElementById('uploadStatus').textContent = `已上传: ${file.name} (${originalCount}条)`;
+                document.getElementById('uploadStatus').style.color = '#34a853';
+                const blobTxt = new Blob([uniqueData.join('\n')], { type: 'text/plain;charset=utf-8' });
+                const urlTxt = URL.createObjectURL(blobTxt);
+                document.getElementById('downloadCleanBtn').href = urlTxt;
+                document.getElementById('downloadCleanBtn').download = file.name.replace(/\.[^/.]+$/, "") + '_去重后.txt';
             });
         });
 
-        // ==================== 分类工具修复 ====================
-        document.getElementById('selectClassifyFileBtn').addEventListener('click', () => {
-            document.getElementById('classifyFileInput').click();
-        });
-
+        // ========== 功能3: 按前缀分类 ==========
+        document.getElementById('selectClassifyFileBtn').addEventListener('click', () => document.getElementById('classifyFileInput').click());
+        
         document.getElementById('classifyFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
-            document.getElementById('classificationStatus').textContent = '分类中...';
             parseUploadedFile(file, (err, data) => {
-                if (err) {
-                    document.getElementById('classificationStatus').textContent = '解析失败';
-                    alert('文件解析失败');
-                    return;
-                }
-                
-                const prefixLen = parseInt(document.getElementById('prefixLength').value);
-                const includeFull = document.getElementById('includeFullNumber').checked;
-                
-                // 按前缀分类
-                const groups = {};
-                data.forEach(num => {
-                    const numStr = num.toString().trim();
-                    if (numStr.length < prefixLen) return; // 忽略过短的
-                    const prefix = numStr.substring(0, prefixLen);
-                    if (!groups[prefix]) groups[prefix] = [];
-                    groups[prefix].push(includeFull ? numStr : numStr.substring(prefixLen));
-                });
-                
-                // 排序
-                const sortedPrefixes = Object.keys(groups).sort((a, b) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
-                
-                // 更新UI
-                classifyResultCache = groups;
-                classifyFileNameCache = file.name;
-                
-                document.getElementById('classifyFileName').textContent = file.name;
-                document.getElementById('totalNumbersCount').textContent = data.length;
-                document.getElementById('uniquePrefixesCount').textContent = sortedPrefixes.length;
-                
-                // 找到最多号码的前缀
-                let maxPrefix = '', maxCount = 0;
-                sortedPrefixes.forEach(p => {
-                    if (groups[p].length > maxCount) {
-                        maxCount = groups[p].length;
-                        maxPrefix = p;
-                    }
-                });
-                document.getElementById('maxNumbersPrefix').textContent = maxPrefix || '-';
-                
-                // 渲染列表
-                const listDiv = document.getElementById('classificationList');
-                listDiv.innerHTML = '';
-                sortedPrefixes.forEach(prefix => {
-                    const item = document.createElement('div');
-                    item.className = 'classification-item';
-                    item.innerHTML = `
-                        <div class="prefix-info">
-                            <span class="prefix-badge">${prefix}</span>
-                            <span class="prefix-count">${groups[prefix].length} 条</span>
-                        </div>
-                        <a href="#" class="download-classify-btn" data-prefix="${prefix}">下载</a>
-                    `;
-                    listDiv.appendChild(item);
-                });
-                
-                // 绑定单个下载
-                document.querySelectorAll('.download-classify-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const prefix = this.dataset.prefix;
-                        const numbers = groups[prefix];
-                        const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
-                        saveAs(blob, `${prefix}_分类.txt`);
-                    });
-                });
-                
-                document.getElementById('classificationResults').style.display = 'block';
-                document.getElementById('classificationStatus').textContent = '分类完成';
+                if (err) { alert('文件解析失败！'); return; }
+                classifyFileData = data;
+                performClassification();
             });
         });
+        
+        function createExcelBlob(numbers) {
+            const ws = XLSX.utils.aoa_to_sheet(numbers.map(n => [n]));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "分类数据");
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            return new Blob([wbout], { type: 'application/octet-stream' });
+        }
 
-        // 下载所有分类文件
-        document.getElementById('downloadAllClassifyBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!classifyResultCache) return;
+        function performClassification() {
+            const prefixLen = parseInt(document.getElementById('prefixLength').value);
+            const includeFull = document.getElementById('includeFullNumber').checked;
+            const isAsc = document.getElementById('sortAscBtn').classList.contains('active');
+            const prefixMap = new Map();
             
-            // 打包为zip过于复杂，这里逐个下载提示
-            const groups = classifyResultCache;
-            Object.keys(groups).forEach(prefix => {
-                const numbers = groups[prefix];
-                const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
-                saveAs(blob, `${prefix}_分类.txt`);
+            classifyFileData.forEach(num => {
+                const prefix = num.substring(0, Math.min(prefixLen, num.length));
+                if (!prefixMap.has(prefix)) prefixMap.set(prefix, []);
+                prefixMap.get(prefix).push(includeFull ? num : num.substring(prefixLen));
+            });
+            
+            let prefixes = Array.from(prefixMap.entries());
+            prefixes.sort((a, b) => isAsc ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]));
+            
+            let maxPrefix = '', maxCount = 0;
+            prefixMap.forEach((vals, pref) => { 
+                if (vals.length > maxCount) { 
+                    maxCount = vals.length; 
+                    maxPrefix = pref; 
+                } 
+            });
+            
+            document.getElementById('classifyFileName').textContent = document.getElementById('classifyFileInput').files[0]?.name || '-';
+            document.getElementById('totalNumbersCount').textContent = classifyFileData.length.toLocaleString();
+            document.getElementById('uniquePrefixesCount').textContent = prefixMap.size.toLocaleString();
+            document.getElementById('maxNumbersPrefix').textContent = `${maxPrefix} (${maxCount})`;
+            
+            const listEl = document.getElementById('classificationList');
+            listEl.innerHTML = '';
+            
+            // 为每个前缀创建TXT和Excel双下载按钮
+            prefixes.forEach(([prefix, numbers]) => {
+                const item = document.createElement('div');
+                item.className = 'classification-item';
+                
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'download-buttons-group';
+                
+                // TXT下载按钮
+                const txtBtn = document.createElement('button');
+                txtBtn.className = 'download-classify-btn-txt';
+                txtBtn.textContent = 'TXT';
+                txtBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const blob = new Blob([numbers.join('\n')], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `前缀_${prefix}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+                
+                // Excel下载按钮
+                const xlsxBtn = document.createElement('button');
+                xlsxBtn.className = 'download-classify-btn-xlsx';
+                xlsxBtn.textContent = 'Excel';
+                xlsxBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const blob = createExcelBlob(numbers);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `前缀_${prefix}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+                
+                btnGroup.appendChild(txtBtn);
+                btnGroup.appendChild(xlsxBtn);
+                
+                item.innerHTML = `
+                    <div class="prefix-info">
+                        <span class="prefix-badge">${prefix}</span>
+                        <span class="prefix-count">${numbers.length} 个号码</span>
+                    </div>
+                `;
+                item.appendChild(btnGroup);
+                listEl.appendChild(item);
+            });
+            
+            document.getElementById('classificationResults').classList.add('show');
+            document.getElementById('classificationStatus').textContent = `分类完成: ${prefixMap.size} 个前缀`;
+            document.getElementById('classificationStatus').style.color = '#34a853';
+        }
+        
+        document.getElementById('prefixLength').addEventListener('change', function() {
+            if (classifyFileData.length > 0) performClassification();
+        });
+        document.getElementById('includeFullNumber').addEventListener('change', function() {
+            if (classifyFileData.length > 0) performClassification();
+        });
+        document.getElementById('sortAscBtn').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('sortDescBtn').classList.remove('active');
+            if (classifyFileData.length > 0) performClassification();
+        });
+        document.getElementById('sortDescBtn').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('sortAscBtn').classList.remove('active');
+            if (classifyFileData.length > 0) performClassification();
+        });
+        
+        // 下载所有分类文件
+        document.getElementById('downloadAllClassifyBtnTxt').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!classifyFileData.length) { alert('请先上传并分类文件'); return; }
+            const prefixMap = collectCurrentPrefixMap();
+            prefixMap.forEach((numbers, prefix) => {
+                const blob = new Blob([numbers.join('\n')], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `前缀_${prefix}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             });
         });
-
-        // 重置分类
+        
+        document.getElementById('downloadAllClassifyBtnXlsx').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!classifyFileData.length) { alert('请先上传并分类文件'); return; }
+            const prefixMap = collectCurrentPrefixMap();
+            prefixMap.forEach((numbers, prefix) => {
+                const blob = createExcelBlob(numbers);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `前缀_${prefix}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+        
+        // 辅助函数：获取当前分类配置下的数据映射
+        function collectCurrentPrefixMap() {
+            const prefixLen = parseInt(document.getElementById('prefixLength').value);
+            const includeFull = document.getElementById('includeFullNumber').checked;
+            const map = new Map();
+            classifyFileData.forEach(num => {
+                const prefix = num.substring(0, Math.min(prefixLen, num.length));
+                if (!map.has(prefix)) map.set(prefix, []);
+                map.get(prefix).push(includeFull ? num : num.substring(prefixLen));
+            });
+            return map;
+        }
+        
         document.getElementById('resetClassifyBtn').addEventListener('click', function() {
-            document.getElementById('classificationResults').style.display = 'none';
-            document.getElementById('classificationStatus').textContent = '等待上传文件...';
-            classifyResultCache = null;
             document.getElementById('classifyFileInput').value = '';
+            classifyFileData = [];
+            document.getElementById('classificationResults').classList.remove('show');
+            document.getElementById('classificationStatus').textContent = '等待上传文件...';
+            document.getElementById('classificationStatus').style.color = '#4d90fe';
         });
 
-        // 排序切换
-        document.getElementById('sortAscBtn').addEventListener('click', function() {
-            sortAsc = !sortAsc;
-            this.classList.toggle('active', sortAsc);
-            // 如果有缓存，刷新显示
-            if (classifyResultCache && document.getElementById('classificationResults').style.display === 'block') {
-                // 重新渲染
-                const groups = classifyResultCache;
-                const sortedPrefixes = Object.keys(groups).sort((a, b) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
-                const listDiv = document.getElementById('classificationList');
-                listDiv.innerHTML = '';
-                sortedPrefixes.forEach(prefix => {
-                    const item = document.createElement('div');
-                    item.className = 'classification-item';
-                    item.innerHTML = `
-                        <div class="prefix-info">
-                            <span class="prefix-badge">${prefix}</span>
-                            <span class="prefix-count">${groups[prefix].length} 条</span>
-                        </div>
-                        <a href="#" class="download-classify-btn" data-prefix="${prefix}">下载</a>
-                    `;
-                    listDiv.appendChild(item);
-                });
-                // 重新绑定事件
-                document.querySelectorAll('.download-classify-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const prefix = this.dataset.prefix;
-                        const numbers = groups[prefix];
-                        const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
-                        saveAs(blob, `${prefix}_分类.txt`);
-                    });
-                });
-            }
-        });
-
-        // ==================== 双文件重复删除修复 ====================
+        // ========== 功能4: 双文件重复删除 ==========
         function handleDuplicateFileSelect(event, fileNum) {
             const file = event.target.files[0];
             if (!file) return;
-            
-            const nameId = `duplicateFile${fileNum}Name`;
-            const errorId = `duplicateError${fileNum}`;
-            
-            document.getElementById(nameId).textContent = file.name;
-            document.getElementById(errorId).style.display = 'none';
-            
             parseUploadedFile(file, (error, fileData) => {
                 if (error) {
-                    document.getElementById(errorId).textContent = '文件解析失败，请检查文件格式！';
-                    document.getElementById(errorId).style.display = 'block';
+                    document.getElementById(`duplicateError${fileNum}`).textContent = '文件解析失败！';
+                    document.getElementById(`duplicateError${fileNum}`).style.display = 'block';
                     duplicateFileData[`file${fileNum}`] = { name: '', data: [] };
                 } else {
-                    duplicateFileData[`file${fileNum}`] = {
-                        name: file.name,
-                        data: [...new Set(fileData)] // 自身去重
-                    };
+                    document.getElementById(`duplicateFile${fileNum}Name`).textContent = file.name;
+                    document.getElementById(`duplicateError${fileNum}`).style.display = 'none';
+                    duplicateFileData[`file${fileNum}`] = { name: file.name, data: [...new Set(fileData)] };
                 }
                 updateDuplicateBtnStatus();
                 updateDuplicateStatus();
             });
         }
-
+        
         function updateDuplicateBtnStatus() {
             const btn = document.getElementById('duplicateProcessBtn');
-            const hasFile1 = duplicateFileData.file1.data.length > 0;
-            const hasFile2 = duplicateFileData.file2.data.length > 0;
-            btn.disabled = !(hasFile1 && hasFile2);
+            btn.disabled = !(duplicateFileData.file1.data.length > 0 && duplicateFileData.file2.data.length > 0);
         }
-
+        
         function updateDuplicateStatus() {
             const statusEl = document.getElementById('duplicateStatus');
-            const count1 = duplicateFileData.file1.data.length;
-            const count2 = duplicateFileData.file2.data.length;
-            if (count1 > 0 && count2 > 0) {
-                statusEl.textContent = `已上传2个文件 | 文件1：${count1}条 | 文件2：${count2}条`;
+            const c1 = duplicateFileData.file1.data.length, c2 = duplicateFileData.file2.data.length;
+            if (c1 > 0 && c2 > 0) {
+                statusEl.textContent = `已上传2个文件 | 文件1：${c1}条 | 文件2：${c2}条`;
                 statusEl.style.color = '#34a853';
-            } else if (count1 > 0) {
-                statusEl.textContent = `已上传1个文件 | 文件1：${count1}条 | 等待上传文件2`;
+            } else if (c1 > 0) {
+                statusEl.textContent = `已上传1个文件 | 文件1：${c1}条 | 等待文件2`;
                 statusEl.style.color = '#fbbc05';
-            } else if (count2 > 0) {
-                statusEl.textContent = `已上传1个文件 | 文件2：${count2}条 | 等待上传文件1`;
+            } else if (c2 > 0) {
+                statusEl.textContent = `已上传1个文件 | 文件2：${c2}条 | 等待文件1`;
                 statusEl.style.color = '#fbbc05';
             } else {
                 statusEl.textContent = '等待上传文件...';
                 statusEl.style.color = '#4d90fe';
             }
         }
-
+        
         function processDuplicateFiles() {
-            const data1 = duplicateFileData.file1.data;
-            const data2 = duplicateFileData.file2.data;
-            
-            const set1 = new Set(data1);
-            const set2 = new Set(data2);
-            
-            const commonData = new Set();
-            set1.forEach(item => { if (set2.has(item)) commonData.add(item); });
-            
-            const uniqueData1 = data1.filter(item => !commonData.has(item));
-            const uniqueData2 = data2.filter(item => !commonData.has(item));
-            
-            // 生成下载链接
-            const blob1Txt = new Blob([uniqueData1.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const blob2Txt = new Blob([uniqueData2.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const blob1Excel = createExcelBlob(uniqueData1);
-            const blob2Excel = createExcelBlob(uniqueData2);
-            
-            document.getElementById('duplicateDownload1Txt').href = URL.createObjectURL(blob1Txt);
-            document.getElementById('duplicateDownload2Txt').href = URL.createObjectURL(blob2Txt);
-            document.getElementById('duplicateDownload1Excel').href = URL.createObjectURL(blob1Excel);
-            document.getElementById('duplicateDownload2Excel').href = URL.createObjectURL(blob2Excel);
-            
+            const data1 = duplicateFileData.file1.data, data2 = duplicateFileData.file2.data;
+            const set1 = new Set(data1), set2 = new Set(data2);
+            const commonData = new Set([...data1].filter(x => set2.has(x)));
+            const uniqueData1 = data1.filter(x => !commonData.has(x));
+            const uniqueData2 = data2.filter(x => !commonData.has(x));
+            generateDuplicateDownloadLinks(uniqueData1, uniqueData2);
             document.getElementById('duplicateDownloadSection').classList.add('show');
             document.getElementById('duplicateStatus').textContent = `处理完成！共移除 ${commonData.size} 条重复数据`;
             document.getElementById('duplicateStatus').style.color = '#34a853';
         }
-
+        
+        function generateDuplicateDownloadLinks(data1, data2) {
+            const blob1Txt = new Blob([data1.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const blob2Txt = new Blob([data2.join('\n')], { type: 'text/plain;charset=utf-8' });
+            document.getElementById('duplicateDownload1Txt').href = URL.createObjectURL(blob1Txt);
+            document.getElementById('duplicateDownload2Txt').href = URL.createObjectURL(blob2Txt);
+            
+            const createExcelBlob = (data) => {
+                const ws = XLSX.utils.aoa_to_sheet(data.map(d => [d]));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "去重后数据");
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                return new Blob([wbout], { type: 'application/octet-stream' });
+            };
+            
+            const blob1Excel = createExcelBlob(data1), blob2Excel = createExcelBlob(data2);
+            document.getElementById('duplicateDownload1Excel').href = URL.createObjectURL(blob1Excel);
+            document.getElementById('duplicateDownload2Excel').href = URL.createObjectURL(blob2Excel);
+        }
+        
         function clearDuplicateFiles() {
             duplicateFileData = { file1: { name: '', data: [] }, file2: { name: '', data: [] } };
-            document.getElementById('duplicateFile1Name').textContent = '未选择文件';
-            document.getElementById('duplicateFile2Name').textContent = '未选择文件';
-            document.getElementById('duplicateError1').style.display = 'none';
-            document.getElementById('duplicateError2').style.display = 'none';
+            ['1', '2'].forEach(n => {
+                document.getElementById(`duplicateFile${n}Name`).textContent = '未选择文件';
+                document.getElementById(`duplicateError${n}`).style.display = 'none';
+                document.getElementById(`duplicateFile${n}Input`).value = '';
+            });
             document.getElementById('duplicateProcessBtn').disabled = true;
             document.getElementById('duplicateDownloadSection').classList.remove('show');
-            document.getElementById('duplicateFile1Input').value = '';
-            document.getElementById('duplicateFile2Input').value = '';
             updateDuplicateStatus();
         }
-
-        // 绑定双文件事件
+        
+        // 绑定双文件上传事件
+        document.getElementById('duplicateUploadBox1').addEventListener('click', () => document.getElementById('duplicateFile1Input').click());
+        document.getElementById('duplicateUploadBox2').addEventListener('click', () => document.getElementById('duplicateFile2Input').click());
         document.getElementById('duplicateFile1Input').addEventListener('change', (e) => handleDuplicateFileSelect(e, 1));
         document.getElementById('duplicateFile2Input').addEventListener('change', (e) => handleDuplicateFileSelect(e, 2));
         document.getElementById('duplicateProcessBtn').addEventListener('click', processDuplicateFiles);
         document.getElementById('duplicateClearBtn').addEventListener('click', clearDuplicateFiles);
-
-        // 重置
-        document.getElementById('resetBtn').addEventListener('click', function() {
-            document.getElementById('filenameInput').value = '';
-            document.getElementById('numbersPerFile').value = 10;
-            document.getElementById('dataInput').value = '开头:';
-            document.getElementById('fileList').innerHTML = '';
-            updateStats(0, 0, 0, 0, 0, 40);
-            updateStatus('等待生成...', 0);
-        });
-
-        // 生成按钮
-        document.getElementById('generateBtn').addEventListener('click', () => generateFilesCore(false));
-        document.getElementById('generateFilteredBtn').addEventListener('click', () => generateFilesCore(true));
-
-        // 每文件数据量显示
-        document.getElementById('numbersPerFile').addEventListener('change', function() {
-            document.getElementById('fileSize').textContent = (parseInt(this.value) || 40) + '万';
-        });
     </script>
 </body>
 </html>
