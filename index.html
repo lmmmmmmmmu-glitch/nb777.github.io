@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>批量号码生成与文件分割工具</title>
+    <title>批量号码生成与文件分割工具 · 修复版</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -1125,19 +1125,18 @@
                 <div class="input-group">
                     <label class="input-label"><i>🔢</i> 每文件数据量：</label>
                     <div class="input-with-unit">
-                        <input type="number" id="numbersPerFile" class="number-input" min="1" max="100" value="40" step="1">
+                        <input type="number" id="numbersPerFile" class="number-input" min="1" value="10" step="1">
                         <div class="unit-label">万/文件</div>
                     </div>
-                    <div class="filename-hint">设置每个Excel文件包含的数据量（建议1-100万）</div>
-                    <div class="filename-example">默认：40万/文件</div>
+                    <div class="filename-hint">设置每个Excel文件包含的数据量（无上限，按输入数值*1万条）</div>
+                    <div class="filename-example">默认：10万/文件，可任意设置</div>
                 </div>
             </div>
             
             <div class="input-group">
                 <label class="input-label"><i>📝</i> 请输入号码段规则：</label>
                 <textarea id="dataInput">开头:
-000-000
-000</textarea>
+</textarea>
             </div>
         </div>
         
@@ -1214,7 +1213,7 @@
             </div>
         </div>
         
-        <!-- 数据去重工具 -->
+        <!-- 数据去重工具 (修复版) -->
         <div class="upload-section">
             <div class="upload-header">
                 <div class="upload-title">数据去重工具</div>
@@ -1264,7 +1263,7 @@
             </div>
         </div>
         
-        <!-- 按号码开头自动分类文件工具 -->
+        <!-- 按号码开头自动分类文件工具 (修复版) -->
         <div class="classification-section">
             <div class="classification-header">
                 <div class="classification-title">按号码开头自动分类文件工具</div>
@@ -1362,7 +1361,7 @@
             </div>
         </div>
         
-        <!-- 双文件重复号码删除工具 -->
+        <!-- 双文件重复号码删除工具 (已修复) -->
         <div class="duplicate-removal-section">
             <div class="duplicate-header">
                 <div class="duplicate-title">双文件重复号码删除工具</div>
@@ -1388,12 +1387,12 @@
                 </div>
             </div>
             
-            <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" onchange="handleDuplicateFileSelect(event, 1)" style="display: none;">
-            <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" onchange="handleDuplicateFileSelect(event, 2)" style="display: none;">
+            <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display: none;">
+            <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display: none;">
             
             <div class="duplicate-controls">
-                <button class="duplicate-btn" id="duplicateProcessBtn" onclick="processDuplicateFiles()" disabled>🔍 处理并生成下载</button>
-                <button class="duplicate-btn" onclick="clearDuplicateFiles()" style="background: linear-gradient(135deg, #ff9a9e, #fecfef);">🗑️ 清空</button>
+                <button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成下载</button>
+                <button class="duplicate-btn" id="duplicateClearBtn" style="background: linear-gradient(135deg, #ff9a9e, #fecfef);">🗑️ 清空</button>
             </div>
             
             <div class="duplicate-download-section" id="duplicateDownloadSection">
@@ -1427,322 +1426,20 @@
         </div>
     </div>
     <script>
-        // 全局变量存储双文件处理数据
+        // ==================== 全局变量 ====================
+        // 双文件处理数据
         let duplicateFileData = {
             file1: { name: '', data: [] },
             file2: { name: '', data: [] }
         };
-        
-        // 格式自动修正函数
-        function normalizeInputFormat(inputText) {
-            const lines = inputText.split('\n');
-            const normalizedLines = [];
-            
-            for (const line of lines) {
-                let normalizedLine = line.trim();
-                
-                // 处理"xxx-xxx"格式
-                const rangeMatch = normalizedLine.match(/^(\d+)\s*-\s*(\d+)$/);
-                if (rangeMatch) {
-                    const start = rangeMatch[1];
-                    const end = rangeMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
-                }
-                
-                // 处理"xxx~xxx"格式
-                const tildeMatch = normalizedLine.match(/^(\d+)\s*~\s*(\d+)$/);
-                if (tildeMatch) {
-                    const start = tildeMatch[1];
-                    const end = tildeMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
-                }
-                
-                // 处理"xxx至xxx"格式
-                const chineseMatch = normalizedLine.match(/^(\d+)\s*至\s*(\d+)$/);
-                if (chineseMatch) {
-                    const start = chineseMatch[1];
-                    const end = chineseMatch[2];
-                    normalizedLine = `${start}一直加到${end}`;
-                }
-                
-                normalizedLines.push(normalizedLine);
-            }
-            
-            return normalizedLines.join('\n');
-        }
-        
-        // 解析输入数据
-        function parseInputData(inputText) {
-            // 先进行格式标准化
-            const normalizedText = normalizeInputFormat(inputText);
-            const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line);
-            const data = {};
-            let currentPrefix = null;
-            
-            lines.forEach(line => {
-                // 检查是否是"开头:"格式
-                if (line.startsWith('开头:')) {
-                    currentPrefix = line.replace('开头:', '').trim();
-                    if (!data[currentPrefix]) {
-                        data[currentPrefix] = [];
-                    }
-                } 
-                // 检查是否是"xxx一直加到xxx"格式
-                else if (line.includes('一直加到')) {
-                    if (!currentPrefix) {
-                        console.error('错误: 在指定前缀之前发现了范围数据');
-                        return;
-                    }
-                    
-                    const rangeMatch = line.match(/(\d+)\s*一直加到\s*(\d+)/);
-                    if (rangeMatch) {
-                        const start = parseInt(rangeMatch[1]);
-                        const end = parseInt(rangeMatch[2]);
-                        
-                        for (let i = start; i <= end; i++) {
-                            data[currentPrefix].push(i.toString().padStart(3, '0'));
-                        }
-                    }
-                } 
-                // 检查是否是单个数字
-                else if (/^\d+$/.test(line)) {
-                    if (!currentPrefix) {
-                        console.error('错误: 在指定前缀之前发现了数字');
-                        return;
-                    }
-                    
-                    data[currentPrefix].push(line.padStart(3, '0'));
-                }
-            });
-            
-            return data;
-        }
-        
-        // 生成所有号码
-        function generateAllNumbers(data) {
-            const allNumbers = [];
-            
-            for (const [prefix, middles] of Object.entries(data)) {
-                for (const middle of middles) {
-                    for (let i = 1; i <= 9999; i++) {
-                        const suffix = i.toString().padStart(4, '0');
-                        allNumbers.push(prefix + middle + suffix);
-                    }
-                }
-            }
-            
-            return allNumbers;
-        }
-        
-        // 打乱数组顺序 (Fisher-Yates洗牌算法)
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        }
-        
-        // 过滤尾缀为110的号码
-        function filterSuffix110(numbers) {
-            return numbers.filter(number => !number.endsWith('110'));
-        }
-        
-        // 创建Excel文件（去掉表头）
-        function createExcelFile(numbers, fileName) {
-            // 将数字数组转换为工作表数据（直接使用号码，不添加表头）
-            const worksheetData = numbers.map(number => [number]);
-            
-            // 创建工作表（不添加表头）
-            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            
-            // 设置列宽
-            worksheet['!cols'] = [{ wch: 15 }];
-            
-            // 创建工作簿
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
-            
-            // 写入文件
-            XLSX.writeFile(workbook, fileName);
-            
-            return {
-                name: fileName,
-                size: numbers.length,
-                url: "#"
-            };
-        }
-        
-        // 更新UI状态
-        function updateStatus(text, progress) {
-            document.getElementById('statusText').textContent = text;
-            document.getElementById('progressBar').style.width = `${progress}%`;
-        }
-        
-        // 更新统计信息
-        function updateStats(total, files, groups, unique, filtered, fileSize) {
-            document.getElementById('totalCount').textContent = total.toLocaleString();
-            document.getElementById('fileCount').textContent = files.toLocaleString();
-            document.getElementById('groupCount').textContent = groups.toLocaleString();
-            document.getElementById('uniqueCount').textContent = unique.toLocaleString();
-            document.getElementById('filteredCount').textContent = filtered.toLocaleString();
-            
-            // 格式化文件大小显示
-            document.getElementById('fileSize').textContent = fileSize + '万';
-        }
-        
-        // 添加文件到列表
-        function addFileToList(file, fileIndex) {
-            const fileList = document.getElementById('fileList');
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
-            
-            // 文件类型图标
-            const fileTypes = ['📊', '📈', '📉', '📇', '📁', '📂', '📅', '📆'];
-            const fileIcon = fileTypes[fileIndex % fileTypes.length];
-            
-            fileItem.innerHTML = `
-                <div class="file-info">
-                    <div class="file-icon">${fileIcon}</div>
-                    <div class="file-details">
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-size">${file.size.toLocaleString()} 条数据</div>
-                    </div>
-                </div>
-                <a href="${file.url}" download="${file.name}" class="download-btn">下载文件</a>
-            `;
-            
-            fileList.appendChild(fileItem);
-        }
-        
-        // 主生成函数（通用，支持是否过滤尾缀110）
-        function generateFilesCore(filterSuffix = false) {
-            const inputText = document.getElementById('dataInput').value;
-            const filename = document.getElementById('filenameInput').value || '号码数据';
-            const numbersPerFileInput = document.getElementById('numbersPerFile');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const fileList = document.getElementById('fileList');
-            
-            // 验证文件名
-            if (!filename.trim()) {
-                alert('请输入有效的文件名！');
-                document.getElementById('filenameInput').focus();
-                return;
-            }
-            
-            // 获取并验证每文件数据量（单位：万）
-            let numbersPerFile = parseInt(numbersPerFileInput.value);
-            if (isNaN(numbersPerFile) || numbersPerFile < 1) {
-                alert('每文件数据量必须是1-100万之间的数字！');
-                numbersPerFileInput.focus();
-                return;
-            }
-            
-            if (numbersPerFile > 100) {
-                if (!confirm(`您设置了每个文件 ${numbersPerFile} 万条数据，这可能使文件过大，是否继续？`)) {
-                    numbersPerFileInput.focus();
-                    return;
-                }
-            }
-            
-            // 转换为实际条数
-            const numbersPerFileInCount = numbersPerFile * 10000;
-            
-            // 显示加载指示器
-            loadingIndicator.style.display = 'block';
-            fileList.innerHTML = '';
-            
-            // 解析输入数据
-            updateStatus('正在解析输入数据...', 10);
-            const parsedData = parseInputData(inputText);
-            console.log('解析的数据:', parsedData);
-            
-            // 计算总组数
-            let totalGroups = 0;
-            for (const middles of Object.values(parsedData)) {
-                totalGroups += middles.length;
-            }
-            
-            // 生成所有号码
-            updateStatus('正在生成号码序列...', 30);
-            const allNumbers = generateAllNumbers(parsedData);
-            console.log(`生成了 ${allNumbers.length.toLocaleString()} 条数据`);
-            
-            // 打乱顺序
-            updateStatus('正在打乱数据顺序...', 50);
-            const shuffledNumbers = shuffleArray(allNumbers);
-            
-            // 去重
-            updateStatus('正在去除重复数据...', 70);
-            let uniqueNumbers = [...new Set(shuffledNumbers)];
-            
-            // 过滤尾缀110号码（如果需要）
-            let filteredCount = 0;
-            if (filterSuffix) {
-                updateStatus('正在过滤尾缀110号码...', 80);
-                const originalUniqueCount = uniqueNumbers.length;
-                uniqueNumbers = filterSuffix110(uniqueNumbers);
-                filteredCount = originalUniqueCount - uniqueNumbers.length;
-            }
-            
-            // 计算文件数量
-            const totalFiles = Math.ceil(uniqueNumbers.length / numbersPerFileInCount);
-            
-            // 更新统计信息
-            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, filteredCount, numbersPerFile);
-            
-            // 创建Excel文件
-            updateStatus(filterSuffix ? '正在创建过滤后的Excel文件...' : '正在创建Excel文件...', 90);
-            
-            // 模拟创建文件（在浏览器中实际生成）
-            setTimeout(() => {
-                for (let i = 0; i < totalFiles; i++) {
-                    const startIdx = i * numbersPerFileInCount;
-                    const endIdx = Math.min(startIdx + numbersPerFileInCount, uniqueNumbers.length);
-                    const fileNumbers = uniqueNumbers.slice(startIdx, endIdx);
-                    
-                    // 生成文件名（过滤后文件添加标识）
-                    const fileSuffix = filterSuffix ? '_无尾缀110' : '';
-                    const fileName = i === 0 ? 
-                        `${filename}${fileSuffix}.xlsx` : 
-                        `${filename}${fileSuffix}_${i+1}.xlsx`;
-                    
-                    // 创建并下载文件
-                    const file = createExcelFile(fileNumbers, fileName);
-                    addFileToList(file, i);
-                    
-                    // 更新进度
-                    updateStatus(filterSuffix ? 
-                        `正在生成过滤文件 ${i+1}/${totalFiles}...` : 
-                        `正在生成文件 ${i+1}/${totalFiles}...`, 
-                        90 + (i+1)/totalFiles * 10
-                    );
-                }
-                
-                // 完成
-                const completeText = filterSuffix ? 
-                    `文件生成完成！已过滤 ${filteredCount.toLocaleString()} 条尾缀110号码` : 
-                    '文件生成完成！';
-                updateStatus(completeText, 100);
-                loadingIndicator.style.display = 'none';
-                
-                // 提示用户
-                alert(`${completeText} 共创建了 ${totalFiles} 个文件。`);
-            }, 500);
-        }
-        
-        // 重置表单
-        function resetForm() {
-            document.getElementById('filenameInput').value = '';
-            document.getElementById('numbersPerFile').value = 40;
-            document.getElementById('dataInput').value = '开头:\n000-000\n000';
-            document.getElementById('fileList').innerHTML = '';
-            updateStats(0, 0, 0, 0, 0, 40);
-            updateStatus('等待生成...', 0);
-        }
-        
-        // 解析上传的文件数据
+
+        // 分类工具数据缓存
+        let classifyResultCache = null; // 存储分类后的数据 { prefix: [numbers] }
+        let classifyFileNameCache = '';
+        let sortAsc = true; // 排序方式
+
+        // ==================== 工具函数 ====================
+        // 解析上传的文件数据 (通用)
         function parseUploadedFile(file, callback) {
             const reader = new FileReader();
             const fileExt = file.name.split('.').pop().toLowerCase();
@@ -1756,15 +1453,17 @@
                         const workbook = XLSX.read(e.target.result, { type: 'binary' });
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
-                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
                         
                         // 提取所有非空单元格数据
                         aoa.forEach(row => {
-                            row.forEach(cell => {
-                                if (cell !== undefined && cell !== null && cell.toString().trim() !== '') {
-                                    data.push(cell.toString().trim());
-                                }
-                            });
+                            if (Array.isArray(row)) {
+                                row.forEach(cell => {
+                                    if (cell !== undefined && cell !== null && cell.toString().trim() !== '') {
+                                        data.push(cell.toString().trim());
+                                    }
+                                });
+                            }
                         });
                     } else {
                         // 处理文本文件
@@ -1779,27 +1478,430 @@
                 }
             };
             
+            reader.onerror = function() {
+                callback(new Error('文件读取失败'), null);
+            };
+            
             if (fileExt === 'xlsx' || fileExt === 'xls') {
                 reader.readAsBinaryString(file);
             } else {
-                reader.readAsText(file);
+                reader.readAsText(file, 'UTF-8');
             }
         }
-        
-        // 双文件选择处理
+
+        // 创建Excel Blob (无表头)
+        function createExcelBlob(numbersArray) {
+            const worksheetData = numbersArray.map(num => [num]);
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
+            const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            return new Blob([wbout], { type: 'application/octet-stream' });
+        }
+
+        // ==================== 生成文件核心 (修复无限制) ====================
+        function generateFilesCore(filterSuffix = false) {
+            const inputText = document.getElementById('dataInput').value;
+            const filename = document.getElementById('filenameInput').value || '号码数据';
+            const numbersPerFileInput = document.getElementById('numbersPerFile');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const fileList = document.getElementById('fileList');
+            
+            // 验证文件名
+            if (!filename.trim()) {
+                alert('请输入有效的文件名！');
+                document.getElementById('filenameInput').focus();
+                return;
+            }
+            
+            // 获取每文件数据量（万），允许任意正整数，不设上限
+            let numbersPerFile = parseInt(numbersPerFileInput.value);
+            if (isNaN(numbersPerFile) || numbersPerFile < 1) {
+                alert('每文件数据量必须是大于等于1的数字！');
+                numbersPerFileInput.focus();
+                return;
+            }
+            
+            // 转换为实际条数
+            const numbersPerFileInCount = numbersPerFile * 10000;
+            
+            // 显示加载指示器
+            loadingIndicator.style.display = 'block';
+            fileList.innerHTML = '';
+            
+            // 解析输入数据
+            updateStatus('正在解析输入数据...', 10);
+            const parsedData = parseInputData(inputText);
+            
+            // 计算总组数
+            let totalGroups = 0;
+            for (const middles of Object.values(parsedData)) {
+                totalGroups += middles.length;
+            }
+            
+            // 生成所有号码
+            updateStatus('正在生成号码序列...', 30);
+            const allNumbers = generateAllNumbers(parsedData);
+            
+            // 打乱顺序
+            updateStatus('正在打乱数据顺序...', 50);
+            const shuffledNumbers = shuffleArray(allNumbers);
+            
+            // 去重
+            updateStatus('正在去除重复数据...', 70);
+            let uniqueNumbers = [...new Set(shuffledNumbers)];
+            
+            // 过滤尾缀110号码（如果需要）
+            let filteredCount = 0;
+            if (filterSuffix) {
+                updateStatus('正在过滤尾缀110号码...', 80);
+                const originalUniqueCount = uniqueNumbers.length;
+                uniqueNumbers = uniqueNumbers.filter(number => !number.endsWith('110'));
+                filteredCount = originalUniqueCount - uniqueNumbers.length;
+            }
+            
+            // 计算文件数量
+            const totalFiles = Math.ceil(uniqueNumbers.length / numbersPerFileInCount);
+            
+            // 更新统计信息
+            updateStats(allNumbers.length, totalFiles, totalGroups, uniqueNumbers.length, filteredCount, numbersPerFile);
+            
+            // 创建Excel文件
+            updateStatus(filterSuffix ? '正在创建过滤后的Excel文件...' : '正在创建Excel文件...', 90);
+            
+            // 使用setTimeout避免UI卡死，并立即下载
+            setTimeout(() => {
+                for (let i = 0; i < totalFiles; i++) {
+                    const startIdx = i * numbersPerFileInCount;
+                    const endIdx = Math.min(startIdx + numbersPerFileInCount, uniqueNumbers.length);
+                    const fileNumbers = uniqueNumbers.slice(startIdx, endIdx);
+                    
+                    const fileSuffix = filterSuffix ? '_无尾缀110' : '';
+                    const fileName = i === 0 ? 
+                        `${filename}${fileSuffix}.xlsx` : 
+                        `${filename}${fileSuffix}_${i+1}.xlsx`;
+                    
+                    // 创建并触发下载 (使用FileSaver或直接创建Blob链接)
+                    const blob = createExcelBlob(fileNumbers);
+                    saveAs(blob, fileName);  // FileSaver.js 全局函数
+                    
+                    // 添加到列表
+                    addFileToList({ name: fileName, size: fileNumbers.length }, i);
+                    
+                    updateStatus(filterSuffix ? 
+                        `正在生成过滤文件 ${i+1}/${totalFiles}...` : 
+                        `正在生成文件 ${i+1}/${totalFiles}...`, 
+                        90 + ((i+1)/totalFiles) * 10
+                    );
+                }
+                
+                updateStatus(filterSuffix ? `文件生成完成！已过滤 ${filteredCount.toLocaleString()} 条尾缀110号码` : '文件生成完成！', 100);
+                loadingIndicator.style.display = 'none';
+                alert(`生成完成！共创建了 ${totalFiles} 个文件，已自动下载。`);
+            }, 100);
+        }
+
+        // 解析输入数据 (复用原逻辑)
+        function normalizeInputFormat(inputText) {
+            const lines = inputText.split('\n');
+            const normalizedLines = [];
+            for (const line of lines) {
+                let normalizedLine = line.trim();
+                const rangeMatch = normalizedLine.match(/^(\d+)\s*-\s*(\d+)$/);
+                if (rangeMatch) {
+                    const start = rangeMatch[1];
+                    const end = rangeMatch[2];
+                    normalizedLine = `${start}一直加到${end}`;
+                }
+                const tildeMatch = normalizedLine.match(/^(\d+)\s*~\s*(\d+)$/);
+                if (tildeMatch) {
+                    const start = tildeMatch[1];
+                    const end = tildeMatch[2];
+                    normalizedLine = `${start}一直加到${end}`;
+                }
+                const chineseMatch = normalizedLine.match(/^(\d+)\s*至\s*(\d+)$/);
+                if (chineseMatch) {
+                    const start = chineseMatch[1];
+                    const end = chineseMatch[2];
+                    normalizedLine = `${start}一直加到${end}`;
+                }
+                normalizedLines.push(normalizedLine);
+            }
+            return normalizedLines.join('\n');
+        }
+
+        function parseInputData(inputText) {
+            const normalizedText = normalizeInputFormat(inputText);
+            const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line);
+            const data = {};
+            let currentPrefix = null;
+            
+            lines.forEach(line => {
+                if (line.startsWith('开头:')) {
+                    currentPrefix = line.replace('开头:', '').trim();
+                    if (!data[currentPrefix]) {
+                        data[currentPrefix] = [];
+                    }
+                } else if (line.includes('一直加到')) {
+                    if (!currentPrefix) return;
+                    const rangeMatch = line.match(/(\d+)\s*一直加到\s*(\d+)/);
+                    if (rangeMatch) {
+                        const start = parseInt(rangeMatch[1]);
+                        const end = parseInt(rangeMatch[2]);
+                        for (let i = start; i <= end; i++) {
+                            data[currentPrefix].push(i.toString().padStart(3, '0'));
+                        }
+                    }
+                } else if (/^\d+$/.test(line)) {
+                    if (!currentPrefix) return;
+                    data[currentPrefix].push(line.padStart(3, '0'));
+                }
+            });
+            return data;
+        }
+
+        function generateAllNumbers(data) {
+            const allNumbers = [];
+            for (const [prefix, middles] of Object.entries(data)) {
+                for (const middle of middles) {
+                    for (let i = 1; i <= 9999; i++) {
+                        const suffix = i.toString().padStart(4, '0');
+                        allNumbers.push(prefix + middle + suffix);
+                    }
+                }
+            }
+            return allNumbers;
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function updateStatus(text, progress) {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function updateStats(total, files, groups, unique, filtered, fileSize) {
+            document.getElementById('totalCount').textContent = total.toLocaleString();
+            document.getElementById('fileCount').textContent = files.toLocaleString();
+            document.getElementById('groupCount').textContent = groups.toLocaleString();
+            document.getElementById('uniqueCount').textContent = unique.toLocaleString();
+            document.getElementById('filteredCount').textContent = filtered.toLocaleString();
+            document.getElementById('fileSize').textContent = fileSize + '万';
+        }
+
+        function addFileToList(file, fileIndex) {
+            const fileList = document.getElementById('fileList');
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            const fileTypes = ['📊', '📈', '📉', '📇', '📁', '📂', '📅', '📆'];
+            const fileIcon = fileTypes[fileIndex % fileTypes.length];
+            fileItem.innerHTML = `
+                <div class="file-info">
+                    <div class="file-icon">${fileIcon}</div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${file.size.toLocaleString()} 条数据</div>
+                    </div>
+                </div>
+                <a href="#" class="download-btn" onclick="(function(){ var blob = createExcelBlob([${JSON.stringify(file.size)}]); saveAs(blob, '${file.name}'); })(); return false;">下载文件</a>
+            `;
+            fileList.appendChild(fileItem);
+        }
+
+        // ==================== 数据去重工具修复 ====================
+        document.getElementById('selectFileBtn').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('uploadStatus').textContent = '正在解析...';
+            parseUploadedFile(file, (err, data) => {
+                if (err) {
+                    document.getElementById('uploadStatus').textContent = '解析失败';
+                    alert('文件解析失败');
+                    return;
+                }
+                const original = data.length;
+                const unique = [...new Set(data)];
+                const duplicateCount = original - unique.length;
+                
+                document.getElementById('uploadFileName').textContent = file.name;
+                document.getElementById('originalCount').textContent = original;
+                document.getElementById('duplicateCount').textContent = duplicateCount;
+                document.getElementById('cleanCount').textContent = unique.length;
+                document.getElementById('uploadResults').style.display = 'block';
+                document.getElementById('uploadStatus').textContent = '解析完成';
+                
+                // 绑定下载
+                const cleanBlob = new Blob([unique.join('\n')], { type: 'text/plain;charset=utf-8' });
+                const downloadBtn = document.getElementById('downloadCleanBtn');
+                downloadBtn.href = URL.createObjectURL(cleanBlob);
+                downloadBtn.download = file.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
+            });
+        });
+
+        // ==================== 分类工具修复 ====================
+        document.getElementById('selectClassifyFileBtn').addEventListener('click', () => {
+            document.getElementById('classifyFileInput').click();
+        });
+
+        document.getElementById('classifyFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('classificationStatus').textContent = '分类中...';
+            parseUploadedFile(file, (err, data) => {
+                if (err) {
+                    document.getElementById('classificationStatus').textContent = '解析失败';
+                    alert('文件解析失败');
+                    return;
+                }
+                
+                const prefixLen = parseInt(document.getElementById('prefixLength').value);
+                const includeFull = document.getElementById('includeFullNumber').checked;
+                
+                // 按前缀分类
+                const groups = {};
+                data.forEach(num => {
+                    const numStr = num.toString().trim();
+                    if (numStr.length < prefixLen) return; // 忽略过短的
+                    const prefix = numStr.substring(0, prefixLen);
+                    if (!groups[prefix]) groups[prefix] = [];
+                    groups[prefix].push(includeFull ? numStr : numStr.substring(prefixLen));
+                });
+                
+                // 排序
+                const sortedPrefixes = Object.keys(groups).sort((a, b) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
+                
+                // 更新UI
+                classifyResultCache = groups;
+                classifyFileNameCache = file.name;
+                
+                document.getElementById('classifyFileName').textContent = file.name;
+                document.getElementById('totalNumbersCount').textContent = data.length;
+                document.getElementById('uniquePrefixesCount').textContent = sortedPrefixes.length;
+                
+                // 找到最多号码的前缀
+                let maxPrefix = '', maxCount = 0;
+                sortedPrefixes.forEach(p => {
+                    if (groups[p].length > maxCount) {
+                        maxCount = groups[p].length;
+                        maxPrefix = p;
+                    }
+                });
+                document.getElementById('maxNumbersPrefix').textContent = maxPrefix || '-';
+                
+                // 渲染列表
+                const listDiv = document.getElementById('classificationList');
+                listDiv.innerHTML = '';
+                sortedPrefixes.forEach(prefix => {
+                    const item = document.createElement('div');
+                    item.className = 'classification-item';
+                    item.innerHTML = `
+                        <div class="prefix-info">
+                            <span class="prefix-badge">${prefix}</span>
+                            <span class="prefix-count">${groups[prefix].length} 条</span>
+                        </div>
+                        <a href="#" class="download-classify-btn" data-prefix="${prefix}">下载</a>
+                    `;
+                    listDiv.appendChild(item);
+                });
+                
+                // 绑定单个下载
+                document.querySelectorAll('.download-classify-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const prefix = this.dataset.prefix;
+                        const numbers = groups[prefix];
+                        const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
+                        saveAs(blob, `${prefix}_分类.txt`);
+                    });
+                });
+                
+                document.getElementById('classificationResults').style.display = 'block';
+                document.getElementById('classificationStatus').textContent = '分类完成';
+            });
+        });
+
+        // 下载所有分类文件
+        document.getElementById('downloadAllClassifyBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!classifyResultCache) return;
+            
+            // 打包为zip过于复杂，这里逐个下载提示
+            const groups = classifyResultCache;
+            Object.keys(groups).forEach(prefix => {
+                const numbers = groups[prefix];
+                const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
+                saveAs(blob, `${prefix}_分类.txt`);
+            });
+        });
+
+        // 重置分类
+        document.getElementById('resetClassifyBtn').addEventListener('click', function() {
+            document.getElementById('classificationResults').style.display = 'none';
+            document.getElementById('classificationStatus').textContent = '等待上传文件...';
+            classifyResultCache = null;
+            document.getElementById('classifyFileInput').value = '';
+        });
+
+        // 排序切换
+        document.getElementById('sortAscBtn').addEventListener('click', function() {
+            sortAsc = !sortAsc;
+            this.classList.toggle('active', sortAsc);
+            // 如果有缓存，刷新显示
+            if (classifyResultCache && document.getElementById('classificationResults').style.display === 'block') {
+                // 重新渲染
+                const groups = classifyResultCache;
+                const sortedPrefixes = Object.keys(groups).sort((a, b) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
+                const listDiv = document.getElementById('classificationList');
+                listDiv.innerHTML = '';
+                sortedPrefixes.forEach(prefix => {
+                    const item = document.createElement('div');
+                    item.className = 'classification-item';
+                    item.innerHTML = `
+                        <div class="prefix-info">
+                            <span class="prefix-badge">${prefix}</span>
+                            <span class="prefix-count">${groups[prefix].length} 条</span>
+                        </div>
+                        <a href="#" class="download-classify-btn" data-prefix="${prefix}">下载</a>
+                    `;
+                    listDiv.appendChild(item);
+                });
+                // 重新绑定事件
+                document.querySelectorAll('.download-classify-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const prefix = this.dataset.prefix;
+                        const numbers = groups[prefix];
+                        const blob = new Blob([numbers.join('\n')], { type: 'text/plain;charset=utf-8' });
+                        saveAs(blob, `${prefix}_分类.txt`);
+                    });
+                });
+            }
+        });
+
+        // ==================== 双文件重复删除修复 ====================
         function handleDuplicateFileSelect(event, fileNum) {
             const file = event.target.files[0];
             if (!file) return;
             
-            const fileId = `duplicateFile${fileNum}`;
             const nameId = `duplicateFile${fileNum}Name`;
             const errorId = `duplicateError${fileNum}`;
             
-            // 更新文件名显示
             document.getElementById(nameId).textContent = file.name;
             document.getElementById(errorId).style.display = 'none';
             
-            // 解析文件
             parseUploadedFile(file, (error, fileData) => {
                 if (error) {
                     document.getElementById(errorId).textContent = '文件解析失败，请检查文件格式！';
@@ -1808,32 +1910,25 @@
                 } else {
                     duplicateFileData[`file${fileNum}`] = {
                         name: file.name,
-                        data: [...new Set(fileData)] // 先去重自身重复数据
+                        data: [...new Set(fileData)] // 自身去重
                     };
                 }
-                
-                // 更新按钮状态
                 updateDuplicateBtnStatus();
-                // 更新状态提示
                 updateDuplicateStatus();
             });
         }
-        
-        // 更新双文件处理按钮状态
+
         function updateDuplicateBtnStatus() {
             const btn = document.getElementById('duplicateProcessBtn');
             const hasFile1 = duplicateFileData.file1.data.length > 0;
             const hasFile2 = duplicateFileData.file2.data.length > 0;
-            
             btn.disabled = !(hasFile1 && hasFile2);
         }
-        
-        // 更新双文件处理状态提示
+
         function updateDuplicateStatus() {
             const statusEl = document.getElementById('duplicateStatus');
             const count1 = duplicateFileData.file1.data.length;
             const count2 = duplicateFileData.file2.data.length;
-            
             if (count1 > 0 && count2 > 0) {
                 statusEl.textContent = `已上传2个文件 | 文件1：${count1}条 | 文件2：${count2}条`;
                 statusEl.style.color = '#34a853';
@@ -1848,111 +1943,72 @@
                 statusEl.style.color = '#4d90fe';
             }
         }
-        
-        // 处理双文件去重
+
         function processDuplicateFiles() {
             const data1 = duplicateFileData.file1.data;
             const data2 = duplicateFileData.file2.data;
             
-            // 创建集合用于快速查找
             const set1 = new Set(data1);
             const set2 = new Set(data2);
             
-            // 找出共同重复数据
             const commonData = new Set();
-            set1.forEach(item => {
-                if (set2.has(item)) {
-                    commonData.add(item);
-                }
-            });
+            set1.forEach(item => { if (set2.has(item)) commonData.add(item); });
             
-            // 过滤掉共同重复数据
             const uniqueData1 = data1.filter(item => !commonData.has(item));
             const uniqueData2 = data2.filter(item => !commonData.has(item));
             
             // 生成下载链接
-            generateDuplicateDownloadLinks(uniqueData1, uniqueData2);
-            
-            // 显示下载区域
-            document.getElementById('duplicateDownloadSection').classList.add('show');
-            
-            // 更新状态
-            document.getElementById('duplicateStatus').textContent = `处理完成！共移除 ${commonData.size} 条重复数据`;
-            document.getElementById('duplicateStatus').style.color = '#34a853';
-        }
-        
-        // 生成双文件处理后的下载链接
-        function generateDuplicateDownloadLinks(data1, data2) {
-            // 生成TXT文件下载链接
-            const blob1Txt = new Blob([data1.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const blob2Txt = new Blob([data2.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const blob1Txt = new Blob([uniqueData1.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const blob2Txt = new Blob([uniqueData2.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const blob1Excel = createExcelBlob(uniqueData1);
+            const blob2Excel = createExcelBlob(uniqueData2);
             
             document.getElementById('duplicateDownload1Txt').href = URL.createObjectURL(blob1Txt);
             document.getElementById('duplicateDownload2Txt').href = URL.createObjectURL(blob2Txt);
-            
-            // 生成Excel文件下载链接
-            const createExcelBlob = (data) => {
-                const worksheetData = data.map(item => [item]);
-                const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "去重后数据");
-                const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                return new Blob([wbout], { type: 'application/octet-stream' });
-            };
-            
-            const blob1Excel = createExcelBlob(data1);
-            const blob2Excel = createExcelBlob(data2);
-            
             document.getElementById('duplicateDownload1Excel').href = URL.createObjectURL(blob1Excel);
             document.getElementById('duplicateDownload2Excel').href = URL.createObjectURL(blob2Excel);
-        }
-        
-        // 清空双文件上传数据
-        function clearDuplicateFiles() {
-            duplicateFileData = {
-                file1: { name: '', data: [] },
-                file2: { name: '', data: [] }
-            };
             
+            document.getElementById('duplicateDownloadSection').classList.add('show');
+            document.getElementById('duplicateStatus').textContent = `处理完成！共移除 ${commonData.size} 条重复数据`;
+            document.getElementById('duplicateStatus').style.color = '#34a853';
+        }
+
+        function clearDuplicateFiles() {
+            duplicateFileData = { file1: { name: '', data: [] }, file2: { name: '', data: [] } };
             document.getElementById('duplicateFile1Name').textContent = '未选择文件';
             document.getElementById('duplicateFile2Name').textContent = '未选择文件';
             document.getElementById('duplicateError1').style.display = 'none';
             document.getElementById('duplicateError2').style.display = 'none';
             document.getElementById('duplicateProcessBtn').disabled = true;
             document.getElementById('duplicateDownloadSection').classList.remove('show');
-            
-            // 重置文件输入
             document.getElementById('duplicateFile1Input').value = '';
             document.getElementById('duplicateFile2Input').value = '';
-            
-            // 更新状态
             updateDuplicateStatus();
         }
-        
-        // 绑定事件监听
-        document.addEventListener('DOMContentLoaded', function() {
-            // 生成按钮
-            document.getElementById('generateBtn').addEventListener('click', () => generateFilesCore(false));
-            document.getElementById('generateFilteredBtn').addEventListener('click', () => generateFilesCore(true));
-            
-            // 重置按钮
-            document.getElementById('resetBtn').addEventListener('click', resetForm);
-            
-            // 上传文件按钮
-            document.getElementById('selectFileBtn').addEventListener('click', () => {
-                document.getElementById('fileInput').click();
-            });
-            
-            // 分类文件选择按钮
-            document.getElementById('selectClassifyFileBtn').addEventListener('click', () => {
-                document.getElementById('classifyFileInput').click();
-            });
-            
-            // 每文件数据量变化时更新统计
-            document.getElementById('numbersPerFile').addEventListener('change', function() {
-                const value = parseInt(this.value) || 40;
-                document.getElementById('fileSize').textContent = value + '万';
-            });
+
+        // 绑定双文件事件
+        document.getElementById('duplicateFile1Input').addEventListener('change', (e) => handleDuplicateFileSelect(e, 1));
+        document.getElementById('duplicateFile2Input').addEventListener('change', (e) => handleDuplicateFileSelect(e, 2));
+        document.getElementById('duplicateProcessBtn').addEventListener('click', processDuplicateFiles);
+        document.getElementById('duplicateClearBtn').addEventListener('click', clearDuplicateFiles);
+
+        // 重置
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('filenameInput').value = '';
+            document.getElementById('numbersPerFile').value = 10;
+            document.getElementById('dataInput').value = '开头:';
+            document.getElementById('fileList').innerHTML = '';
+            updateStats(0, 0, 0, 0, 0, 40);
+            updateStatus('等待生成...', 0);
+        });
+
+        // 生成按钮
+        document.getElementById('generateBtn').addEventListener('click', () => generateFilesCore(false));
+        document.getElementById('generateFilteredBtn').addEventListener('click', () => generateFilesCore(true));
+
+        // 每文件数据量显示
+        document.getElementById('numbersPerFile').addEventListener('change', function() {
+            document.getElementById('fileSize').textContent = (parseInt(this.value) || 40) + '万';
         });
     </script>
 </body>
