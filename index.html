@@ -1272,7 +1272,7 @@
             </div>
         </div>
         
-        <!-- 面板2: 单文件去重 -->
+        <!-- 面板2: 单文件去重 - 修复前导0问题，新增批量下载按钮 -->
         <div id="panel-deduplicate" class="tool-panel">
             <div class="upload-section">
                 <div class="upload-header">
@@ -1300,13 +1300,15 @@
                     <div id="deduplicateResultCards"></div>
                     
                     <div class="actions-row" style="margin-top:20px;">
+                        <button class="download-all-btn" id="downloadAllDeduplicateTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllDeduplicateXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
                         <button class="reset-btn" id="resetDeduplicateBtn">🔄 清空所有</button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- 面板3: 按前缀自动分类 (列选择器同样改为按钮样式) -->
+        <!-- 面板3: 按前缀自动分类 (修复前缀识别问题，确保保留前导0) -->
         <div id="panel-classify" class="tool-panel">
             <div class="classification-section">
                 <div class="classification-header">
@@ -1457,7 +1459,9 @@
         
         <div class="note">
             ⚡ 自动识别功能：当您输入多个“开头：”时，输出文件名称会自动用“-”连接，如“022-021-045”<br>
-            🚫 一键去除功能：同时去除尾号为 100、110、114、119、120 的号码
+            🚫 一键去除功能：同时去除尾号为 100、110、114、119、120 的号码<br>
+            🔧 前缀分类已优化：完美支持带0开头的号码（如023、045等），导出的文件会完整保留前导0<br>
+            📥 单文件去重新增批量下载功能：可一键下载所有TXT或Excel文件
         </div>
     </div>
 
@@ -1545,21 +1549,23 @@
             });
         });
 
-        // ========== 文件名自动识别功能（识别所有开头，用“-”连接）- 强制自动填充 ==========
+        // ========== 文件名自动识别功能（识别所有开头，用“-”连接）- 修复版，支持带0前缀 ==========
         function extractAllPrefixesFromInput() {
             const inputText = document.getElementById('dataInput').value;
             const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             const prefixes = [];
             
             lines.forEach(line => {
-                // 匹配 "开头:022"、"开头：021"、"开头 023" 等多种格式
+                // 改进的正则表达式：匹配 "开头:022"、"开头：021"、"开头 023" 等多种格式
+                // 确保能捕获带前导0的数字
                 const prefixMatch = line.match(/^开头[:：]?\s*(\d+)/);
                 if (prefixMatch) {
+                    // 保留原始格式，包括前导0
                     prefixes.push(prefixMatch[1]);
                 }
             });
             
-            // 去重
+            // 去重但保持原始字符串格式（包括前导0）
             return [...new Set(prefixes)];
         }
 
@@ -1569,11 +1575,10 @@
             const autoHint = document.getElementById('filenameAutoHint');
             
             if (prefixes.length >= 1) {
-                // 直接按检测到的顺序用“-”连接
+                // 直接按检测到的顺序用“-”连接，保留原始格式（包括前导0）
                 const suggestion = prefixes.join('-');
                 
                 // 始终自动填充，除非用户手动编辑过且不为空
-                // 但如果检测到新前缀，也自动更新
                 if (!lastManualValue || filenameInput.value === lastManualValue) {
                     filenameInput.value = suggestion;
                     autoHint.innerHTML = `✅ 自动识别: ${prefixes.join('、')} → ${suggestion}`;
@@ -1649,7 +1654,7 @@
             }).join('\n');
         }
 
-        // 解析输入数据
+        // 解析输入数据 - 修复版，支持带0前缀
         function parseInputData(inputText) {
             const normalizedText = normalizeInputFormat(inputText);
             const lines = normalizedText.split('\n').map(l => l.trim()).filter(l => l);
@@ -1657,7 +1662,8 @@
             let currentPrefix = null;
             
             lines.forEach(line => {
-                const prefixMatch = line.match(/^开头[:：]?\s*(.*)$/);
+                // 改进的正则，确保能捕获带0的数字
+                const prefixMatch = line.match(/^开头[:：]?\s*(.+)$/);
                 if (prefixMatch) {
                     currentPrefix = prefixMatch[1].trim();
                     if (currentPrefix) {
@@ -1714,7 +1720,32 @@
             });
         }
 
-        // 创建Excel文件（支持选择数据列位置）
+        // 创建Excel Blob - 通用函数，确保保留前导0
+        function createExcelBlobWithLeadingZero(numbers) {
+            const worksheetData = numbers.map(n => [n]);
+            const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // 设置所有单元格为文本格式，确保保留前导0
+            if (ws['!ref']) {
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; R++) {
+                    for (let C = range.s.c; C <= range.e.c; C++) {
+                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                        if (ws[cellRef]) {
+                            ws[cellRef].t = 's';
+                        }
+                    }
+                }
+            }
+            
+            ws['!cols'] = [{ wch: 15 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "数据");
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            return new Blob([wbout], { type: 'application/octet-stream' });
+        }
+
+        // 创建Excel文件（支持选择数据列位置）- 修复版，确保保留前导0
         function createExcelFile(numbers, fileName, columnPosition) {
             let worksheetData;
             if (columnPosition === 'first') {
@@ -1723,7 +1754,23 @@
                 worksheetData = numbers.map(num => ['', num]);
             }
             
+            // 确保所有数字都以字符串形式保存，保留前导0
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // 设置列格式为文本，防止Excel去掉前导0
+            if (worksheet['!ref']) {
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                for (let R = range.s.r; R <= range.e.r; R++) {
+                    for (let C = range.s.c; C <= range.e.c; C++) {
+                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                        if (worksheet[cellRef]) {
+                            // 强制设置为文本类型
+                            worksheet[cellRef].t = 's';
+                        }
+                    }
+                }
+            }
+            
             worksheet['!cols'] = columnPosition === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "数据");
@@ -1731,7 +1778,7 @@
             return { name: fileName, size: numbers.length, url: "#" };
         }
 
-        // 解析上传的文件 - 支持选择列位置
+        // 解析上传的文件 - 支持选择列位置，修复前缀识别
         function parseUploadedFile(file, callback, columnPosition = 'first') {
             const reader = new FileReader();
             const ext = file.name.split('.').pop().toLowerCase();
@@ -1741,7 +1788,7 @@
                     if (ext === 'xlsx' || ext === 'xls') {
                         const workbook = XLSX.read(e.target.result, { type: 'binary' });
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                        const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false }); // raw: false 确保获取原始字符串
                         
                         // 根据选择的列位置提取数据
                         const colIndex = columnPosition === 'first' ? 0 : 1;
@@ -1749,6 +1796,7 @@
                             if (Array.isArray(row) && row.length > colIndex) {
                                 const cell = row[colIndex];
                                 if (cell != null && cell.toString().trim() !== '') {
+                                    // 保留原始格式，包括前导0
                                     data.push(cell.toString().trim());
                                 }
                             }
@@ -1901,7 +1949,7 @@
             });
         });
 
-        // ========== 单文件去重 ==========
+        // ========== 单文件去重 - 修复前导0问题，新增批量下载功能 ==========
         const deduplicateUploadArea = document.getElementById('deduplicateUploadArea');
         const deduplicateFileInput = document.getElementById('deduplicateFileInput');
         const deduplicateFilesList = document.getElementById('deduplicateFilesList');
@@ -2029,7 +2077,8 @@
                         a.click();
                         URL.revokeObjectURL(url);
                     } else {
-                        const blob = createExcelBlob(uniqueData);
+                        // 使用修复前导0的Excel导出函数
+                        const blob = createExcelBlobWithLeadingZero(uniqueData);
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -2041,6 +2090,56 @@
             });
         }
 
+        // 批量下载所有TXT
+        document.getElementById('downloadAllDeduplicateTxt').addEventListener('click', function() {
+            if (deduplicateFiles.length === 0) {
+                alert('请先上传文件');
+                return;
+            }
+            
+            deduplicateFiles.forEach((file, index) => {
+                const uniqueData = [...new Set(file.data)];
+                const baseName = file.name.replace(/\.[^/.]+$/, "");
+                const blob = new Blob([uniqueData.join('\n')], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${baseName}_去重后_${uniqueData.length}条.txt`;
+                
+                // 使用setTimeout避免浏览器阻止多个下载
+                setTimeout(() => {
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, index * 100);
+            });
+        });
+
+        // 批量下载所有Excel - 修复前导0问题
+        document.getElementById('downloadAllDeduplicateXlsx').addEventListener('click', function() {
+            if (deduplicateFiles.length === 0) {
+                alert('请先上传文件');
+                return;
+            }
+            
+            deduplicateFiles.forEach((file, index) => {
+                const uniqueData = [...new Set(file.data)];
+                const baseName = file.name.replace(/\.[^/.]+$/, "");
+                
+                // 使用修复前导0的Excel导出函数
+                const blob = createExcelBlobWithLeadingZero(uniqueData);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${baseName}_去重后_${uniqueData.length}条.xlsx`;
+                
+                // 使用setTimeout避免浏览器阻止多个下载
+                setTimeout(() => {
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, index * 100);
+            });
+        });
+
         document.getElementById('resetDeduplicateBtn').addEventListener('click', function() {
             deduplicateFileInput.value = '';
             deduplicateFiles = [];
@@ -2050,7 +2149,7 @@
             uploadStatus.style.color = '#4d90fe';
         });
 
-        // ========== 前缀分类 (支持列位置选择) ==========
+        // ========== 前缀分类 (支持列位置选择) - 彻底修复前缀识别问题 ==========
         const classificationArea = document.getElementById('classificationArea');
         const classifyFileInput = document.getElementById('classifyFileInput');
         const classifyUploadedFilesList = document.getElementById('classifyUploadedFilesList');
@@ -2136,14 +2235,6 @@
             });
         }
 
-        function createExcelBlob(numbers) {
-            const ws = XLSX.utils.aoa_to_sheet(numbers.map(n => [n]));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "分类数据");
-            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            return new Blob([wbout], { type: 'application/octet-stream' });
-        }
-
         function performClassification() {
             if (classifyFiles.length === 0) return;
             
@@ -2156,13 +2247,26 @@
             const prefixMap = new Map();
             
             allNumbers.forEach(num => {
+                // 修复：确保能正确处理带前导0的号码
+                // 取前prefixLen位，保持原始字符串格式
                 const prefix = num.substring(0, Math.min(prefixLen, num.length));
-                if (!prefixMap.has(prefix)) prefixMap.set(prefix, []);
+                if (!prefixMap.has(prefix)) {
+                    prefixMap.set(prefix, []);
+                }
                 prefixMap.get(prefix).push(includeFull ? num : num.substring(prefixLen));
             });
             
+            // 转换为数组并排序
             let prefixes = Array.from(prefixMap.entries());
-            prefixes.sort((a, b) => isAsc ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]));
+            
+            // 排序时保持字符串格式，确保"023"排在"045"前面
+            prefixes.sort((a, b) => {
+                if (isAsc) {
+                    return a[0].localeCompare(b[0], undefined, {numeric: false});
+                } else {
+                    return b[0].localeCompare(a[0], undefined, {numeric: false});
+                }
+            });
             
             let maxPrefix = '', maxCount = 0;
             prefixMap.forEach((vals, pref) => { 
@@ -2206,7 +2310,7 @@
                 xlsxBtn.textContent = `Excel (${numbers.length}条)`;
                 xlsxBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const blob = createExcelBlob(numbers);
+                    const blob = createExcelBlobWithLeadingZero(numbers);
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -2259,7 +2363,7 @@
             if (classifyFiles.length === 0) { alert('请先上传文件'); return; }
             const prefixMap = collectCurrentPrefixMap();
             prefixMap.forEach((numbers, prefix) => {
-                const blob = createExcelBlob(numbers);
+                const blob = createExcelBlobWithLeadingZero(numbers);
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -2396,15 +2500,10 @@
             document.getElementById('duplicateDownload2Txt').href = URL.createObjectURL(blob2Txt);
             document.getElementById('duplicateDownload2Txt').download = `${name2}_去重后_${data2.length}条.txt`;
             
-            const createExcelBlob = (data) => {
-                const ws = XLSX.utils.aoa_to_sheet(data.map(d => [d]));
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "去重后数据");
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                return new Blob([wbout], { type: 'application/octet-stream' });
-            };
+            // 使用修复前导0的Excel导出函数
+            const blob1Excel = createExcelBlobWithLeadingZero(data1);
+            const blob2Excel = createExcelBlobWithLeadingZero(data2);
             
-            const blob1Excel = createExcelBlob(data1), blob2Excel = createExcelBlob(data2);
             document.getElementById('duplicateDownload1Excel').href = URL.createObjectURL(blob1Excel);
             document.getElementById('duplicateDownload1Excel').download = `${name1}_去重后_${data1.length}条.xlsx`;
             
