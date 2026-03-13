@@ -214,14 +214,15 @@
             margin-top: 6px;
         }
         
-        .quick-buttons, .column-quick-buttons {
+        /* 快捷按钮组 */
+        .quick-buttons, .column-quick-buttons, .action-buttons {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 10px;
         }
         
-        .quick-btn, .column-quick-btn {
+        .quick-btn, .column-quick-btn, .action-btn {
             padding: 6px 12px;
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             border: 1px solid #d0d7de;
@@ -235,7 +236,7 @@
         }
         
         @media (max-width: 480px) {
-            .quick-btn, .column-quick-btn {
+            .quick-btn, .column-quick-btn, .action-btn {
                 padding: 8px 10px;
                 font-size: 13px;
                 flex: 1 1 calc(33.333% - 6px);
@@ -243,7 +244,7 @@
             }
         }
         
-        .quick-btn:hover, .column-quick-btn:hover {
+        .quick-btn:hover, .column-quick-btn:hover, .action-btn:hover {
             background: linear-gradient(135deg, #e2e6ea, #d0d7de);
             transform: translateY(-1px);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -253,6 +254,19 @@
             background: linear-gradient(135deg, #4d90fe, #357ae8);
             color: white;
             border-color: #4d90fe;
+        }
+        
+        /* 操作按钮特殊颜色 */
+        .action-btn.add-zero {
+            background: linear-gradient(135deg, #34a853, #2e8b47);
+            color: white;
+            border-color: #2e8b47;
+        }
+        
+        .action-btn.remove-zero {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border-color: #d32f2f;
         }
         
         .column-radio-hidden {
@@ -293,18 +307,6 @@
             background: linear-gradient(135deg, #e53935, #c62828);
             transform: translateY(-1px);
             box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
-        }
-        
-        .add-prefix-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 4px rgba(244, 67, 54, 0.5);
-        }
-        
-        @media (max-width: 480px) {
-            .add-prefix-btn {
-                padding: 4px 14px;
-                font-size: 13px;
-            }
         }
         
         .filename-auto-hint {
@@ -603,11 +605,11 @@
             font-size: 14px;
         }
         
-        .upload-section, .classification-section, .duplicate-removal-section {
+        .upload-section, .classification-section, .duplicate-removal-section, .data-op-section {
             margin-top: 30px;
         }
         
-        .upload-header, .classification-header, .duplicate-header {
+        .upload-header, .classification-header, .duplicate-header, .data-op-header {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
@@ -615,13 +617,13 @@
             gap: 10px;
         }
         
-        .upload-title, .classification-title, .duplicate-title {
+        .upload-title, .classification-title, .duplicate-title, .data-op-title {
             font-weight: 700;
             color: #2c3e50;
             font-size: clamp(1rem, 3vw, 1.1rem);
         }
         
-        #uploadStatus, #classificationStatus, #duplicateStatus {
+        #uploadStatus, #classificationStatus, #duplicateStatus, #dataOpStatus {
             font-weight: 600;
             color: #4d90fe;
             font-size: clamp(0.9rem, 2.5vw, 1rem);
@@ -1138,6 +1140,7 @@
             <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
             <div class="tool-tab" data-tool="classify">📂 前缀分类</div>
             <div class="tool-tab" data-tool="duplicate">🔄 双文件去重</div>
+            <div class="tool-tab" data-tool="dataop">0️⃣ 加减前导0</div>
         </div>
         
         <!-- 面板1: 批量号码生成 -->
@@ -1411,19 +1414,77 @@
             </div>
         </div>
         
+        <!-- 面板5: 加减前导0工具 - 精简版 -->
+        <div id="panel-dataop" class="tool-panel">
+            <div class="data-op-section">
+                <div class="data-op-header">
+                    <div class="data-op-title">0️⃣ 加减前导0工具</div>
+                    <div id="dataOpStatus">等待上传文件...</div>
+                </div>
+                
+                <div class="upload-area" id="dataOpUploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div>
+                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
+                    <button class="upload-btn" id="selectDataOpFilesBtn">📁 选择文件（可多选）</button>
+                    <input type="file" id="dataOpFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
+                    
+                    <div id="dataOpFilesList" class="file-list-container" style="display:none; margin-top:20px;">
+                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
+                        <div id="dataOpFileListItems"></div>
+                    </div>
+                </div>
+                
+                <!-- 列选择按钮组 -->
+                <div style="margin: 20px 0;">
+                    <label class="input-label">📊 选择操作列：</label>
+                    <div class="column-quick-buttons">
+                        <span class="column-quick-btn active" data-target="dataOpColFirst">第一列</span>
+                        <span class="column-quick-btn" data-target="dataOpColSecond">第二列</span>
+                    </div>
+                    <input type="radio" name="dataOpColumnPosition" id="dataOpColFirst" value="first" checked class="column-radio-hidden">
+                    <input type="radio" name="dataOpColumnPosition" id="dataOpColSecond" value="second" class="column-radio-hidden">
+                    <div class="filename-hint">选择要对哪一列进行加减0操作</div>
+                </div>
+                
+                <!-- 加减0操作按钮组 -->
+                <div style="margin: 20px 0;">
+                    <label class="input-label">0️⃣ 操作：</label>
+                    <div class="action-buttons">
+                        <span class="action-btn add-zero" data-action="add">➕ 添加前导0</span>
+                        <span class="action-btn remove-zero" data-action="remove">➖ 删除前导0</span>
+                    </div>
+                    <div class="filename-hint">点击按钮对已上传文件执行操作</div>
+                </div>
+                
+                <!-- 处理结果区域 -->
+                <div id="dataOpResults" class="multi-file-results" style="display:none;">
+                    <div class="file-list-header">处理结果（点击按钮下载）</div>
+                    <div id="dataOpResultCards"></div>
+                    
+                    <div class="actions-row" style="margin-top:20px;">
+                        <button class="download-all-btn" id="downloadAllDataOpTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllDataOpXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetDataOpBtn">🔄 清空所有</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="example-section">
             <div class="example-title">输入格式示例：</div>
-            <div class="example-content">开头：022
-开头：021
+            <div class="example-content">
 开头：045
-730-739</div>
+730-739
+</div>
         </div>
         
         <div class="note">
             ⚡ 高性能优化版：数据处理速度提升300%<br>
             🔧 前缀分类已完全修复：完美支持带0开头的号码（如023、045等）<br>
             📥 单文件去重支持批量下载<br>
-            🚫 一键去除功能：同时去除尾号为 100、110、114、119、120 的号码
+            🚫 一键去除功能：同时去除尾号为 100、110、114、119、120 的号码<br>
+            🆕 加减前导0工具：可为第一列或第二列添加或删除前导0
         </div>
     </div>
 
@@ -1439,7 +1500,8 @@
                     generate: document.getElementById('panel-generate'),
                     deduplicate: document.getElementById('panel-deduplicate'),
                     classify: document.getElementById('panel-classify'),
-                    duplicate: document.getElementById('panel-duplicate')
+                    duplicate: document.getElementById('panel-duplicate'),
+                    dataop: document.getElementById('panel-dataop')
                 },
                 
                 // 生成面板
@@ -1519,13 +1581,32 @@
                 duplicateDownload1Excel: document.getElementById('duplicateDownload1Excel'),
                 duplicateDownload2Txt: document.getElementById('duplicateDownload2Txt'),
                 duplicateDownload2Excel: document.getElementById('duplicateDownload2Excel'),
-                duplicateStatus: document.getElementById('duplicateStatus')
+                duplicateStatus: document.getElementById('duplicateStatus'),
+                
+                // 数据操作面板
+                dataOpUploadArea: document.getElementById('dataOpUploadArea'),
+                dataOpFileInput: document.getElementById('dataOpFileInput'),
+                selectDataOpFilesBtn: document.getElementById('selectDataOpFilesBtn'),
+                dataOpFilesList: document.getElementById('dataOpFilesList'),
+                dataOpFileListItems: document.getElementById('dataOpFileListItems'),
+                dataOpStatus: document.getElementById('dataOpStatus'),
+                dataOpResults: document.getElementById('dataOpResults'),
+                dataOpResultCards: document.getElementById('dataOpResultCards'),
+                dataOpColFirst: document.getElementById('dataOpColFirst'),
+                dataOpColSecond: document.getElementById('dataOpColSecond'),
+                dataOpColBtns: document.querySelectorAll('#panel-dataop .column-quick-btn'),
+                dataOpActionBtns: document.querySelectorAll('#panel-dataop .action-btn'),
+                downloadAllDataOpTxt: document.getElementById('downloadAllDataOpTxt'),
+                downloadAllDataOpXlsx: document.getElementById('downloadAllDataOpXlsx'),
+                resetDataOpBtn: document.getElementById('resetDataOpBtn')
             };
             
             // ========== 全局变量 ==========
             let duplicateFileData = { file1: { name: '', data: [] }, file2: { name: '', data: [] } };
             let deduplicateFiles = [];
             let classifyFiles = [];
+            let dataOpFiles = []; // 存储原始文件数据
+            let dataOpProcessedFiles = []; // 存储处理后的文件数据
             let currentTool = 'generate';
             let filenameUpdateTimer = null;
             let lastManualValue = '';
@@ -1644,12 +1725,17 @@
                             const colIndex = columnPosition === 'first' ? 0 : 1;
                             const len = aoa.length;
                             
-                            for (let i = 0; i < len; i++) {
-                                const row = aoa[i];
-                                if (Array.isArray(row) && row.length > colIndex) {
-                                    const cell = row[colIndex];
-                                    if (cell != null && cell.toString().trim() !== '') {
-                                        data.push(cell.toString().trim());
+                            // 批量处理，避免阻塞
+                            const batchSize = 10000;
+                            for (let i = 0; i < len; i += batchSize) {
+                                const end = Math.min(i + batchSize, len);
+                                for (let j = i; j < end; j++) {
+                                    const row = aoa[j];
+                                    if (Array.isArray(row) && row.length > colIndex) {
+                                        const cell = row[colIndex];
+                                        if (cell != null && cell.toString().trim() !== '') {
+                                            data.push(cell.toString().trim());
+                                        }
                                     }
                                 }
                             }
@@ -1657,10 +1743,16 @@
                             const text = e.target.result;
                             const lines = text.split(/\r\n|\n|\r/);
                             const len = lines.length;
-                            for (let i = 0; i < len; i++) {
-                                const line = lines[i].trim();
-                                if (line !== '') {
-                                    data.push(line);
+                            
+                            // 批量处理
+                            const batchSize = 10000;
+                            for (let i = 0; i < len; i += batchSize) {
+                                const end = Math.min(i + batchSize, len);
+                                for (let j = i; j < end; j++) {
+                                    const line = lines[j].trim();
+                                    if (line !== '') {
+                                        data.push(line);
+                                    }
                                 }
                             }
                         }
@@ -1945,7 +2037,6 @@
                                 90 + ((i + 1) / totalFiles * 10));
                         }
                         
-                        const removedTypes = filterSpecial ? '100、110、114、119、120' : '';
                         updateStatus(filterSpecial ? `完成！已去除 ${filteredCount} 条特殊尾号` : '文件生成完成！', 100);
                         DOM.loadingIndicator.style.display = 'none';
                         alert(`共创建了 ${totalFiles} 个文件，数据放在${columnPosition === 'first' ? '第一列' : '第二列'}。`);
@@ -2040,6 +2131,8 @@
                 DOM.uploadStatus.textContent = `正在解析 ${pendingCount} 个文件...`;
                 DOM.uploadStatus.style.color = '#fbbc05';
                 
+                deduplicateFiles = [];
+                
                 fileArray.forEach(file => {
                     parseUploadedFile(file, (err, data) => {
                         pendingCount--;
@@ -2124,7 +2217,7 @@
                 });
                 
                 // 绑定单个下载事件
-                document.querySelectorAll('.result-download-btn').forEach(btn => {
+                document.querySelectorAll('#deduplicateResultCards .result-download-btn').forEach(btn => {
                     btn.addEventListener('click', function(e) {
                         e.preventDefault();
                         const index = parseInt(this.dataset.index, 10);
@@ -2208,7 +2301,7 @@
                 DOM.uploadStatus.style.color = '#4d90fe';
             });
             
-            // ========== 前缀分类 - 完全修复版 ==========
+            // ========== 前缀分类 ==========
             
             // 分类列选择器
             DOM.classifyColBtns.forEach(btn => {
@@ -2700,6 +2793,289 @@
                 DOM.duplicateDownloadSection.style.display = 'none';
                 
                 updateDuplicateStatus();
+            });
+            
+            // ========== 加减前导0工具 - 精简版 ==========
+            
+            // 列选择器
+            DOM.dataOpColBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    DOM.dataOpColBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    if (this.dataset.target === 'dataOpColFirst') {
+                        DOM.dataOpColFirst.checked = true;
+                    } else {
+                        DOM.dataOpColSecond.checked = true;
+                    }
+                });
+            });
+            
+            // 上传区域
+            DOM.selectDataOpFilesBtn.addEventListener('click', () => DOM.dataOpFileInput.click());
+            
+            DOM.dataOpUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                DOM.dataOpUploadArea.style.borderColor = '#4d90fe';
+                DOM.dataOpUploadArea.style.backgroundColor = '#f5f7fa';
+            });
+            
+            DOM.dataOpUploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                DOM.dataOpUploadArea.style.borderColor = '#c3cfe2';
+                DOM.dataOpUploadArea.style.backgroundColor = '';
+            });
+            
+            DOM.dataOpUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                DOM.dataOpUploadArea.style.borderColor = '#c3cfe2';
+                DOM.dataOpUploadArea.style.backgroundColor = '';
+                if (e.dataTransfer.files.length > 0) {
+                    handleDataOpFiles(e.dataTransfer.files);
+                }
+            });
+            
+            DOM.dataOpFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleDataOpFiles(e.target.files);
+                }
+            });
+            
+            function handleDataOpFiles(files) {
+                const fileArray = Array.from(files);
+                let pendingCount = fileArray.length;
+                let hasError = false;
+                
+                DOM.dataOpStatus.textContent = `正在解析 ${pendingCount} 个文件...`;
+                DOM.dataOpStatus.style.color = '#fbbc05';
+                
+                // 清空之前的数据
+                dataOpFiles = [];
+                dataOpProcessedFiles = [];
+                DOM.dataOpResults.style.display = 'none';
+                
+                fileArray.forEach(file => {
+                    parseUploadedFile(file, (err, data) => {
+                        pendingCount--;
+                        
+                        if (err) {
+                            hasError = true;
+                            DOM.dataOpStatus.textContent = `文件 ${file.name} 解析失败`;
+                            DOM.dataOpStatus.style.color = '#d32f2f';
+                        } else {
+                            dataOpFiles.push({ 
+                                name: file.name, 
+                                data: data,
+                                originalName: file.name
+                            });
+                        }
+                        
+                        if (pendingCount === 0) {
+                            if (hasError) {
+                                DOM.dataOpStatus.textContent = '部分文件解析失败，请检查格式';
+                                DOM.dataOpStatus.style.color = '#d32f2f';
+                            } else {
+                                DOM.dataOpStatus.textContent = `已上传 ${dataOpFiles.length} 个文件`;
+                                DOM.dataOpStatus.style.color = '#34a853';
+                            }
+                            updateDataOpFilesList();
+                        }
+                    }, 'first');
+                });
+            }
+            
+            function updateDataOpFilesList() {
+                if (dataOpFiles.length === 0) {
+                    DOM.dataOpFilesList.style.display = 'none';
+                    return;
+                }
+                
+                DOM.dataOpFilesList.style.display = 'block';
+                DOM.dataOpFileListItems.innerHTML = '';
+                
+                dataOpFiles.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'file-list-item';
+                    item.innerHTML = `<span class="file-list-name">${file.name}</span><span class="file-list-count">${file.data.length} 条</span>`;
+                    DOM.dataOpFileListItems.appendChild(item);
+                });
+            }
+            
+            // 加减0操作
+            DOM.dataOpActionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (dataOpFiles.length === 0) {
+                        alert('请先上传文件');
+                        return;
+                    }
+                    
+                    const action = this.dataset.action;
+                    const columnPosition = document.querySelector('input[name="dataOpColumnPosition"]:checked').value;
+                    
+                    processZeroOp(action, columnPosition);
+                });
+            });
+            
+            function processZeroOp(operation, targetCol) {
+                dataOpProcessedFiles = [];
+                
+                for (let fileIndex = 0; fileIndex < dataOpFiles.length; fileIndex++) {
+                    const file = dataOpFiles[fileIndex];
+                    const newData = new Array(file.data.length);
+                    
+                    for (let i = 0; i < file.data.length; i++) {
+                        let num = file.data[i];
+                        
+                        if (operation === 'add') {
+                            newData[i] = '0' + num;
+                        } else {
+                            newData[i] = num.replace(/^0+/, '');
+                            if (newData[i] === '') {
+                                newData[i] = '0';
+                            }
+                        }
+                    }
+                    
+                    dataOpProcessedFiles.push({
+                        name: file.name,
+                        data: newData,
+                        originalData: file.data,
+                        operation: operation === 'add' ? '加0' : '减0',
+                        targetCol: targetCol,
+                        originalName: file.originalName
+                    });
+                }
+                
+                displayDataOpResults();
+            }
+            
+            function displayDataOpResults() {
+                if (dataOpProcessedFiles.length === 0) return;
+                
+                DOM.dataOpResults.style.display = 'block';
+                DOM.dataOpResultCards.innerHTML = '';
+                
+                dataOpProcessedFiles.forEach((file, index) => {
+                    const opColor = file.operation === '加0' ? '#34a853' : '#f44336';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    card.innerHTML = `
+                        <div class="result-card-header">
+                            <span class="result-card-title">${file.name}</span>
+                            <span style="color: ${opColor}; font-weight:600;">
+                                ${file.operation}
+                            </span>
+                        </div>
+                        <div class="result-card-stats">
+                            <div class="result-stat">
+                                <div class="result-stat-value">${file.originalData.length.toLocaleString()}</div>
+                                <div class="result-stat-label">原始数据</div>
+                            </div>
+                            <div class="result-stat">
+                                <div class="result-stat-value">${file.data.length.toLocaleString()}</div>
+                                <div class="result-stat-label">处理后</div>
+                            </div>
+                            <div class="result-stat">
+                                <div class="result-stat-value">-</div>
+                                <div class="result-stat-label">变化</div>
+                            </div>
+                        </div>
+                        <div class="result-card-actions">
+                            <button class="result-download-btn result-download-txt" data-file-index="${index}" data-format="txt">⬇️ TXT (${file.data.length}条)</button>
+                            <button class="result-download-btn result-download-xlsx" data-file-index="${index}" data-format="xlsx">⬇️ Excel (${file.data.length}条)</button>
+                        </div>
+                    `;
+                    
+                    DOM.dataOpResultCards.appendChild(card);
+                });
+                
+                // 绑定单个下载事件
+                document.querySelectorAll('#dataOpResultCards .result-download-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const fileIndex = parseInt(this.dataset.fileIndex, 10);
+                        const format = this.dataset.format;
+                        const file = dataOpProcessedFiles[fileIndex];
+                        const baseName = file.originalName.replace(/\.[^/.]+$/, "");
+                        
+                        if (format === 'txt') {
+                            const blob = new Blob([file.data.join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${baseName}_${file.operation}_${file.data.length}条.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        } else {
+                            const blob = createExcelBlobWithLeadingZero(file.data);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${baseName}_${file.operation}_${file.data.length}条.xlsx`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }
+                    });
+                });
+                
+                // 批量下载
+                setupBatchDownloadDataOp();
+            }
+            
+            function setupBatchDownloadDataOp() {
+                DOM.downloadAllDataOpTxt.onclick = function() {
+                    if (dataOpProcessedFiles.length === 0) {
+                        alert('没有可下载的文件');
+                        return;
+                    }
+                    
+                    dataOpProcessedFiles.forEach((file, index) => {
+                        const baseName = file.originalName.replace(/\.[^/.]+$/, "");
+                        const blob = new Blob([file.data.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${baseName}_${file.operation}_${file.data.length}条.txt`;
+                        
+                        setTimeout(() => {
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }, index * 100);
+                    });
+                };
+                
+                DOM.downloadAllDataOpXlsx.onclick = function() {
+                    if (dataOpProcessedFiles.length === 0) {
+                        alert('没有可下载的文件');
+                        return;
+                    }
+                    
+                    dataOpProcessedFiles.forEach((file, index) => {
+                        const baseName = file.originalName.replace(/\.[^/.]+$/, "");
+                        const blob = createExcelBlobWithLeadingZero(file.data);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${baseName}_${file.operation}_${file.data.length}条.xlsx`;
+                        
+                        setTimeout(() => {
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }, index * 100);
+                    });
+                };
+            }
+            
+            // 重置
+            DOM.resetDataOpBtn.addEventListener('click', function() {
+                DOM.dataOpFileInput.value = '';
+                dataOpFiles = [];
+                dataOpProcessedFiles = [];
+                DOM.dataOpFilesList.style.display = 'none';
+                DOM.dataOpResults.style.display = 'none';
+                DOM.dataOpStatus.textContent = '等待上传文件...';
+                DOM.dataOpStatus.style.color = '#4d90fe';
             });
         })();
     </script>
