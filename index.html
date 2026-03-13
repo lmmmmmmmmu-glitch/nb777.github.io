@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>⚡ 极速数据处理套件 · 全功能进度条 · 首列智能识别</title>
+    <title>⚡数据处理</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
@@ -404,11 +404,6 @@
         
         .generate-btn, .download-btn, .upload-btn { 
             background: linear-gradient(135deg, #4d90fe, #357ae8); 
-            color: white; 
-        }
-        
-        .filter-btn, .classification-btn { 
-            background: linear-gradient(135deg, #ea4335, #d93025); 
             color: white; 
         }
         
@@ -1185,7 +1180,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>⚡ 极速数据处理套件 · 全功能进度条 · 首列智能识别</h1>
+        <h1>⚡ 数据处理</h1>
         
         <div class="tool-tabs">
             <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
@@ -1196,15 +1191,15 @@
             <div class="tool-tab" data-tool="firstcol">⬅️ 首列编辑</div>
         </div>
         
-        <!-- 面板1: 批量号码生成 -->
+        <!-- ========== 面板1: 批量号码生成 ========== -->
         <div id="panel-generate" class="tool-panel active">
             <div class="input-section">
                 <div class="input-row">
                     <div class="input-group">
                         <label class="input-label">📁 输出文件名称：</label>
-                        <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 022-021-045" value="">
+                        <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 0731-0746" value="">
                         <div class="filename-hint">自动识别所有开头并用“-”连接，可手动编辑</div>
-                        <div class="filename-auto-hint" id="filenameAutoHint">正在识别开头...</div>
+                        <div class="filename-auto-hint" id="filenameAutoHint">等待输入开头...</div>
                         
                         <div style="margin-top: 15px;">
                             <label class="input-label" style="margin-bottom: 5px;">📊 数据列位置：</label>
@@ -1214,19 +1209,17 @@
                             </div>
                             <input type="radio" name="genColumnPosition" id="genColFirst" value="first" checked class="column-radio-hidden">
                             <input type="radio" name="genColumnPosition" id="genColSecond" value="second" class="column-radio-hidden">
-                            <div class="filename-hint">选择生成的号码放在Excel的第一列还是第二列</div>
                         </div>
                     </div>
                     
                     <div class="input-group">
                         <label class="input-label">🔢 每文件数据量：</label>
-                        <input type="number" id="numbersPerFile" class="number-input" min="1" max="100" value="40" step="1">
-                        <div class="filename-hint">设置每个Excel文件包含的数据量（建议1-100万）。</div>
+                        <input type="number" id="numbersPerFile" class="number-input" min="10" max="100" value="10" step="10">
                         <div class="quick-buttons">
+                            <span class="quick-btn" data-value="1">1万</span>
                             <span class="quick-btn" data-value="5">5万</span>
                             <span class="quick-btn" data-value="10">10万</span>
                             <span class="quick-btn" data-value="20">20万</span>
-                            <span class="quick-btn" data-value="30">30万</span>
                             <span class="quick-btn active" data-value="40">40万</span>
                             <span class="quick-btn" data-value="50">50万</span>
                         </div>
@@ -1238,14 +1231,16 @@
                         <label class="input-label">📝 请输入号码段规则：</label>
                         <button class="add-prefix-btn" id="addPrefixBtn" type="button">➕ 添加开头</button>
                     </div>
-                    <textarea id="dataInput" placeholder="示例：开头：022&#10;开头：021&#10;开头：045">开头：</textarea>
-                    <div class="filename-hint">点击红色按钮可在下一行快速插入“开头：”，支持多个开头</div>
+                    <textarea id="dataInput" placeholder="示例：
+开头
+0731
+2866
+">开头</textarea>
                 </div>
             </div>
             
             <div class="controls">
                 <button class="generate-btn" id="generateBtn">▶️ 开始生成文件</button>
-                <button class="filter-btn" id="generateFilteredBtn">🚫 一键去除 (100/110/114/119/120)</button>
                 <button class="reset-btn" id="resetBtn">🔄 重置</button>
             </div>
             
@@ -1275,10 +1270,6 @@
                         <div class="stat-value" id="uniqueCount">0</div>
                         <div class="stat-label">去重后</div>
                     </div>
-                    <div class="stat-box filter-stat-box">
-                        <div class="stat-value filter-stat-value" id="filteredCount">0</div>
-                        <div class="stat-label">一键去除</div>
-                    </div>
                     <div class="stat-box">
                         <div class="stat-value" id="fileSize">40万</div>
                         <div class="stat-label">每文件量</div>
@@ -1297,7 +1288,7 @@
             </div>
         </div>
         
-        <!-- 面板2: 单文件去重 -->
+        <!-- ========== 面板2: 单文件去重 ========== -->
         <div id="panel-deduplicate" class="tool-panel">
             <div class="upload-section">
                 <div class="upload-header">
@@ -1335,7 +1326,7 @@
             </div>
         </div>
         
-        <!-- 面板3: 按前缀自动分类 -->
+        <!-- ========== 面板3: 前缀分类 ========== -->
         <div id="panel-classify" class="tool-panel">
             <div class="classification-section">
                 <div class="classification-header">
@@ -1374,7 +1365,6 @@
                     </div>
                     <input type="radio" name="classifyColumnPosition" id="classifyColFirst" value="first" checked class="column-radio-hidden">
                     <input type="radio" name="classifyColumnPosition" id="classifyColSecond" value="second" class="column-radio-hidden">
-                    <div class="filename-hint">选择从Excel的第一列还是第二列提取号码进行分类</div>
                 </div>
                 
                 <div class="classification-area" id="classificationArea">
@@ -1394,7 +1384,7 @@
                     <div class="progress-bar" id="classifyProgressBar"></div>
                 </div>
                 
-                <div class="classification-results" id="classificationResults" style="display: none;">
+                <div id="classificationResults" class="classification-results" style="display: none;">
                     <div class="results-header">分类结果</div>
                     
                     <div class="classification-stats">
@@ -1428,7 +1418,7 @@
             </div>
         </div>
         
-        <!-- 面板4: 双文件重复删除 -->
+        <!-- ========== 面板4: 双文件去重 ========== -->
         <div id="panel-duplicate" class="tool-panel">
             <div class="duplicate-removal-section">
                 <div class="duplicate-header">
@@ -1479,7 +1469,7 @@
             </div>
         </div>
         
-        <!-- 面板5: 加减前导0工具 -->
+        <!-- ========== 面板5: 加减前导0 ========== -->
         <div id="panel-dataop" class="tool-panel">
             <div class="data-op-section">
                 <div class="data-op-header">
@@ -1511,7 +1501,6 @@
                 </div>
                 
                 <div style="margin: 20px 0;">
-                    <label class="input-label">0️⃣ 操作：</label>
                     <div class="action-buttons">
                         <span class="action-btn add-zero" data-action="add">➕ 添加前导0</span>
                         <span class="action-btn remove-zero" data-action="remove">➖ 删除前导0</span>
@@ -1535,7 +1524,7 @@
             </div>
         </div>
         
-        <!-- 面板6: 首列编辑（智能识别空列） -->
+        <!-- ========== 面板6: 首列编辑 ========== -->
         <div id="panel-firstcol" class="tool-panel">
             <div class="first-col-section">
                 <div class="first-col-header">
@@ -1556,7 +1545,6 @@
                     </div>
                 </div>
                 
-                <!-- 智能识别提示 -->
                 <div id="firstColWarning" class="first-col-warning" style="display: none;">
                     <span>⚠️</span>
                     <span id="firstColWarningText"></span>
@@ -1585,24 +1573,23 @@
         </div>
         
         <div class="example-section">
-            <div class="example-title">📝 号码生成格式示例：</div>
+            <div class="example-title">📝 批量生成格式示例：</div>
             <div class="example-content">
-开头：045
-730-739
+开头
+0731
+2866
+
             </div>
         </div>
         
         <div class="note">
-            ⚡ 极速优化：所有操作均支持进度条 · 首列智能识别空列 · 批量下载无卡顿<br>
-            🔧 完美支持带0开头的号码（如023、045等）· 全功能已测试零BUG
+            ⚡ 所有功能均可正常运行
         </div>
     </div>
 
     <script>
         (function() {
-            // ========== 极速数据处理核心 ==========
-            
-            // DOM 元素缓存
+            // ========== DOM元素缓存 ==========
             const DOM = {
                 toolTabs: document.querySelectorAll('.tool-tab'),
                 toolPanels: {
@@ -1622,7 +1609,6 @@
                 genColSecond: document.getElementById('genColSecond'),
                 genColBtns: document.querySelectorAll('#panel-generate .column-quick-btn'),
                 generateBtn: document.getElementById('generateBtn'),
-                generateFilteredBtn: document.getElementById('generateFilteredBtn'),
                 resetBtn: document.getElementById('resetBtn'),
                 generateStatus: document.getElementById('generateStatus'),
                 generateProgressBar: document.getElementById('generateProgressBar'),
@@ -1630,7 +1616,6 @@
                 fileCount: document.getElementById('fileCount'),
                 groupCount: document.getElementById('groupCount'),
                 uniqueCount: document.getElementById('uniqueCount'),
-                filteredCount: document.getElementById('filteredCount'),
                 fileSize: document.getElementById('fileSize'),
                 generateLoading: document.getElementById('generateLoading'),
                 generateFileList: document.getElementById('generateFileList'),
@@ -1745,9 +1730,23 @@
             let filenameUpdateTimer = null;
             let lastManualValue = '';
             
-            // ========== 高性能工具函数 ==========
+            // ========== 工具切换 ==========
+            DOM.toolTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tool = this.dataset.tool;
+                    
+                    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    if (DOM.toolPanels[tool]) {
+                        DOM.toolPanels[tool].classList.add('active');
+                    }
+                    currentTool = tool;
+                });
+            });
             
-            // 使用Typed Arrays和批处理优化性能
+            // ========== 工具函数 ==========
             function uniqueArray(array) {
                 return [...new Set(array)];
             }
@@ -1761,12 +1760,6 @@
                 return shuffled;
             }
             
-            function filterSpecialSuffixes(numbers) {
-                const suffixes = new Set(['100', '110', '114', '119', '120']);
-                return numbers.filter(num => !suffixes.has(num.slice(-3)));
-            }
-            
-            // 极速Excel生成（保留前导0）
             function createExcelBlob(data, isArray = true) {
                 const worksheetData = isArray ? data.map(v => [v]) : data;
                 const ws = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -1788,7 +1781,6 @@
                     { type: 'application/octet-stream' });
             }
             
-            // 解析文件（极速版）
             function parseFile(file, colIndex = 0, callback) {
                 const reader = new FileReader();
                 const ext = file.name.split('.').pop().toLowerCase();
@@ -1828,7 +1820,6 @@
                 }
             }
             
-            // 解析Excel为二维数组
             function parseExcelToArray(file, callback) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -1844,7 +1835,6 @@
                 reader.readAsBinaryString(file);
             }
             
-            // 解析TXT为二维数组
             function parseTxtToArray(file, callback) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -1860,24 +1850,8 @@
                 reader.readAsText(file, 'UTF-8');
             }
             
-            // ========== 工具切换 ==========
-            DOM.toolTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tool = tab.dataset.tool;
-                    if (tool === currentTool) return;
-                    
-                    document.querySelector('.tool-tab.active').classList.remove('active');
-                    document.querySelector('.tool-panel.active').classList.remove('active');
-                    
-                    tab.classList.add('active');
-                    DOM.toolPanels[tool].classList.add('active');
-                    currentTool = tool;
-                });
-            });
-            
             // ========== 批量生成 ==========
             
-            // 列选择器
             DOM.genColBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     DOM.genColBtns.forEach(b => b.classList.remove('active'));
@@ -1886,7 +1860,6 @@
                 });
             });
             
-            // 快捷按钮
             DOM.quickBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     DOM.quickBtns.forEach(b => b.classList.remove('active'));
@@ -1899,12 +1872,17 @@
             DOM.addPrefixBtn.addEventListener('click', () => {
                 let val = DOM.dataInput.value;
                 if (val.trim() !== '' && !val.endsWith('\n')) val += '\n';
-                DOM.dataInput.value = val + '开头：';
+                DOM.dataInput.value = val + '开头';
                 DOM.dataInput.focus();
                 updateFilenameSuggestion();
             });
             
             DOM.dataInput.addEventListener('input', () => {
+                clearTimeout(filenameUpdateTimer);
+                filenameUpdateTimer = setTimeout(updateFilenameSuggestion, 100);
+            });
+            
+            DOM.dataInput.addEventListener('paste', () => {
                 clearTimeout(filenameUpdateTimer);
                 filenameUpdateTimer = setTimeout(updateFilenameSuggestion, 100);
             });
@@ -1916,10 +1894,28 @@
             
             function updateFilenameSuggestion() {
                 const prefixes = [];
-                const lines = DOM.dataInput.value.split('\n');
+                const text = DOM.dataInput.value;
+                const lines = text.split(/\r?\n/);
+                let waitingForPrefix = false;
+                
                 for (let line of lines) {
-                    const match = line.trim().match(/^开头[:：]?\s*(\d+)/);
-                    if (match) prefixes.push(match[1]);
+                    line = line.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+                    
+                    if (line === '开头') {
+                        waitingForPrefix = true;
+                        continue;
+                    }
+                    
+                    if (waitingForPrefix && /^\d+$/.test(line)) {
+                        prefixes.push(line);
+                        waitingForPrefix = false;
+                        continue;
+                    }
+                    
+                    const match = line.match(/^开头\s*(\d+)/);
+                    if (match) {
+                        prefixes.push(match[1]);
+                    }
                 }
                 
                 if (prefixes.length) {
@@ -1932,36 +1928,54 @@
                         DOM.filenameAutoHint.innerHTML = `📋 检测到开头: ${prefixes.join('、')}`;
                     }
                 } else {
-                    DOM.filenameAutoHint.innerHTML = DOM.filenameInput.value ? '✏️ 手动输入' : '⏳ 等待输入...';
+                    DOM.filenameAutoHint.innerHTML = DOM.filenameInput.value ? '✏️ 手动输入' : '⏳ 等待输入开头...';
                 }
             }
             
-            setTimeout(updateFilenameSuggestion, 100);
-            
-            // 解析输入
             function parseInputData(text) {
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                const lines = text.split(/\r?\n/);
                 const data = {};
                 let currentPrefix = null;
                 
                 for (let line of lines) {
-                    const prefixMatch = line.match(/^开头[:：]?\s*(.+)$/);
+                    line = line.trim();
+                    if (line === '') continue;
+                    
+                    if (line === '开头') {
+                        currentPrefix = null;
+                        continue;
+                    }
+                    
+                    const prefixMatch = line.match(/^开头\s*(\d+)/);
                     if (prefixMatch) {
-                        currentPrefix = prefixMatch[1].trim();
-                        if (currentPrefix && !data[currentPrefix]) data[currentPrefix] = [];
-                    } else if (line.includes('一直加到') && currentPrefix) {
-                        const range = line.match(/(\d+)\s*一直加到\s*(\d+)/);
-                        if (range) {
-                            const start = parseInt(range[1], 10);
-                            const end = parseInt(range[2], 10);
-                            for (let j = start; j <= end; j++) {
-                                data[currentPrefix].push(j.toString().padStart(3, '0'));
+                        currentPrefix = prefixMatch[1];
+                        if (!data[currentPrefix]) data[currentPrefix] = [];
+                        continue;
+                    }
+                    
+                    if (/^\d+$/.test(line)) {
+                        if (currentPrefix) {
+                            data[currentPrefix].push(line.padStart(3, '0'));
+                        } else {
+                            currentPrefix = line;
+                            if (!data[currentPrefix]) data[currentPrefix] = [];
+                        }
+                        continue;
+                    }
+                    
+                    if (currentPrefix) {
+                        const numbers = line.match(/\d+/g);
+                        if (numbers) {
+                            for (let num of numbers) {
+                                if (num.length >= 2 && num.length <= 4) {
+                                    data[currentPrefix].push(num.padStart(3, '0'));
+                                }
                             }
                         }
-                    } else if (/^\d+$/.test(line) && currentPrefix) {
-                        data[currentPrefix].push(line.padStart(3, '0'));
                     }
                 }
+                
                 return data;
             }
             
@@ -1977,10 +1991,10 @@
                 return numbers;
             }
             
-            function generateFilesCore(filterSpecial = false) {
+            function generateFilesCore() {
                 const inputText = DOM.dataInput.value;
                 let filename = DOM.filenameInput.value.trim() || '号码数据';
-                const perFile = parseInt(DOM.numbersPerFile.value, 10) || 40;
+                const perFile = parseInt(DOM.numbersPerFile.value, 10) || 1;
                 const colPos = document.querySelector('input[name="genColumnPosition"]:checked').value;
                 const perFileCount = perFile * 10000;
                 
@@ -1992,12 +2006,14 @@
                 setTimeout(() => {
                     try {
                         const parsed = parseInputData(inputText);
+                        
                         let totalGroups = 0;
                         for (let m of Object.values(parsed)) totalGroups += m.length;
                         
                         if (totalGroups === 0) {
                             alert('未解析到有效号码段！');
                             DOM.generateLoading.style.display = 'none';
+                            DOM.generateProgressBar.style.width = '0%';
                             return;
                         }
                         
@@ -2014,15 +2030,7 @@
                         DOM.generateStatus.textContent = '去重...';
                         DOM.generateProgressBar.style.width = '70%';
                         
-                        let unique = uniqueArray(shuffled);
-                        let filteredCount = 0;
-                        
-                        if (filterSpecial) {
-                            DOM.generateStatus.textContent = '过滤特殊尾号...';
-                            const before = unique.length;
-                            unique = filterSpecialSuffixes(unique);
-                            filteredCount = before - unique.length;
-                        }
+                        const unique = uniqueArray(shuffled);
                         
                         const totalFiles = Math.ceil(unique.length / perFileCount);
                         
@@ -2030,7 +2038,6 @@
                         DOM.fileCount.textContent = totalFiles;
                         DOM.groupCount.textContent = totalGroups;
                         DOM.uniqueCount.textContent = unique.length.toLocaleString();
-                        DOM.filteredCount.textContent = filteredCount.toLocaleString();
                         
                         DOM.generateStatus.textContent = '生成文件...';
                         DOM.generateProgressBar.style.width = '85%';
@@ -2040,17 +2047,29 @@
                             const end = Math.min(start + perFileCount, unique.length);
                             const fileNumbers = unique.slice(start, end);
                             
-                            const suffix = filterSpecial ? '_去除了特殊尾号' : '';
                             const colSuffix = colPos === 'second' ? '_第二列' : '';
                             const fileName = i === 0 ? 
-                                `${filename}${suffix}${colSuffix}.xlsx` : 
-                                `${filename}${suffix}${colSuffix}_${i+1}.xlsx`;
+                                `${filename}${colSuffix}.xlsx` : 
+                                `${filename}${colSuffix}_${i+1}.xlsx`;
                             
                             const data = colPos === 'first' ? 
                                 fileNumbers.map(v => [v]) : 
                                 fileNumbers.map(v => ['', v]);
                             
                             const ws = XLSX.utils.aoa_to_sheet(data);
+                            
+                            if (ws['!ref']) {
+                                const range = XLSX.utils.decode_range(ws['!ref']);
+                                for (let R = range.s.r; R <= range.e.r; R++) {
+                                    for (let C = range.s.c; C <= range.e.c; C++) {
+                                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                        if (ws[cellRef]) ws[cellRef].t = 's';
+                                    }
+                                }
+                            }
+                            
+                            ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                            
                             const wb = XLSX.utils.book_new();
                             XLSX.utils.book_append_sheet(wb, ws, "数据");
                             XLSX.writeFile(wb, fileName);
@@ -2070,34 +2089,33 @@
                             DOM.generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
                         }
                         
-                        DOM.generateStatus.textContent = filterSpecial ? `完成！已去除 ${filteredCount} 条` : '完成！';
+                        DOM.generateStatus.textContent = '完成！';
                         DOM.generateProgressBar.style.width = '100%';
                         DOM.generateLoading.style.display = 'none';
-                        alert(`成功生成 ${totalFiles} 个文件`);
+                        alert(`成功生成 ${totalFiles} 个文件，共 ${unique.length} 条数据`);
                     } catch (e) {
                         alert('错误：' + e.message);
                         DOM.generateLoading.style.display = 'none';
+                        DOM.generateProgressBar.style.width = '0%';
                     }
                 }, 50);
             }
             
-            DOM.generateBtn.addEventListener('click', () => generateFilesCore(false));
-            DOM.generateFilteredBtn.addEventListener('click', () => generateFilesCore(true));
+            DOM.generateBtn.addEventListener('click', generateFilesCore);
             
             DOM.resetBtn.addEventListener('click', () => {
                 DOM.filenameInput.value = '';
-                DOM.numbersPerFile.value = '40';
-                DOM.dataInput.value = '开头：';
+                DOM.numbersPerFile.value = '10';
+                DOM.dataInput.value = '开头';
                 DOM.generateFileList.innerHTML = '';
                 DOM.totalCount.textContent = '0';
                 DOM.fileCount.textContent = '0';
                 DOM.groupCount.textContent = '0';
                 DOM.uniqueCount.textContent = '0';
-                DOM.filteredCount.textContent = '0';
                 DOM.generateStatus.textContent = '等待生成...';
                 DOM.generateProgressBar.style.width = '0%';
                 lastManualValue = '';
-                updateFilenameSuggestion();
+                DOM.filenameAutoHint.innerHTML = '等待输入开头...';
             });
             
             // ========== 单文件去重 ==========
@@ -2267,7 +2285,7 @@
                 DOM.deduplicateProgressBar.style.width = '0%';
             });
             
-            // ========== 前缀分类（简化版，保持进度条） ==========
+            // ========== 前缀分类 ==========
             
             DOM.selectClassifyFileBtn.addEventListener('click', () => DOM.classifyFileInput.click());
             
@@ -2492,7 +2510,7 @@
             
             // ========== 双文件去重 ==========
             
-            function setupDuplicateDragAndDrop(box, input, nameEl, errorEl, fileNum) {
+            function setupDuplicateDragAndDrop(box, input, nameEl, errorEl) {
                 box.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     box.style.borderColor = '#4d90fe';
@@ -2518,8 +2536,8 @@
                 box.addEventListener('click', () => input.click());
             }
             
-            setupDuplicateDragAndDrop(DOM.duplicateUploadBox1, DOM.duplicateFile1Input, DOM.duplicateFile1Name, DOM.duplicateError1, 1);
-            setupDuplicateDragAndDrop(DOM.duplicateUploadBox2, DOM.duplicateFile2Input, DOM.duplicateFile2Name, DOM.duplicateError2, 2);
+            setupDuplicateDragAndDrop(DOM.duplicateUploadBox1, DOM.duplicateFile1Input, DOM.duplicateFile1Name, DOM.duplicateError1);
+            setupDuplicateDragAndDrop(DOM.duplicateUploadBox2, DOM.duplicateFile2Input, DOM.duplicateFile2Name, DOM.duplicateError2);
             
             function handleDuplicateFileSelect(event, fileNum) {
                 const file = event.target.files[0];
@@ -2813,7 +2831,7 @@
                 DOM.dataOpProgressBar.style.width = '0%';
             });
             
-            // ========== 首列编辑（智能识别空列） ==========
+            // ========== 首列编辑 ==========
             
             DOM.selectFirstColFilesBtn.addEventListener('click', () => DOM.firstColFileInput.click());
             
@@ -2907,7 +2925,7 @@
                 
                 if (emptyFiles.length) {
                     DOM.firstColWarning.style.display = 'flex';
-                    DOM.firstColWarningText.textContent = `警告：以下文件第一列为空，插入/删除操作可能影响其他列：${emptyFiles.join('、')}`;
+                    DOM.firstColWarningText.textContent = `警告：以下文件第一列为空：${emptyFiles.join('、')}`;
                 } else {
                     DOM.firstColWarning.style.display = 'none';
                 }
@@ -3051,7 +3069,7 @@
                 DOM.firstColStatus.style.color = '#4d90fe';
             });
             
-            // 列选择器通用
+            // 列选择器
             DOM.dataOpColBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     DOM.dataOpColBtns.forEach(b => b.classList.remove('active'));
@@ -3065,10 +3083,6 @@
                     DOM.classifyColBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     DOM[this.dataset.target === 'classifyColFirst' ? 'classifyColFirst' : 'classifyColSecond'].checked = true;
-                    if (classifyFiles.length && confirm('改变列位置将重新解析文件？')) {
-                        alert('请重新上传文件');
-                        resetClassify();
-                    }
                 });
             });
             
