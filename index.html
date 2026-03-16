@@ -408,7 +408,6 @@
             color: white; 
         }
 
-        /* 新增TXT按钮样式，与Excel按钮区分 */
         .generate-txt-btn {
             background: linear-gradient(135deg, #34a853, #2e8b47);
             color: white;
@@ -1282,7 +1281,7 @@
                 </div>
             </div>
             
-            <!-- 修改点：将原来的单个按钮改为两个按钮 -->
+            <!-- 两个生成按钮 -->
             <div class="controls">
                 <button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button>
                 <button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button>
@@ -1470,6 +1469,7 @@
                     <div class="results-header">前缀分类详情</div>
                     <div class="classification-list" id="classificationList"></div>
                     
+                    <!-- 下载所有按钮 - 保持原样 -->
                     <div class="actions-row">
                         <button class="download-all-btn" id="downloadAllClassifyBtnTxt">📦 下载所有TXT</button>
                         <button class="download-all-btn" id="downloadAllClassifyBtnXlsx">📦 下载所有Excel</button>
@@ -1670,7 +1670,7 @@
                     firstcol: document.getElementById('panel-firstcol')
                 },
                 
-                // 生成面板 - 修改：添加TXT按钮
+                // 生成面板
                 filenameInput: document.getElementById('filenameInput'),
                 dataInput: document.getElementById('dataInput'),
                 numbersPerFile: document.getElementById('numbersPerFile'),
@@ -1805,7 +1805,7 @@
             let firstColProcessedFiles = [];
             let currentTool = 'generate';
             let filenameUpdateTimer = null;
-            let lastManualValue = '';  // 修复：正确定义变量
+            let lastManualValue = '';
             let currentSortMode = 'asc';
             let currentFilenamePrefix = 'none';
             
@@ -2015,7 +2015,7 @@
                 DOM.filenameAutoHint.innerHTML = '✏️ 手动编辑模式';
             });
             
-            // 修复：只识别"开头"后面的数字
+            // 只识别"开头"后面的数字
             function updateFilenameSuggestion() {
                 const prefixes = [];
                 const text = DOM.dataInput.value;
@@ -2024,7 +2024,6 @@
                 for (let line of lines) {
                     line = line.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
                     
-                    // 只匹配 "开头" 后面跟数字的情况
                     const prefixMatch = line.match(/^开头\s*(\d+)/);
                     if (prefixMatch) {
                         prefixes.push(prefixMatch[1]);
@@ -2120,7 +2119,7 @@
                 return numbers;
             }
             
-            // 修改：核心生成函数，增加format参数
+            // 核心生成函数
             function generateFilesCore(format) {
                 const inputText = DOM.dataInput.value;
                 let filename = DOM.filenameInput.value.trim() || '号码数据';
@@ -2200,7 +2199,7 @@
                                 a.click();
                                 URL.revokeObjectURL(url);
                             } else {
-                                // 生成Excel文件（原功能）
+                                // 生成Excel文件
                                 const data = colPos === 'first' ? 
                                     fileNumbers.map(v => [v]) : 
                                     fileNumbers.map(v => ['', v]);
@@ -2477,7 +2476,7 @@
                     const txtBtn = item.querySelector('.download-classify-btn-txt');
                     const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
                     txtBtn.addEventListener('click', () => {
-                        // 修复：下载时始终按从小到大排序
+                        // 下载时按从小到大排序
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
@@ -2488,7 +2487,7 @@
                         URL.revokeObjectURL(url);
                     });
                     xlsxBtn.addEventListener('click', () => {
-                        // 修复：下载时始终按从小到大排序
+                        // 下载时按从小到大排序
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
                         const blob = createExcelBlob(data, true);
@@ -2501,9 +2500,9 @@
                     });
                 });
                 
+                // 下载所有按钮 - 保持原样
                 DOM.downloadAllClassifyBtnTxt.onclick = () => {
                     Object.entries(groups).forEach(([key, nums]) => {
-                        // 修复：下载时始终按从小到大排序
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
@@ -2516,7 +2515,6 @@
                 };
                 DOM.downloadAllClassifyBtnXlsx.onclick = () => {
                     Object.entries(groups).forEach(([key, nums]) => {
-                        // 修复：下载时始终按从小到大排序
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
                         const blob = createExcelBlob(data, true);
