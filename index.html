@@ -407,6 +407,12 @@
             background: linear-gradient(135deg, #4d90fe, #357ae8); 
             color: white; 
         }
+
+        /* 新增TXT按钮样式，与Excel按钮区分 */
+        .generate-txt-btn {
+            background: linear-gradient(135deg, #34a853, #2e8b47);
+            color: white;
+        }
         
         .reset-btn { 
             background: white; 
@@ -1276,8 +1282,10 @@
                 </div>
             </div>
             
+            <!-- 修改点：将原来的单个按钮改为两个按钮 -->
             <div class="controls">
-                <button class="generate-btn" id="generateBtn">▶️ 开始生成文件</button>
+                <button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button>
+                <button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button>
                 <button class="reset-btn" id="resetBtn">🔄 重置</button>
             </div>
             
@@ -1662,14 +1670,15 @@
                     firstcol: document.getElementById('panel-firstcol')
                 },
                 
-                // 生成面板
+                // 生成面板 - 修改：添加TXT按钮
                 filenameInput: document.getElementById('filenameInput'),
                 dataInput: document.getElementById('dataInput'),
                 numbersPerFile: document.getElementById('numbersPerFile'),
                 genColFirst: document.getElementById('genColFirst'),
                 genColSecond: document.getElementById('genColSecond'),
                 genColBtns: document.querySelectorAll('#panel-generate .column-quick-btn'),
-                generateBtn: document.getElementById('generateBtn'),
+                generateTxtBtn: document.getElementById('generateTxtBtn'),
+                generateExcelBtn: document.getElementById('generateExcelBtn'),
                 resetBtn: document.getElementById('resetBtn'),
                 generateStatus: document.getElementById('generateStatus'),
                 generateProgressBar: document.getElementById('generateProgressBar'),
@@ -2111,7 +2120,8 @@
                 return numbers;
             }
             
-            function generateFilesCore() {
+            // 修改：核心生成函数，增加format参数
+            function generateFilesCore(format) {
                 const inputText = DOM.dataInput.value;
                 let filename = DOM.filenameInput.value.trim() || '号码数据';
                 const perFile = parseInt(DOM.numbersPerFile.value, 10) || 10;
@@ -2168,31 +2178,51 @@
                             const fileNumbers = unique.slice(start, end);
                             
                             const colSuffix = colPos === 'second' ? '_第二列' : '';
+                            const fileExt = format === 'txt' ? '.txt' : '.xlsx';
                             const fileName = i === 0 ? 
-                                `${filename}${colSuffix}.xlsx` : 
-                                `${filename}${colSuffix}_${i+1}.xlsx`;
+                                `${filename}${colSuffix}${fileExt}` : 
+                                `${filename}${colSuffix}_${i+1}${fileExt}`;
                             
-                            const data = colPos === 'first' ? 
-                                fileNumbers.map(v => [v]) : 
-                                fileNumbers.map(v => ['', v]);
-                            
-                            const ws = XLSX.utils.aoa_to_sheet(data);
-                            
-                            if (ws['!ref']) {
-                                const range = XLSX.utils.decode_range(ws['!ref']);
-                                for (let R = range.s.r; R <= range.e.r; R++) {
-                                    for (let C = range.s.c; C <= range.e.c; C++) {
-                                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                                        if (ws[cellRef]) ws[cellRef].t = 's';
+                            if (format === 'txt') {
+                                // 生成TXT文件
+                                let content = '';
+                                if (colPos === 'first') {
+                                    content = fileNumbers.join('\n');
+                                } else {
+                                    content = fileNumbers.map(v => '\t' + v).join('\n');
+                                }
+                                
+                                const blob = new Blob([content], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = fileName;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            } else {
+                                // 生成Excel文件（原功能）
+                                const data = colPos === 'first' ? 
+                                    fileNumbers.map(v => [v]) : 
+                                    fileNumbers.map(v => ['', v]);
+                                
+                                const ws = XLSX.utils.aoa_to_sheet(data);
+                                
+                                if (ws['!ref']) {
+                                    const range = XLSX.utils.decode_range(ws['!ref']);
+                                    for (let R = range.s.r; R <= range.e.r; R++) {
+                                        for (let C = range.s.c; C <= range.e.c; C++) {
+                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                            if (ws[cellRef]) ws[cellRef].t = 's';
+                                        }
                                     }
                                 }
+                                
+                                ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                
+                                const wb = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                XLSX.writeFile(wb, fileName);
                             }
-                            
-                            ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
-                            
-                            const wb = XLSX.utils.book_new();
-                            XLSX.utils.book_append_sheet(wb, ws, "数据");
-                            XLSX.writeFile(wb, fileName);
                             
                             const item = document.createElement('div');
                             item.className = 'file-item';
@@ -2212,7 +2242,7 @@
                         DOM.generateStatus.textContent = '完成！';
                         DOM.generateProgressBar.style.width = '100%';
                         DOM.generateLoading.style.display = 'none';
-                        // 修复：移除 alert 弹窗
+                        // 无弹窗
                     } catch (e) {
                         alert('错误：' + e.message);
                         DOM.generateLoading.style.display = 'none';
@@ -2221,7 +2251,15 @@
                 }, 50);
             }
             
-            DOM.generateBtn.addEventListener('click', generateFilesCore);
+            // 绑定TXT按钮
+            DOM.generateTxtBtn.addEventListener('click', function() {
+                generateFilesCore('txt');
+            });
+            
+            // 绑定Excel按钮
+            DOM.generateExcelBtn.addEventListener('click', function() {
+                generateFilesCore('excel');
+            });
             
             DOM.resetBtn.addEventListener('click', () => {
                 DOM.filenameInput.value = '';
