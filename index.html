@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -592,6 +593,9 @@
             }
             .file-item .download-btn {
                 align-self: flex-end;
+                width: 100%;
+                text-align: center;
+                padding: 10px;
             }
         }
         
@@ -1647,7 +1651,8 @@
             <div class="example-content">
 开头023
 110-119      
-
+213-9   (代表213-219)
+6380-9  (代表6380-6389)
             </div>
         </div>
         
@@ -2080,12 +2085,24 @@
                         continue;
                     }
                     
+                    // 修改后的范围匹配，支持智能简写（如213-9表示213-219，6380-9表示6380-6389）
                     const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
                     if (rangeMatch && currentPrefix) {
-                        const start = parseInt(rangeMatch[1], 10);
-                        const end = parseInt(rangeMatch[2], 10);
-                        if (start <= end) {
-                            for (let i = start; i <= end; i++) {
+                        let start = rangeMatch[1];
+                        let end = rangeMatch[2];
+                        
+                        // 智能处理范围：如果结束数字位数少于开始数字，自动补齐
+                        if (end.length < start.length) {
+                            // 取开始数字的前缀 + 结束数字
+                            const prefix = start.substring(0, start.length - end.length);
+                            end = prefix + end;
+                        }
+                        
+                        const startNum = parseInt(start, 10);
+                        const endNum = parseInt(end, 10);
+                        
+                        if (startNum <= endNum) {
+                            for (let i = startNum; i <= endNum; i++) {
                                 data[currentPrefix].push(i.toString().padStart(3, '0'));
                             }
                         }
@@ -2225,14 +2242,63 @@
                             
                             const item = document.createElement('div');
                             item.className = 'file-item';
+                            
+                            // 修复下载按钮：使用Blob URL而不是href属性
+                            const blobUrl = URL.createObjectURL(new Blob([''], { type: 'text/plain' })); // 临时占位
                             item.innerHTML = `
                                 <div class="file-info">
                                     <div class="file-name">${fileName}</div>
                                     <div class="file-size">${fileNumbers.length} 条</div>
                                 </div>
-                                <a href="${fileName}" download class="download-btn">⬇️ 下载</a>
+                                <button class="download-btn" data-filename="${fileName}" data-content='${JSON.stringify(fileNumbers)}' data-format="${format}" data-colpos="${colPos}">⬇️ 下载</button>
                             `;
                             DOM.generateFileList.appendChild(item);
+                            
+                            // 为下载按钮添加事件监听
+                            const downloadBtn = item.querySelector('.download-btn');
+                            downloadBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const fileName = this.dataset.filename;
+                                const fileNumbers = JSON.parse(this.dataset.content);
+                                const format = this.dataset.format;
+                                const colPos = this.dataset.colpos;
+                                
+                                if (format === 'txt') {
+                                    let content = '';
+                                    if (colPos === 'first') {
+                                        content = fileNumbers.join('\n');
+                                    } else {
+                                        content = fileNumbers.map(v => '\t' + v).join('\n');
+                                    }
+                                    const blob = new Blob([content], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                } else {
+                                    const data = colPos === 'first' ? 
+                                        fileNumbers.map(v => [v]) : 
+                                        fileNumbers.map(v => ['', v]);
+                                    const ws = XLSX.utils.aoa_to_sheet(data);
+                                    if (ws['!ref']) {
+                                        const range = XLSX.utils.decode_range(ws['!ref']);
+                                        for (let R = range.s.r; R <= range.e.r; R++) {
+                                            for (let C = range.s.c; C <= range.e.c; C++) {
+                                                const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                if (ws[cellRef]) ws[cellRef].t = 's';
+                                            }
+                                        }
+                                    }
+                                    ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                    const wb = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                    XLSX.writeFile(wb, fileName);
+                                }
+                            });
                             
                             DOM.generateProgressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
                             DOM.generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
@@ -2241,7 +2307,6 @@
                         DOM.generateStatus.textContent = '完成！';
                         DOM.generateProgressBar.style.width = '100%';
                         DOM.generateLoading.style.display = 'none';
-                        // 无弹窗
                     } catch (e) {
                         alert('错误：' + e.message);
                         DOM.generateLoading.style.display = 'none';
@@ -2483,8 +2548,10 @@
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                        document.body.appendChild(a);
                         a.click();
-                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                     xlsxBtn.addEventListener('click', () => {
                         // 下载时按从小到大排序
@@ -2495,12 +2562,14 @@
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                        document.body.appendChild(a);
                         a.click();
-                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                 });
                 
-                // 下载所有按钮 - 保持原样
+                // 下载所有按钮 - 修复下载功能
                 DOM.downloadAllClassifyBtnTxt.onclick = () => {
                     Object.entries(groups).forEach(([key, nums]) => {
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
@@ -2509,8 +2578,10 @@
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                        document.body.appendChild(a);
                         a.click();
-                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                 };
                 DOM.downloadAllClassifyBtnXlsx.onclick = () => {
@@ -2522,8 +2593,10 @@
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                        document.body.appendChild(a);
                         a.click();
-                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                 };
             }
@@ -2538,7 +2611,7 @@
                 DOM.classifyPreviewArea.style.display = 'none';
             });
             
-            // ========== 其他面板功能保持不变 ==========
+            // ========== 其他面板功能保持不变，但修复所有下载按钮 ==========
             // 单文件去重
             let deduplicateFilesList = [];
             
@@ -2633,8 +2706,10 @@
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
                             a.click();
-                            URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
                         });
                         xlsxBtn.addEventListener('click', () => {
                             const blob = createExcelBlob(unique);
@@ -2642,8 +2717,10 @@
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
                             a.click();
-                            URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
                         });
                     });
                 });
@@ -2884,8 +2961,10 @@
                                 const a = document.createElement('a');
                                 a.href = url;
                                 a.download = txtBtn.dataset.filename;
+                                document.body.appendChild(a);
                                 a.click();
-                                URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
                             });
                             
                             xlsxBtn.addEventListener('click', () => {
@@ -2894,8 +2973,10 @@
                                 const a = document.createElement('a');
                                 a.href = url;
                                 a.download = xlsxBtn.dataset.filename;
+                                document.body.appendChild(a);
                                 a.click();
-                                URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
                             });
                         });
                     });
@@ -3012,8 +3093,10 @@
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
                             a.click();
-                            URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
                         });
                         
                         xlsxBtn.addEventListener('click', () => {
@@ -3022,8 +3105,10 @@
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
                             a.click();
-                            URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
                         });
                     });
                 });
@@ -3042,3 +3127,4 @@
     </script>
 </body>
 </html>
+```
