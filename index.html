@@ -1273,14 +1273,21 @@
                         <button class="add-prefix-btn" id="addPrefixBtn" type="button">➕ 添加开头</button>
                     </div>
                     <textarea id="dataInput" placeholder="示例：
-开头
-023
+开头023
 110-119
 或
 110～119
 或
-110到119">开头</textarea>
-                    <div class="filename-hint">只保留"开头"两字，后面直接跟数字或范围</div>
+110到119
+或
+110.111.112
+或
+110 111 112
+或
+720.721.722.723.724.
+或
+6380-9 6390-9 6370-9">开头</textarea>
+                    <div class="filename-hint">支持范围(110-9)、点号(110.111.112)、空格(110 111 112)、混合格式</div>
                 </div>
             </div>
             
@@ -1650,8 +1657,14 @@
             <div class="example-content">
 开头023
 110-119      
-213-9   (代表213-219)
-6380-9  (代表6380-6389)
+213-9
+6380-9 6390-9 6370-9
+110.111.112
+720.721.722.723.724.
+110 111 112
+110
+111
+112
             </div>
         </div>
         
@@ -2051,7 +2064,7 @@
                 }
             }
             
-            // ========== 核心解析函数 ==========
+            // ========== 升级版核心解析函数 ==========
             function parseInputData(text) {
                 text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
                 const lines = text.split(/\r?\n/);
@@ -2062,11 +2075,13 @@
                     line = line.trim();
                     if (line === '') continue;
                     
+                    // 处理"开头"标记
                     if (line === '开头') {
                         currentPrefix = null;
                         continue;
                     }
                     
+                    // 处理"开头XXX"格式
                     const prefixMatch = line.match(/^开头\s*(\d+)/);
                     if (prefixMatch) {
                         currentPrefix = prefixMatch[1];
@@ -2074,46 +2089,61 @@
                         continue;
                     }
                     
-                    if (/^\d+$/.test(line)) {
-                        if (currentPrefix === null) {
-                            currentPrefix = line;
-                            if (!data[currentPrefix]) data[currentPrefix] = [];
-                        } else {
-                            data[currentPrefix].push(line.padStart(3, '0'));
-                        }
+                    // 如果当前没有前缀，这行本身就是前缀
+                    if (currentPrefix === null && /^\d+$/.test(line)) {
+                        currentPrefix = line;
+                        if (!data[currentPrefix]) data[currentPrefix] = [];
                         continue;
                     }
                     
-                    // 修改后的范围匹配，支持智能简写（如213-9表示213-219，6380-9表示6380-6389）
-                    const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
-                    if (rangeMatch && currentPrefix) {
-                        let start = rangeMatch[1];
-                        let end = rangeMatch[2];
-                        
-                        // 智能处理范围：如果结束数字位数少于开始数字，自动补齐
-                        if (end.length < start.length) {
-                            // 取开始数字的前缀 + 结束数字
-                            const prefix = start.substring(0, start.length - end.length);
-                            end = prefix + end;
-                        }
-                        
-                        const startNum = parseInt(start, 10);
-                        const endNum = parseInt(end, 10);
-                        
-                        if (startNum <= endNum) {
-                            for (let i = startNum; i <= endNum; i++) {
-                                data[currentPrefix].push(i.toString().padStart(3, '0'));
+                    // 只有在有当前前缀的情况下才处理中段号
+                    if (currentPrefix) {
+                        // 格式1: 范围格式，支持智能简写 (110-9, 6380-9)
+                        if (line.includes('-') || line.includes('～') || line.includes('到')) {
+                            // 替换多种分隔符为标准"-"
+                            let processedLine = line.replace(/～/g, '-').replace(/到/g, '-');
+                            // 分割可能存在的多个范围（用空格分隔）
+                            const parts = processedLine.split(/\s+/);
+                            for (let part of parts) {
+                                if (part.includes('-')) {
+                                    const rangeMatch = part.match(/^(\d+)\s*-\s*(\d+)$/);
+                                    if (rangeMatch) {
+                                        let start = rangeMatch[1];
+                                        let end = rangeMatch[2];
+                                        
+                                        // 智能处理范围：如果结束数字位数少于开始数字，自动补齐
+                                        if (end.length < start.length) {
+                                            const prefix = start.substring(0, start.length - end.length);
+                                            end = prefix + end;
+                                        }
+                                        
+                                        const startNum = parseInt(start, 10);
+                                        const endNum = parseInt(end, 10);
+                                        
+                                        if (startNum <= endNum) {
+                                            for (let i = startNum; i <= endNum; i++) {
+                                                data[currentPrefix].push(i.toString().padStart(3, '0'));
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        continue;
-                    }
-                    
-                    if (currentPrefix) {
-                        const numbers = line.match(/\d+/g);
-                        if (numbers) {
+                        // 格式2,3,4,5: 点号分隔、空格分隔、混合分隔
+                        else {
+                            // 替换多种分隔符为统一分隔符
+                            let processedLine = line.replace(/[．.\s]+/g, ' '); // 将点号和空格统一替换为空格
+                            // 按空格分割
+                            const numbers = processedLine.split(/\s+/).filter(n => n.trim() !== '');
+                            
                             for (let num of numbers) {
-                                if (num.length >= 2 && num.length <= 4) {
-                                    data[currentPrefix].push(num.padStart(3, '0'));
+                                // 去除末尾可能的点号
+                                num = num.replace(/\.$/, '');
+                                if (/^\d+$/.test(num)) {
+                                    // 中段号通常是2-4位
+                                    if (num.length >= 1 && num.length <= 4) {
+                                        data[currentPrefix].push(num.padStart(3, '0'));
+                                    }
                                 }
                             }
                         }
@@ -2243,7 +2273,6 @@
                             item.className = 'file-item';
                             
                             // 修复下载按钮：使用Blob URL而不是href属性
-                            const blobUrl = URL.createObjectURL(new Blob([''], { type: 'text/plain' })); // 临时占位
                             item.innerHTML = `
                                 <div class="file-info">
                                     <div class="file-name">${fileName}</div>
@@ -2567,9 +2596,31 @@
                         setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                 });
-                
-                // 下载所有按钮 - 修复下载功能
-                DOM.downloadAllClassifyBtnTxt.onclick = () => {
+            }
+            
+            // 修复一键下载按钮 - 移到render函数外面，确保只绑定一次
+            function setupClassifyDownloadButtons() {
+                // 下载所有TXT
+                DOM.downloadAllClassifyBtnTxt.addEventListener('click', function() {
+                    if (!classifyRawNumbers || classifyRawNumbers.length === 0) {
+                        alert('没有数据可下载');
+                        return;
+                    }
+                    
+                    const prefixLen = parseInt(DOM.prefixLength.value, 10);
+                    const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
+                    
+                    // 重新计算分组，确保使用最新的数据
+                    const groups = {};
+                    classifyRawNumbers.forEach(num => {
+                        if (num.length >= prefixLen) {
+                            const key = num.substring(0, prefixLen);
+                            if (!groups[key]) groups[key] = [];
+                            groups[key].push(num);
+                        }
+                    });
+                    
+                    // 对每个分组生成并下载文件
                     Object.entries(groups).forEach(([key, nums]) => {
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
@@ -2582,8 +2633,30 @@
                         document.body.removeChild(a);
                         setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
-                };
-                DOM.downloadAllClassifyBtnXlsx.onclick = () => {
+                });
+                
+                // 下载所有Excel
+                DOM.downloadAllClassifyBtnXlsx.addEventListener('click', function() {
+                    if (!classifyRawNumbers || classifyRawNumbers.length === 0) {
+                        alert('没有数据可下载');
+                        return;
+                    }
+                    
+                    const prefixLen = parseInt(DOM.prefixLength.value, 10);
+                    const includeFull = DOM.includeFullNumber.checked;
+                    const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
+                    
+                    // 重新计算分组，确保使用最新的数据
+                    const groups = {};
+                    classifyRawNumbers.forEach(num => {
+                        if (num.length >= prefixLen) {
+                            const key = num.substring(0, prefixLen);
+                            if (!groups[key]) groups[key] = [];
+                            groups[key].push(num);
+                        }
+                    });
+                    
+                    // 对每个分组生成并下载文件
                     Object.entries(groups).forEach(([key, nums]) => {
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
@@ -2597,7 +2670,7 @@
                         document.body.removeChild(a);
                         setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
-                };
+                });
             }
             
             DOM.resetClassifyBtn.addEventListener('click', () => {
@@ -3121,6 +3194,9 @@
                 DOM.firstColFileInput.value = '';
                 DOM.firstColPreviewArea.style.display = 'none';
             });
+            
+            // 初始化一键下载按钮
+            setupClassifyDownloadButtons();
             
         })();
     </script>
