@@ -2272,7 +2272,7 @@
                             const item = document.createElement('div');
                             item.className = 'file-item';
                             
-                            // 修复下载按钮：使用Blob URL而不是href属性
+                            // 修复下载按钮 - 兼容安卓手机
                             item.innerHTML = `
                                 <div class="file-info">
                                     <div class="file-name">${fileName}</div>
@@ -2282,10 +2282,12 @@
                             `;
                             DOM.generateFileList.appendChild(item);
                             
-                            // 为下载按钮添加事件监听
+                            // 为下载按钮添加事件监听 - 安卓专用兼容版本
                             const downloadBtn = item.querySelector('.download-btn');
                             downloadBtn.addEventListener('click', function(e) {
                                 e.preventDefault();
+                                e.stopPropagation();
+                                
                                 const fileName = this.dataset.filename;
                                 const fileNumbers = JSON.parse(this.dataset.content);
                                 const format = this.dataset.format;
@@ -2298,33 +2300,97 @@
                                     } else {
                                         content = fileNumbers.map(v => '\t' + v).join('\n');
                                     }
+                                    
+                                    // 安卓专用下载方式
                                     const blob = new Blob([content], { type: 'text/plain' });
                                     const url = URL.createObjectURL(blob);
+                                    
+                                    // 方法1: 使用a标签点击（兼容大多数安卓）
                                     const a = document.createElement('a');
                                     a.href = url;
                                     a.download = fileName;
+                                    a.style.display = 'none';
                                     document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                    
+                                    // 模拟点击
+                                    if (typeof a.click === 'function') {
+                                        a.click();
+                                    } else {
+                                        // 对于极少数不支持click的浏览器
+                                        window.open(url, '_blank');
+                                    }
+                                    
+                                    // 延迟清理
+                                    setTimeout(() => {
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }, 1000);
+                                    
                                 } else {
-                                    const data = colPos === 'first' ? 
-                                        fileNumbers.map(v => [v]) : 
-                                        fileNumbers.map(v => ['', v]);
-                                    const ws = XLSX.utils.aoa_to_sheet(data);
-                                    if (ws['!ref']) {
-                                        const range = XLSX.utils.decode_range(ws['!ref']);
-                                        for (let R = range.s.r; R <= range.e.r; R++) {
-                                            for (let C = range.s.c; C <= range.e.c; C++) {
-                                                const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                                                if (ws[cellRef]) ws[cellRef].t = 's';
+                                    // Excel文件 - 使用XLSX的writeFile方法
+                                    try {
+                                        const data = colPos === 'first' ? 
+                                            fileNumbers.map(v => [v]) : 
+                                            fileNumbers.map(v => ['', v]);
+                                        
+                                        const ws = XLSX.utils.aoa_to_sheet(data);
+                                        if (ws['!ref']) {
+                                            const range = XLSX.utils.decode_range(ws['!ref']);
+                                            for (let R = range.s.r; R <= range.e.r; R++) {
+                                                for (let C = range.s.c; C <= range.e.c; C++) {
+                                                    const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                    if (ws[cellRef]) ws[cellRef].t = 's';
+                                                }
                                             }
                                         }
+                                        ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                        const wb = XLSX.utils.book_new();
+                                        XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                        
+                                        // 使用XLSX的writeFile方法
+                                        XLSX.writeFile(wb, fileName);
+                                    } catch (err) {
+                                        // 如果XLSX.writeFile失败，回退到Blob方式
+                                        try {
+                                            const data = colPos === 'first' ? 
+                                                fileNumbers.map(v => [v]) : 
+                                                fileNumbers.map(v => ['', v]);
+                                            const ws = XLSX.utils.aoa_to_sheet(data);
+                                            if (ws['!ref']) {
+                                                const range = XLSX.utils.decode_range(ws['!ref']);
+                                                for (let R = range.s.r; R <= range.e.r; R++) {
+                                                    for (let C = range.s.c; C <= range.e.c; C++) {
+                                                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                        if (ws[cellRef]) ws[cellRef].t = 's';
+                                                    }
+                                                }
+                                            }
+                                            ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                            const wb = XLSX.utils.book_new();
+                                            XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                                            const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = fileName;
+                                            a.style.display = 'none';
+                                            document.body.appendChild(a);
+                                            
+                                            if (typeof a.click === 'function') {
+                                                a.click();
+                                            } else {
+                                                window.open(url, '_blank');
+                                            }
+                                            
+                                            setTimeout(() => {
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(url);
+                                            }, 1000);
+                                        } catch (e) {
+                                            alert('下载失败，请重试');
+                                        }
                                     }
-                                    ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
-                                    const wb = XLSX.utils.book_new();
-                                    XLSX.utils.book_append_sheet(wb, ws, "数据");
-                                    XLSX.writeFile(wb, fileName);
                                 }
                             });
                             
@@ -2568,37 +2634,69 @@
                     
                     const txtBtn = item.querySelector('.download-classify-btn-txt');
                     const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
-                    txtBtn.addEventListener('click', () => {
-                        // 下载时按从小到大排序
+                    
+                    // 修复分类下载按钮 - 兼容安卓
+                    txtBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const key = this.dataset.prefix;
+                        const nums = JSON.parse(this.dataset.nums);
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                        a.style.display = 'none';
                         document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                        
+                        if (typeof a.click === 'function') {
+                            a.click();
+                        } else {
+                            window.open(url, '_blank');
+                        }
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }, 1000);
                     });
-                    xlsxBtn.addEventListener('click', () => {
-                        // 下载时按从小到大排序
+                    
+                    xlsxBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const key = this.dataset.prefix;
+                        const nums = JSON.parse(this.dataset.nums);
                         const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
                         const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                        const blob = createExcelBlob(data, true);
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                        
+                        try {
+                            const blob = createExcelBlob(data, true);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            
+                            if (typeof a.click === 'function') {
+                                a.click();
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 1000);
+                        } catch (err) {
+                            alert('下载失败，请重试');
+                        }
                     });
                 });
             }
             
-            // 修复一键下载按钮 - 移到render函数外面，确保只绑定一次
+            // 修复一键下载按钮 - 兼容安卓
             function setupClassifyDownloadButtons() {
                 // 下载所有TXT
                 DOM.downloadAllClassifyBtnTxt.addEventListener('click', function() {
@@ -2610,7 +2708,6 @@
                     const prefixLen = parseInt(DOM.prefixLength.value, 10);
                     const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
                     
-                    // 重新计算分组，确保使用最新的数据
                     const groups = {};
                     classifyRawNumbers.forEach(num => {
                         if (num.length >= prefixLen) {
@@ -2620,18 +2717,31 @@
                         }
                     });
                     
-                    // 对每个分组生成并下载文件
+                    // 逐个下载，避免浏览器阻止多个下载
+                    let delay = 0;
                     Object.entries(groups).forEach(([key, nums]) => {
-                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = filePrefix + key + '_' + nums.length + '个.txt';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                        setTimeout(() => {
+                            const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                            const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            
+                            if (typeof a.click === 'function') {
+                                a.click();
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 1000);
+                        }, delay);
+                        delay += 500;
                     });
                 });
                 
@@ -2646,7 +2756,6 @@
                     const includeFull = DOM.includeFullNumber.checked;
                     const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
                     
-                    // 重新计算分组，确保使用最新的数据
                     const groups = {};
                     classifyRawNumbers.forEach(num => {
                         if (num.length >= prefixLen) {
@@ -2656,19 +2765,37 @@
                         }
                     });
                     
-                    // 对每个分组生成并下载文件
+                    // 逐个下载，避免浏览器阻止多个下载
+                    let delay = 0;
                     Object.entries(groups).forEach(([key, nums]) => {
-                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                        const blob = createExcelBlob(data, true);
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                        setTimeout(() => {
+                            const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                            const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
+                            
+                            try {
+                                const blob = createExcelBlob(data, true);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                
+                                if (typeof a.click === 'function') {
+                                    a.click();
+                                } else {
+                                    window.open(url, '_blank');
+                                }
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 1000);
+                            } catch (err) {
+                                alert(`下载 ${key} 失败`);
+                            }
+                        }, delay);
+                        delay += 500;
                     });
                 });
             }
@@ -2772,27 +2899,58 @@
                         
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
-                        txtBtn.addEventListener('click', () => {
+                        
+                        // 修复去重下载按钮
+                        txtBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const unique = JSON.parse(this.dataset.content);
                             const blob = new Blob([unique.join('\n')], { type: 'text/plain' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
-                            a.download = txtBtn.dataset.filename;
+                            a.download = this.dataset.filename;
+                            a.style.display = 'none';
                             document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                            
+                            if (typeof a.click === 'function') {
+                                a.click();
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 1000);
                         });
-                        xlsxBtn.addEventListener('click', () => {
-                            const blob = createExcelBlob(unique);
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = xlsxBtn.dataset.filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        
+                        xlsxBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const unique = JSON.parse(this.dataset.content);
+                            try {
+                                const blob = createExcelBlob(unique);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = this.dataset.filename;
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                
+                                if (typeof a.click === 'function') {
+                                    a.click();
+                                } else {
+                                    window.open(url, '_blank');
+                                }
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 1000);
+                            } catch (err) {
+                                alert('下载失败');
+                            }
                         });
                     });
                 });
@@ -3027,28 +3185,55 @@
                             const txtBtn = card.querySelector('.result-download-txt');
                             const xlsxBtn = card.querySelector('.result-download-xlsx');
                             
-                            txtBtn.addEventListener('click', () => {
+                            // 修复数据操作下载按钮
+                            txtBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
-                                a.download = txtBtn.dataset.filename;
+                                a.download = this.dataset.filename;
+                                a.style.display = 'none';
                                 document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                                
+                                if (typeof a.click === 'function') {
+                                    a.click();
+                                } else {
+                                    window.open(url, '_blank');
+                                }
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 1000);
                             });
                             
-                            xlsxBtn.addEventListener('click', () => {
-                                const blob = createExcelBlob(processed, false);
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = xlsxBtn.dataset.filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                            xlsxBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    const blob = createExcelBlob(processed, false);
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = this.dataset.filename;
+                                    a.style.display = 'none';
+                                    document.body.appendChild(a);
+                                    
+                                    if (typeof a.click === 'function') {
+                                        a.click();
+                                    } else {
+                                        window.open(url, '_blank');
+                                    }
+                                    
+                                    setTimeout(() => {
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }, 1000);
+                                } catch (err) {
+                                    alert('下载失败');
+                                }
                             });
                         });
                     });
@@ -3159,28 +3344,55 @@
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
                         
-                        txtBtn.addEventListener('click', () => {
+                        // 修复首列编辑下载按钮
+                        txtBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
-                            a.download = txtBtn.dataset.filename;
+                            a.download = this.dataset.filename;
+                            a.style.display = 'none';
                             document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                            
+                            if (typeof a.click === 'function') {
+                                a.click();
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 1000);
                         });
                         
-                        xlsxBtn.addEventListener('click', () => {
-                            const blob = createExcelBlob(processed, false);
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = xlsxBtn.dataset.filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        xlsxBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            try {
+                                const blob = createExcelBlob(processed, false);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = this.dataset.filename;
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                
+                                if (typeof a.click === 'function') {
+                                    a.click();
+                                } else {
+                                    window.open(url, '_blank');
+                                }
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 1000);
+                            } catch (err) {
+                                alert('下载失败');
+                            }
                         });
                     });
                 });
