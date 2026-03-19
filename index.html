@@ -1340,6 +1340,12 @@
                 <div class="file-list-header">生成的文件列表</div>
                 <div id="generateFileList"></div>
             </div>
+            
+            <!-- 新增一键下载按钮 -->
+            <div class="actions-row" style="margin-top:20px; justify-content: center;">
+                <button class="download-all-btn" id="downloadAllGenerateTxt" style="background: #4d90fe; color: white; min-width: 160px;">📦 一键下载所有TXT</button>
+                <button class="download-all-btn" id="downloadAllGenerateXlsx" style="background: #34a853; color: white; min-width: 160px;">📦 一键下载所有Excel</button>
+            </div>
         </div>
         
         <!-- ========== 面板2: 单文件去重 ========== -->
@@ -1710,6 +1716,10 @@
                 addPrefixBtn: document.getElementById('addPrefixBtn'),
                 quickBtns: document.querySelectorAll('.quick-btn'),
                 
+                // 新增一键下载按钮
+                downloadAllGenerateTxt: document.getElementById('downloadAllGenerateTxt'),
+                downloadAllGenerateXlsx: document.getElementById('downloadAllGenerateXlsx'),
+                
                 // 去重面板
                 deduplicateUploadArea: document.getElementById('deduplicateUploadArea'),
                 deduplicateFileInput: document.getElementById('deduplicateFileInput'),
@@ -1825,6 +1835,9 @@
             let lastManualValue = '';
             let currentSortMode = 'asc';
             let currentFilenamePrefix = 'none';
+            
+            // 存储生成的文件数据
+            let generatedFilesData = [];
             
             // ========== 工具切换 ==========
             DOM.toolTabs.forEach(tab => {
@@ -2178,6 +2191,9 @@
                 DOM.generateStatus.textContent = '解析输入...';
                 DOM.generateProgressBar.style.width = '10%';
                 
+                // 清空之前存储的文件数据
+                generatedFilesData = [];
+                
                 setTimeout(() => {
                     try {
                         const parsed = parseInputData(inputText);
@@ -2228,6 +2244,14 @@
                             const fileName = i === 0 ? 
                                 `${filename}${colSuffix}${fileExt}` : 
                                 `${filename}${colSuffix}_${i+1}${fileExt}`;
+                            
+                            // 存储文件数据供一键下载使用
+                            generatedFilesData.push({
+                                fileName: fileName,
+                                fileNumbers: fileNumbers,
+                                format: format,
+                                colPos: colPos
+                            });
                             
                             const item = document.createElement('div');
                             item.className = 'file-item';
@@ -2369,6 +2393,110 @@
                 DOM.fileSize.textContent = '10万';
                 lastManualValue = '';
                 DOM.filenameAutoHint.innerHTML = '等待输入开头...';
+                generatedFilesData = [];
+            });
+            
+            // ========== 一键下载功能 ==========
+            function downloadAllFiles(format) {
+                if (generatedFilesData.length === 0) {
+                    alert('没有文件可下载，请先生成文件');
+                    return;
+                }
+                
+                // 过滤出指定格式的文件
+                const filesToDownload = generatedFilesData.filter(f => f.format === format);
+                
+                if (filesToDownload.length === 0) {
+                    alert(`没有${format === 'txt' ? 'TXT' : 'Excel'}格式的文件可下载`);
+                    return;
+                }
+                
+                // 显示下载中提示
+                const btn = format === 'txt' ? DOM.downloadAllGenerateTxt : DOM.downloadAllGenerateXlsx;
+                const originalText = btn.textContent;
+                btn.textContent = '下载中...';
+                btn.disabled = true;
+                
+                // 逐个下载，避免浏览器阻止多个下载
+                let delay = 0;
+                filesToDownload.forEach((file, index) => {
+                    setTimeout(() => {
+                        if (format === 'txt') {
+                            let content = '';
+                            if (file.colPos === 'first') {
+                                content = file.fileNumbers.join('\n');
+                            } else {
+                                content = file.fileNumbers.map(v => '\t' + v).join('\n');
+                            }
+                            
+                            const blob = new Blob([content], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            
+                            // 手机专用下载方式
+                            const iframe = document.createElement('iframe');
+                            iframe.style.display = 'none';
+                            document.body.appendChild(iframe);
+                            
+                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            iframeDoc.open();
+                            iframeDoc.write('<a href="' + url + '" download="' + file.fileName + '" id="downloadLink">download</a>');
+                            iframeDoc.close();
+                            
+                            const link = iframeDoc.getElementById('downloadLink');
+                            if (link) {
+                                link.click();
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(iframe);
+                                URL.revokeObjectURL(url);
+                            }, 2000);
+                            
+                        } else {
+                            try {
+                                const data = file.colPos === 'first' ? 
+                                    file.fileNumbers.map(v => [v]) : 
+                                    file.fileNumbers.map(v => ['', v]);
+                                
+                                const ws = XLSX.utils.aoa_to_sheet(data);
+                                if (ws['!ref']) {
+                                    const range = XLSX.utils.decode_range(ws['!ref']);
+                                    for (let R = range.s.r; R <= range.e.r; R++) {
+                                        for (let C = range.s.c; C <= range.e.c; C++) {
+                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                            if (ws[cellRef]) ws[cellRef].t = 's';
+                                        }
+                                    }
+                                }
+                                ws['!cols'] = file.colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                const wb = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                
+                                XLSX.writeFile(wb, file.fileName);
+                            } catch (err) {
+                                console.error('下载失败:', err);
+                            }
+                        }
+                        
+                        // 最后一个文件下载完成后恢复按钮状态
+                        if (index === filesToDownload.length - 1) {
+                            setTimeout(() => {
+                                btn.textContent = originalText;
+                                btn.disabled = false;
+                            }, 1000);
+                        }
+                    }, delay);
+                    delay += 800; // 每个文件间隔800ms
+                });
+            }
+            
+            // 绑定一键下载按钮
+            DOM.downloadAllGenerateTxt.addEventListener('click', function() {
+                downloadAllFiles('txt');
+            });
+            
+            DOM.downloadAllGenerateXlsx.addEventListener('click', function() {
+                downloadAllFiles('excel');
             });
             
             // ========== 前缀分类排序功能 ==========
