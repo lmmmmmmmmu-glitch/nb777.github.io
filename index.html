@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -2166,7 +2165,7 @@
                 return numbers;
             }
             
-            // 核心生成函数 - 修复手机下载
+            // 核心生成函数 - 修复手机下载，每个按钮独立
             function generateFilesCore(format) {
                 const inputText = DOM.dataInput.value;
                 let filename = DOM.filenameInput.value.trim() || '号码数据';
@@ -2218,6 +2217,7 @@
                         DOM.generateStatus.textContent = '生成文件...';
                         DOM.generateProgressBar.style.width = '85%';
                         
+                        // 使用循环创建每个文件项，每个按钮独立绑定数据
                         for (let i = 0; i < totalFiles; i++) {
                             const start = i * perFileCount;
                             const end = Math.min(start + perFileCount, unique.length);
@@ -2232,106 +2232,102 @@
                             const item = document.createElement('div');
                             item.className = 'file-item';
                             
-                            // 创建下载按钮 - 使用data属性存储数据
-                            item.innerHTML = `
-                                <div class="file-info">
-                                    <div class="file-name">${fileName}</div>
-                                    <div class="file-size">${fileNumbers.length} 条</div>
-                                </div>
-                                <button class="download-btn" data-filename="${fileName}" data-format="${format}" data-colpos="${colPos}">⬇️ 下载</button>
-                            `;
-                            
-                            // 将文件数据存储在按钮的data属性中（使用base64编码避免JSON解析问题）
-                            const downloadBtn = item.querySelector('.download-btn');
-                            downloadBtn.setAttribute('data-content', btoa(JSON.stringify(fileNumbers)));
-                            
-                            // 为下载按钮添加事件监听 - 专门为手机优化
-                            downloadBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
+                            // 使用立即执行函数创建闭包，为每个按钮保存独立的数据
+                            (function(currentFileNumbers, currentFileName, currentFormat, currentColPos) {
+                                item.innerHTML = `
+                                    <div class="file-info">
+                                        <div class="file-name">${currentFileName}</div>
+                                        <div class="file-size">${currentFileNumbers.length} 条</div>
+                                    </div>
+                                    <button class="download-btn">⬇️ 下载</button>
+                                `;
                                 
-                                const fileName = this.dataset.filename;
-                                const fileNumbers = JSON.parse(atob(this.dataset.content));
-                                const format = this.dataset.format;
-                                const colPos = this.dataset.colpos;
+                                const downloadBtn = item.querySelector('.download-btn');
                                 
-                                // 显示下载中提示
-                                const originalText = this.textContent;
-                                this.textContent = '下载中...';
-                                this.disabled = true;
-                                
-                                setTimeout(() => {
-                                    if (format === 'txt') {
-                                        let content = '';
-                                        if (colPos === 'first') {
-                                            content = fileNumbers.join('\n');
-                                        } else {
-                                            content = fileNumbers.map(v => '\t' + v).join('\n');
-                                        }
-                                        
-                                        // 创建Blob
-                                        const blob = new Blob([content], { type: 'text/plain' });
-                                        const url = URL.createObjectURL(blob);
-                                        
-                                        // 手机专用下载方式 - 使用iframe
-                                        const iframe = document.createElement('iframe');
-                                        iframe.style.display = 'none';
-                                        document.body.appendChild(iframe);
-                                        
-                                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                        iframeDoc.open();
-                                        iframeDoc.write('<a href="' + url + '" download="' + fileName + '" id="downloadLink">download</a>');
-                                        iframeDoc.close();
-                                        
-                                        const link = iframeDoc.getElementById('downloadLink');
-                                        if (link) {
-                                            link.click();
-                                        }
-                                        
-                                        // 清理
-                                        setTimeout(() => {
-                                            document.body.removeChild(iframe);
-                                            URL.revokeObjectURL(url);
-                                            this.textContent = originalText;
-                                            this.disabled = false;
-                                        }, 2000);
-                                        
-                                    } else {
-                                        // Excel文件
-                                        try {
-                                            const data = colPos === 'first' ? 
-                                                fileNumbers.map(v => [v]) : 
-                                                fileNumbers.map(v => ['', v]);
-                                            
-                                            const ws = XLSX.utils.aoa_to_sheet(data);
-                                            if (ws['!ref']) {
-                                                const range = XLSX.utils.decode_range(ws['!ref']);
-                                                for (let R = range.s.r; R <= range.e.r; R++) {
-                                                    for (let C = range.s.c; C <= range.e.c; C++) {
-                                                        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                                                        if (ws[cellRef]) ws[cellRef].t = 's';
-                                                    }
-                                                }
+                                // 直接绑定点击事件，不依赖data属性
+                                downloadBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    const fileName = currentFileName;
+                                    const fileNumbers = currentFileNumbers;
+                                    const format = currentFormat;
+                                    const colPos = currentColPos;
+                                    
+                                    // 显示下载中提示
+                                    const originalText = this.textContent;
+                                    this.textContent = '下载中...';
+                                    this.disabled = true;
+                                    
+                                    setTimeout(() => {
+                                        if (format === 'txt') {
+                                            let content = '';
+                                            if (colPos === 'first') {
+                                                content = fileNumbers.join('\n');
+                                            } else {
+                                                content = fileNumbers.map(v => '\t' + v).join('\n');
                                             }
-                                            ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
-                                            const wb = XLSX.utils.book_new();
-                                            XLSX.utils.book_append_sheet(wb, ws, "数据");
                                             
-                                            // 使用XLSX的writeFile方法
-                                            XLSX.writeFile(wb, fileName);
+                                            const blob = new Blob([content], { type: 'text/plain' });
+                                            const url = URL.createObjectURL(blob);
+                                            
+                                            // 手机专用下载方式 - 使用iframe
+                                            const iframe = document.createElement('iframe');
+                                            iframe.style.display = 'none';
+                                            document.body.appendChild(iframe);
+                                            
+                                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                            iframeDoc.open();
+                                            iframeDoc.write('<a href="' + url + '" download="' + fileName + '" id="downloadLink">download</a>');
+                                            iframeDoc.close();
+                                            
+                                            const link = iframeDoc.getElementById('downloadLink');
+                                            if (link) {
+                                                link.click();
+                                            }
                                             
                                             setTimeout(() => {
+                                                document.body.removeChild(iframe);
+                                                URL.revokeObjectURL(url);
                                                 this.textContent = originalText;
                                                 this.disabled = false;
-                                            }, 1000);
-                                        } catch (err) {
-                                            alert('下载失败，请重试');
-                                            this.textContent = originalText;
-                                            this.disabled = false;
+                                            }, 2000);
+                                            
+                                        } else {
+                                            try {
+                                                const data = colPos === 'first' ? 
+                                                    fileNumbers.map(v => [v]) : 
+                                                    fileNumbers.map(v => ['', v]);
+                                                
+                                                const ws = XLSX.utils.aoa_to_sheet(data);
+                                                if (ws['!ref']) {
+                                                    const range = XLSX.utils.decode_range(ws['!ref']);
+                                                    for (let R = range.s.r; R <= range.e.r; R++) {
+                                                        for (let C = range.s.c; C <= range.e.c; C++) {
+                                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                            if (ws[cellRef]) ws[cellRef].t = 's';
+                                                        }
+                                                    }
+                                                }
+                                                ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                                const wb = XLSX.utils.book_new();
+                                                XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                                
+                                                XLSX.writeFile(wb, fileName);
+                                                
+                                                setTimeout(() => {
+                                                    this.textContent = originalText;
+                                                    this.disabled = false;
+                                                }, 1000);
+                                            } catch (err) {
+                                                alert('下载失败，请重试');
+                                                this.textContent = originalText;
+                                                this.disabled = false;
+                                            }
                                         }
-                                    }
-                                }, 100);
-                            });
+                                    }, 100);
+                                });
+                            })(fileNumbers, fileName, format, colPos);
                             
                             DOM.generateFileList.appendChild(item);
                             DOM.generateProgressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
@@ -2566,8 +2562,8 @@
                             <span class="prefix-count">${nums.length} 个号码</span>
                         </div>
                         <div class="download-buttons-group">
-                            <button class="download-classify-btn-txt" data-prefix="${key}" data-nums='${btoa(JSON.stringify(nums))}'>TXT</button>
-                            <button class="download-classify-btn-xlsx" data-prefix="${key}" data-nums='${btoa(JSON.stringify(nums))}'>Excel</button>
+                            <button class="download-classify-btn-txt">TXT</button>
+                            <button class="download-classify-btn-xlsx">Excel</button>
                         </div>
                     `;
                     DOM.classificationList.appendChild(item);
@@ -2575,48 +2571,14 @@
                     const txtBtn = item.querySelector('.download-classify-btn-txt');
                     const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
                     
-                    // 修复分类下载按钮 - 兼容手机
-                    txtBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const key = this.dataset.prefix;
-                        const nums = JSON.parse(atob(this.dataset.nums));
-                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                        
-                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        
-                        // 手机专用下载方式
-                        const iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                        
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        iframeDoc.open();
-                        iframeDoc.write('<a href="' + url + '" download="' + filePrefix + key + '_' + nums.length + '个.txt' + '" id="downloadLink">download</a>');
-                        iframeDoc.close();
-                        
-                        const link = iframeDoc.getElementById('downloadLink');
-                        if (link) {
-                            link.click();
-                        }
-                        
-                        setTimeout(() => {
-                            document.body.removeChild(iframe);
-                            URL.revokeObjectURL(url);
-                        }, 2000);
-                    });
-                    
-                    xlsxBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const key = this.dataset.prefix;
-                        const nums = JSON.parse(atob(this.dataset.nums));
-                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                        
-                        try {
-                            const blob = createExcelBlob(data, true);
+                    // 使用闭包保存每个分组的nums
+                    (function(currentKey, currentNums) {
+                        txtBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const sortedNums = [...currentNums].sort((a, b) => a.localeCompare(b));
+                            
+                            const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
                             const url = URL.createObjectURL(blob);
                             
                             const iframe = document.createElement('iframe');
@@ -2625,7 +2587,7 @@
                             
                             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                             iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + filePrefix + key + '_' + nums.length + '个.xlsx' + '" id="downloadLink">download</a>');
+                            iframeDoc.write('<a href="' + url + '" download="' + filePrefix + currentKey + '_' + currentNums.length + '个.txt' + '" id="downloadLink">download</a>');
                             iframeDoc.close();
                             
                             const link = iframeDoc.getElementById('downloadLink');
@@ -2637,10 +2599,41 @@
                                 document.body.removeChild(iframe);
                                 URL.revokeObjectURL(url);
                             }, 2000);
-                        } catch (err) {
-                            alert('下载失败，请重试');
-                        }
-                    });
+                        });
+                        
+                        xlsxBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const sortedNums = [...currentNums].sort((a, b) => a.localeCompare(b));
+                            const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${currentKey}`]];
+                            
+                            try {
+                                const blob = createExcelBlob(data, true);
+                                const url = URL.createObjectURL(blob);
+                                
+                                const iframe = document.createElement('iframe');
+                                iframe.style.display = 'none';
+                                document.body.appendChild(iframe);
+                                
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                iframeDoc.open();
+                                iframeDoc.write('<a href="' + url + '" download="' + filePrefix + currentKey + '_' + currentNums.length + '个.xlsx' + '" id="downloadLink">download</a>');
+                                iframeDoc.close();
+                                
+                                const link = iframeDoc.getElementById('downloadLink');
+                                if (link) {
+                                    link.click();
+                                }
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(iframe);
+                                    URL.revokeObjectURL(url);
+                                }, 2000);
+                            } catch (err) {
+                                alert('下载失败，请重试');
+                            }
+                        });
+                    })(key, nums);
                 });
             }
             
@@ -2845,8 +2838,8 @@
                                 <span>原: ${data.length} → 去重后: ${unique.length}</span>
                             </div>
                             <div class="result-card-actions">
-                                <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重.txt" data-content='${btoa(JSON.stringify(unique))}'>下载 TXT</button>
-                                <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重.xlsx" data-content='${btoa(JSON.stringify(unique))}'>下载 Excel</button>
+                                <button class="result-download-btn result-download-txt">下载 TXT</button>
+                                <button class="result-download-btn result-download-xlsx">下载 Excel</button>
                             </div>
                         `;
                         DOM.deduplicateResultCards.appendChild(card);
@@ -2854,40 +2847,14 @@
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
                         
-                        // 修复去重下载按钮
-                        txtBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const unique = JSON.parse(atob(this.dataset.content));
-                            const blob = new Blob([unique.join('\n')], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
+                        // 使用闭包保存unique数据
+                        (function(currentUnique, currentFileName) {
+                            const baseName = currentFileName.replace(/\.[^/.]+$/, '');
                             
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                            
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
-                            iframeDoc.close();
-                            
-                            const link = iframeDoc.getElementById('downloadLink');
-                            if (link) {
-                                link.click();
-                            }
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                                URL.revokeObjectURL(url);
-                            }, 2000);
-                        });
-                        
-                        xlsxBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const unique = JSON.parse(atob(this.dataset.content));
-                            try {
-                                const blob = createExcelBlob(unique);
+                            txtBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const blob = new Blob([currentUnique.join('\n')], { type: 'text/plain' });
                                 const url = URL.createObjectURL(blob);
                                 
                                 const iframe = document.createElement('iframe');
@@ -2896,7 +2863,7 @@
                                 
                                 const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                                 iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
+                                iframeDoc.write('<a href="' + url + '" download="' + baseName + '_去重.txt' + '" id="downloadLink">download</a>');
                                 iframeDoc.close();
                                 
                                 const link = iframeDoc.getElementById('downloadLink');
@@ -2908,10 +2875,38 @@
                                     document.body.removeChild(iframe);
                                     URL.revokeObjectURL(url);
                                 }, 2000);
-                            } catch (err) {
-                                alert('下载失败');
-                            }
-                        });
+                            });
+                            
+                            xlsxBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    const blob = createExcelBlob(currentUnique);
+                                    const url = URL.createObjectURL(blob);
+                                    
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.display = 'none';
+                                    document.body.appendChild(iframe);
+                                    
+                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                    iframeDoc.open();
+                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_去重.xlsx' + '" id="downloadLink">download</a>');
+                                    iframeDoc.close();
+                                    
+                                    const link = iframeDoc.getElementById('downloadLink');
+                                    if (link) {
+                                        link.click();
+                                    }
+                                    
+                                    setTimeout(() => {
+                                        document.body.removeChild(iframe);
+                                        URL.revokeObjectURL(url);
+                                    }, 2000);
+                                } catch (err) {
+                                    alert('下载失败');
+                                }
+                            });
+                        })(unique, file.name);
                     });
                 });
             }
@@ -3136,8 +3131,8 @@
                                     <span>处理完成</span>
                                 </div>
                                 <div class="result-card-actions">
-                                    <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button>
-                                    <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button>
+                                    <button class="result-download-btn result-download-txt">下载 TXT</button>
+                                    <button class="result-download-btn result-download-xlsx">下载 Excel</button>
                                 </div>
                             `;
                             DOM.dataOpResultCards.appendChild(card);
@@ -3145,38 +3140,14 @@
                             const txtBtn = card.querySelector('.result-download-txt');
                             const xlsxBtn = card.querySelector('.result-download-xlsx');
                             
-                            // 修复数据操作下载按钮
-                            txtBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                                const url = URL.createObjectURL(blob);
+                            // 使用闭包保存processed数据
+                            (function(currentProcessed, currentFileName) {
+                                const baseName = currentFileName.replace(/\.[^/.]+$/, '');
                                 
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                document.body.appendChild(iframe);
-                                
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
-                                iframeDoc.close();
-                                
-                                const link = iframeDoc.getElementById('downloadLink');
-                                if (link) {
-                                    link.click();
-                                }
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(iframe);
-                                    URL.revokeObjectURL(url);
-                                }, 2000);
-                            });
-                            
-                            xlsxBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                    const blob = createExcelBlob(processed, false);
+                                txtBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const blob = new Blob([currentProcessed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
                                     const url = URL.createObjectURL(blob);
                                     
                                     const iframe = document.createElement('iframe');
@@ -3185,7 +3156,7 @@
                                     
                                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                                     iframeDoc.open();
-                                    iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
+                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.txt' + '" id="downloadLink">download</a>');
                                     iframeDoc.close();
                                     
                                     const link = iframeDoc.getElementById('downloadLink');
@@ -3197,10 +3168,38 @@
                                         document.body.removeChild(iframe);
                                         URL.revokeObjectURL(url);
                                     }, 2000);
-                                } catch (err) {
-                                    alert('下载失败');
-                                }
-                            });
+                                });
+                                
+                                xlsxBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        const blob = createExcelBlob(currentProcessed, false);
+                                        const url = URL.createObjectURL(blob);
+                                        
+                                        const iframe = document.createElement('iframe');
+                                        iframe.style.display = 'none';
+                                        document.body.appendChild(iframe);
+                                        
+                                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                        iframeDoc.open();
+                                        iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.xlsx' + '" id="downloadLink">download</a>');
+                                        iframeDoc.close();
+                                        
+                                        const link = iframeDoc.getElementById('downloadLink');
+                                        if (link) {
+                                            link.click();
+                                        }
+                                        
+                                        setTimeout(() => {
+                                            document.body.removeChild(iframe);
+                                            URL.revokeObjectURL(url);
+                                        }, 2000);
+                                    } catch (err) {
+                                        alert('下载失败');
+                                    }
+                                });
+                            })(processed, file.name);
                         });
                     });
                 });
@@ -3301,8 +3300,8 @@
                                 <span>处理完成</span>
                             </div>
                             <div class="result-card-actions">
-                                <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button>
-                                <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button>
+                                <button class="result-download-btn result-download-txt">下载 TXT</button>
+                                <button class="result-download-btn result-download-xlsx">下载 Excel</button>
                             </div>
                         `;
                         DOM.firstColResultCards.appendChild(card);
@@ -3310,38 +3309,14 @@
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
                         
-                        // 修复首列编辑下载按钮
-                        txtBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
+                        // 使用闭包保存processed数据
+                        (function(currentProcessed, currentFileName) {
+                            const baseName = currentFileName.replace(/\.[^/.]+$/, '');
                             
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                            
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
-                            iframeDoc.close();
-                            
-                            const link = iframeDoc.getElementById('downloadLink');
-                            if (link) {
-                                link.click();
-                            }
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                                URL.revokeObjectURL(url);
-                            }, 2000);
-                        });
-                        
-                        xlsxBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            try {
-                                const blob = createExcelBlob(processed, false);
+                            txtBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const blob = new Blob([currentProcessed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
                                 const url = URL.createObjectURL(blob);
                                 
                                 const iframe = document.createElement('iframe');
@@ -3350,7 +3325,7 @@
                                 
                                 const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                                 iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + this.dataset.filename + '" id="downloadLink">download</a>');
+                                iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.txt' + '" id="downloadLink">download</a>');
                                 iframeDoc.close();
                                 
                                 const link = iframeDoc.getElementById('downloadLink');
@@ -3362,10 +3337,38 @@
                                     document.body.removeChild(iframe);
                                     URL.revokeObjectURL(url);
                                 }, 2000);
-                            } catch (err) {
-                                alert('下载失败');
-                            }
-                        });
+                            });
+                            
+                            xlsxBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    const blob = createExcelBlob(currentProcessed, false);
+                                    const url = URL.createObjectURL(blob);
+                                    
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.display = 'none';
+                                    document.body.appendChild(iframe);
+                                    
+                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                    iframeDoc.open();
+                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.xlsx' + '" id="downloadLink">download</a>');
+                                    iframeDoc.close();
+                                    
+                                    const link = iframeDoc.getElementById('downloadLink');
+                                    if (link) {
+                                        link.click();
+                                    }
+                                    
+                                    setTimeout(() => {
+                                        document.body.removeChild(iframe);
+                                        URL.revokeObjectURL(url);
+                                    }, 2000);
+                                } catch (err) {
+                                    alert('下载失败');
+                                }
+                            });
+                        })(processed, file.name);
                     });
                 });
             }
@@ -3386,4 +3389,3 @@
     </script>
 </body>
 </html>
-```
