@@ -1273,21 +1273,14 @@
                         <button class="add-prefix-btn" id="addPrefixBtn" type="button">➕ 添加开头</button>
                     </div>
                     <textarea id="dataInput" placeholder="示例：
-开头023
+开头
+023
 110-119
 或
 110～119
 或
-110到119
-或
-110.111.112
-或
-110 111 112
-或
-720.721.722.723.724.
-或
-6380-9 6390-9 6370-9">开头</textarea>
-                    <div class="filename-hint">支持范围(110-9)、点号(110.111.112)、空格(110 111 112)、混合格式</div>
+110到119">开头</textarea>
+                    <div class="filename-hint">只保留"开头"两字，后面直接跟数字或范围</div>
                 </div>
             </div>
             
@@ -1339,12 +1332,6 @@
             <div class="file-list">
                 <div class="file-list-header">生成的文件列表</div>
                 <div id="generateFileList"></div>
-            </div>
-            
-            <!-- 新增一键下载按钮 -->
-            <div class="actions-row" style="margin-top:20px; justify-content: center;">
-                <button class="download-all-btn" id="downloadAllGenerateTxt" style="background: #4d90fe; color: white; min-width: 160px;">📦 一键下载所有TXT</button>
-                <button class="download-all-btn" id="downloadAllGenerateXlsx" style="background: #34a853; color: white; min-width: 160px;">📦 一键下载所有Excel</button>
             </div>
         </div>
         
@@ -1663,14 +1650,8 @@
             <div class="example-content">
 开头023
 110-119      
-213-9
-6380-9 6390-9 6370-9
-110.111.112
-720.721.722.723.724.
-110 111 112
-110
-111
-112
+213-9   (代表213-219)
+6380-9  (代表6380-6389)
             </div>
         </div>
         
@@ -1715,10 +1696,6 @@
                 filenameAutoHint: document.getElementById('filenameAutoHint'),
                 addPrefixBtn: document.getElementById('addPrefixBtn'),
                 quickBtns: document.querySelectorAll('.quick-btn'),
-                
-                // 新增一键下载按钮
-                downloadAllGenerateTxt: document.getElementById('downloadAllGenerateTxt'),
-                downloadAllGenerateXlsx: document.getElementById('downloadAllGenerateXlsx'),
                 
                 // 去重面板
                 deduplicateUploadArea: document.getElementById('deduplicateUploadArea'),
@@ -1835,9 +1812,6 @@
             let lastManualValue = '';
             let currentSortMode = 'asc';
             let currentFilenamePrefix = 'none';
-            
-            // 存储生成的文件数据
-            let generatedFilesData = [];
             
             // ========== 工具切换 ==========
             DOM.toolTabs.forEach(tab => {
@@ -2077,7 +2051,7 @@
                 }
             }
             
-            // ========== 升级版核心解析函数 ==========
+            // ========== 核心解析函数 ==========
             function parseInputData(text) {
                 text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
                 const lines = text.split(/\r?\n/);
@@ -2088,13 +2062,11 @@
                     line = line.trim();
                     if (line === '') continue;
                     
-                    // 处理"开头"标记
                     if (line === '开头') {
                         currentPrefix = null;
                         continue;
                     }
                     
-                    // 处理"开头XXX"格式
                     const prefixMatch = line.match(/^开头\s*(\d+)/);
                     if (prefixMatch) {
                         currentPrefix = prefixMatch[1];
@@ -2102,61 +2074,46 @@
                         continue;
                     }
                     
-                    // 如果当前没有前缀，这行本身就是前缀
-                    if (currentPrefix === null && /^\d+$/.test(line)) {
-                        currentPrefix = line;
-                        if (!data[currentPrefix]) data[currentPrefix] = [];
+                    if (/^\d+$/.test(line)) {
+                        if (currentPrefix === null) {
+                            currentPrefix = line;
+                            if (!data[currentPrefix]) data[currentPrefix] = [];
+                        } else {
+                            data[currentPrefix].push(line.padStart(3, '0'));
+                        }
                         continue;
                     }
                     
-                    // 只有在有当前前缀的情况下才处理中段号
-                    if (currentPrefix) {
-                        // 格式1: 范围格式，支持智能简写 (110-9, 6380-9)
-                        if (line.includes('-') || line.includes('～') || line.includes('到')) {
-                            // 替换多种分隔符为标准"-"
-                            let processedLine = line.replace(/～/g, '-').replace(/到/g, '-');
-                            // 分割可能存在的多个范围（用空格分隔）
-                            const parts = processedLine.split(/\s+/);
-                            for (let part of parts) {
-                                if (part.includes('-')) {
-                                    const rangeMatch = part.match(/^(\d+)\s*-\s*(\d+)$/);
-                                    if (rangeMatch) {
-                                        let start = rangeMatch[1];
-                                        let end = rangeMatch[2];
-                                        
-                                        // 智能处理范围：如果结束数字位数少于开始数字，自动补齐
-                                        if (end.length < start.length) {
-                                            const prefix = start.substring(0, start.length - end.length);
-                                            end = prefix + end;
-                                        }
-                                        
-                                        const startNum = parseInt(start, 10);
-                                        const endNum = parseInt(end, 10);
-                                        
-                                        if (startNum <= endNum) {
-                                            for (let i = startNum; i <= endNum; i++) {
-                                                data[currentPrefix].push(i.toString().padStart(3, '0'));
-                                            }
-                                        }
-                                    }
-                                }
+                    // 修改后的范围匹配，支持智能简写（如213-9表示213-219，6380-9表示6380-6389）
+                    const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
+                    if (rangeMatch && currentPrefix) {
+                        let start = rangeMatch[1];
+                        let end = rangeMatch[2];
+                        
+                        // 智能处理范围：如果结束数字位数少于开始数字，自动补齐
+                        if (end.length < start.length) {
+                            // 取开始数字的前缀 + 结束数字
+                            const prefix = start.substring(0, start.length - end.length);
+                            end = prefix + end;
+                        }
+                        
+                        const startNum = parseInt(start, 10);
+                        const endNum = parseInt(end, 10);
+                        
+                        if (startNum <= endNum) {
+                            for (let i = startNum; i <= endNum; i++) {
+                                data[currentPrefix].push(i.toString().padStart(3, '0'));
                             }
                         }
-                        // 格式2,3,4,5: 点号分隔、空格分隔、混合分隔
-                        else {
-                            // 替换多种分隔符为统一分隔符
-                            let processedLine = line.replace(/[．.\s]+/g, ' '); // 将点号和空格统一替换为空格
-                            // 按空格分割
-                            const numbers = processedLine.split(/\s+/).filter(n => n.trim() !== '');
-                            
+                        continue;
+                    }
+                    
+                    if (currentPrefix) {
+                        const numbers = line.match(/\d+/g);
+                        if (numbers) {
                             for (let num of numbers) {
-                                // 去除末尾可能的点号
-                                num = num.replace(/\.$/, '');
-                                if (/^\d+$/.test(num)) {
-                                    // 中段号通常是2-4位
-                                    if (num.length >= 1 && num.length <= 4) {
-                                        data[currentPrefix].push(num.padStart(3, '0'));
-                                    }
+                                if (num.length >= 2 && num.length <= 4) {
+                                    data[currentPrefix].push(num.padStart(3, '0'));
                                 }
                             }
                         }
@@ -2178,7 +2135,7 @@
                 return numbers;
             }
             
-            // 核心生成函数 - 修复手机下载，每个按钮独立
+            // 核心生成函数 - 修复下载按钮多次使用问题
             function generateFilesCore(format) {
                 const inputText = DOM.dataInput.value;
                 let filename = DOM.filenameInput.value.trim() || '号码数据';
@@ -2190,9 +2147,6 @@
                 DOM.generateFileList.innerHTML = '';
                 DOM.generateStatus.textContent = '解析输入...';
                 DOM.generateProgressBar.style.width = '10%';
-                
-                // 清空之前存储的文件数据
-                generatedFilesData = [];
                 
                 setTimeout(() => {
                     try {
@@ -2233,7 +2187,6 @@
                         DOM.generateStatus.textContent = '生成文件...';
                         DOM.generateProgressBar.style.width = '85%';
                         
-                        // 使用循环创建每个文件项，每个按钮独立绑定数据
                         for (let i = 0; i < totalFiles; i++) {
                             const start = i * perFileCount;
                             const end = Math.min(start + perFileCount, unique.length);
@@ -2245,115 +2198,67 @@
                                 `${filename}${colSuffix}${fileExt}` : 
                                 `${filename}${colSuffix}_${i+1}${fileExt}`;
                             
-                            // 存储文件数据供一键下载使用
-                            generatedFilesData.push({
-                                fileName: fileName,
-                                fileNumbers: fileNumbers,
-                                format: format,
-                                colPos: colPos
-                            });
-                            
+                            // 创建文件列表项，不自动下载
                             const item = document.createElement('div');
                             item.className = 'file-item';
+                            item.innerHTML = `
+                                <div class="file-info">
+                                    <div class="file-name">${fileName}</div>
+                                    <div class="file-size">${fileNumbers.length} 条</div>
+                                </div>
+                                <button class="download-btn" data-filename="${fileName}" data-format="${format}" data-colpos="${colPos}">⬇️ 下载</button>
+                            `;
                             
-                            // 使用立即执行函数创建闭包，为每个按钮保存独立的数据
-                            (function(currentFileNumbers, currentFileName, currentFormat, currentColPos) {
-                                item.innerHTML = `
-                                    <div class="file-info">
-                                        <div class="file-name">${currentFileName}</div>
-                                        <div class="file-size">${currentFileNumbers.length} 条</div>
-                                    </div>
-                                    <button class="download-btn">⬇️ 下载</button>
-                                `;
+                            // 将数据挂载到按钮上，避免使用dataset.content导致JSON过长问题
+                            const btn = item.querySelector('.download-btn');
+                            btn.fileData = fileNumbers;  // 直接挂载数据对象
+                            
+                            btn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const fileName = this.dataset.filename;
+                                const fileNumbers = this.fileData;  // 从挂载的属性获取
+                                const format = this.dataset.format;
+                                const colPos = this.dataset.colpos;
                                 
-                                const downloadBtn = item.querySelector('.download-btn');
-                                
-                                // 直接绑定点击事件，不依赖data属性
-                                downloadBtn.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    
-                                    const fileName = currentFileName;
-                                    const fileNumbers = currentFileNumbers;
-                                    const format = currentFormat;
-                                    const colPos = currentColPos;
-                                    
-                                    // 显示下载中提示
-                                    const originalText = this.textContent;
-                                    this.textContent = '下载中...';
-                                    this.disabled = true;
-                                    
-                                    setTimeout(() => {
-                                        if (format === 'txt') {
-                                            let content = '';
-                                            if (colPos === 'first') {
-                                                content = fileNumbers.join('\n');
-                                            } else {
-                                                content = fileNumbers.map(v => '\t' + v).join('\n');
-                                            }
-                                            
-                                            const blob = new Blob([content], { type: 'text/plain' });
-                                            const url = URL.createObjectURL(blob);
-                                            
-                                            // 手机专用下载方式 - 使用iframe
-                                            const iframe = document.createElement('iframe');
-                                            iframe.style.display = 'none';
-                                            document.body.appendChild(iframe);
-                                            
-                                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                            iframeDoc.open();
-                                            iframeDoc.write('<a href="' + url + '" download="' + fileName + '" id="downloadLink">download</a>');
-                                            iframeDoc.close();
-                                            
-                                            const link = iframeDoc.getElementById('downloadLink');
-                                            if (link) {
-                                                link.click();
-                                            }
-                                            
-                                            setTimeout(() => {
-                                                document.body.removeChild(iframe);
-                                                URL.revokeObjectURL(url);
-                                                this.textContent = originalText;
-                                                this.disabled = false;
-                                            }, 2000);
-                                            
-                                        } else {
-                                            try {
-                                                const data = colPos === 'first' ? 
-                                                    fileNumbers.map(v => [v]) : 
-                                                    fileNumbers.map(v => ['', v]);
-                                                
-                                                const ws = XLSX.utils.aoa_to_sheet(data);
-                                                if (ws['!ref']) {
-                                                    const range = XLSX.utils.decode_range(ws['!ref']);
-                                                    for (let R = range.s.r; R <= range.e.r; R++) {
-                                                        for (let C = range.s.c; C <= range.e.c; C++) {
-                                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                                                            if (ws[cellRef]) ws[cellRef].t = 's';
-                                                        }
-                                                    }
-                                                }
-                                                ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
-                                                const wb = XLSX.utils.book_new();
-                                                XLSX.utils.book_append_sheet(wb, ws, "数据");
-                                                
-                                                XLSX.writeFile(wb, fileName);
-                                                
-                                                setTimeout(() => {
-                                                    this.textContent = originalText;
-                                                    this.disabled = false;
-                                                }, 1000);
-                                            } catch (err) {
-                                                alert('下载失败，请重试');
-                                                this.textContent = originalText;
-                                                this.disabled = false;
+                                if (format === 'txt') {
+                                    let content = '';
+                                    if (colPos === 'first') {
+                                        content = fileNumbers.join('\n');
+                                    } else {
+                                        content = fileNumbers.map(v => '\t' + v).join('\n');
+                                    }
+                                    const blob = new Blob([content], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                } else {
+                                    const data = colPos === 'first' ? 
+                                        fileNumbers.map(v => [v]) : 
+                                        fileNumbers.map(v => ['', v]);
+                                    const ws = XLSX.utils.aoa_to_sheet(data);
+                                    if (ws['!ref']) {
+                                        const range = XLSX.utils.decode_range(ws['!ref']);
+                                        for (let R = range.s.r; R <= range.e.r; R++) {
+                                            for (let C = range.s.c; C <= range.e.c; C++) {
+                                                const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                if (ws[cellRef]) ws[cellRef].t = 's';
                                             }
                                         }
-                                    }, 100);
-                                });
-                            })(fileNumbers, fileName, format, colPos);
+                                    }
+                                    ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                    const wb = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                    XLSX.writeFile(wb, fileName);
+                                }
+                            });
                             
                             DOM.generateFileList.appendChild(item);
+                            
                             DOM.generateProgressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
                             DOM.generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
                         }
@@ -2393,110 +2298,6 @@
                 DOM.fileSize.textContent = '10万';
                 lastManualValue = '';
                 DOM.filenameAutoHint.innerHTML = '等待输入开头...';
-                generatedFilesData = [];
-            });
-            
-            // ========== 一键下载功能 ==========
-            function downloadAllFiles(format) {
-                if (generatedFilesData.length === 0) {
-                    alert('没有文件可下载，请先生成文件');
-                    return;
-                }
-                
-                // 过滤出指定格式的文件
-                const filesToDownload = generatedFilesData.filter(f => f.format === format);
-                
-                if (filesToDownload.length === 0) {
-                    alert(`没有${format === 'txt' ? 'TXT' : 'Excel'}格式的文件可下载`);
-                    return;
-                }
-                
-                // 显示下载中提示
-                const btn = format === 'txt' ? DOM.downloadAllGenerateTxt : DOM.downloadAllGenerateXlsx;
-                const originalText = btn.textContent;
-                btn.textContent = '下载中...';
-                btn.disabled = true;
-                
-                // 逐个下载，避免浏览器阻止多个下载
-                let delay = 0;
-                filesToDownload.forEach((file, index) => {
-                    setTimeout(() => {
-                        if (format === 'txt') {
-                            let content = '';
-                            if (file.colPos === 'first') {
-                                content = file.fileNumbers.join('\n');
-                            } else {
-                                content = file.fileNumbers.map(v => '\t' + v).join('\n');
-                            }
-                            
-                            const blob = new Blob([content], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            
-                            // 手机专用下载方式
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                            
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + file.fileName + '" id="downloadLink">download</a>');
-                            iframeDoc.close();
-                            
-                            const link = iframeDoc.getElementById('downloadLink');
-                            if (link) {
-                                link.click();
-                            }
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                                URL.revokeObjectURL(url);
-                            }, 2000);
-                            
-                        } else {
-                            try {
-                                const data = file.colPos === 'first' ? 
-                                    file.fileNumbers.map(v => [v]) : 
-                                    file.fileNumbers.map(v => ['', v]);
-                                
-                                const ws = XLSX.utils.aoa_to_sheet(data);
-                                if (ws['!ref']) {
-                                    const range = XLSX.utils.decode_range(ws['!ref']);
-                                    for (let R = range.s.r; R <= range.e.r; R++) {
-                                        for (let C = range.s.c; C <= range.e.c; C++) {
-                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                                            if (ws[cellRef]) ws[cellRef].t = 's';
-                                        }
-                                    }
-                                }
-                                ws['!cols'] = file.colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
-                                const wb = XLSX.utils.book_new();
-                                XLSX.utils.book_append_sheet(wb, ws, "数据");
-                                
-                                XLSX.writeFile(wb, file.fileName);
-                            } catch (err) {
-                                console.error('下载失败:', err);
-                            }
-                        }
-                        
-                        // 最后一个文件下载完成后恢复按钮状态
-                        if (index === filesToDownload.length - 1) {
-                            setTimeout(() => {
-                                btn.textContent = originalText;
-                                btn.disabled = false;
-                            }, 1000);
-                        }
-                    }, delay);
-                    delay += 800; // 每个文件间隔800ms
-                });
-            }
-            
-            // 绑定一键下载按钮
-            DOM.downloadAllGenerateTxt.addEventListener('click', function() {
-                downloadAllFiles('txt');
-            });
-            
-            DOM.downloadAllGenerateXlsx.addEventListener('click', function() {
-                downloadAllFiles('excel');
             });
             
             // ========== 前缀分类排序功能 ==========
@@ -2690,189 +2491,73 @@
                             <span class="prefix-count">${nums.length} 个号码</span>
                         </div>
                         <div class="download-buttons-group">
-                            <button class="download-classify-btn-txt">TXT</button>
-                            <button class="download-classify-btn-xlsx">Excel</button>
+                            <button class="download-classify-btn-txt" data-prefix="${key}" data-nums='${JSON.stringify(nums)}'>TXT</button>
+                            <button class="download-classify-btn-xlsx" data-prefix="${key}" data-nums='${JSON.stringify(nums)}'>Excel</button>
                         </div>
                     `;
                     DOM.classificationList.appendChild(item);
                     
                     const txtBtn = item.querySelector('.download-classify-btn-txt');
                     const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
-                    
-                    // 使用闭包保存每个分组的nums
-                    (function(currentKey, currentNums) {
-                        txtBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const sortedNums = [...currentNums].sort((a, b) => a.localeCompare(b));
-                            
-                            const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                            
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + filePrefix + currentKey + '_' + currentNums.length + '个.txt' + '" id="downloadLink">download</a>');
-                            iframeDoc.close();
-                            
-                            const link = iframeDoc.getElementById('downloadLink');
-                            if (link) {
-                                link.click();
-                            }
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                                URL.revokeObjectURL(url);
-                            }, 2000);
-                        });
-                        
-                        xlsxBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const sortedNums = [...currentNums].sort((a, b) => a.localeCompare(b));
-                            const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${currentKey}`]];
-                            
-                            try {
-                                const blob = createExcelBlob(data, true);
-                                const url = URL.createObjectURL(blob);
-                                
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                document.body.appendChild(iframe);
-                                
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + filePrefix + currentKey + '_' + currentNums.length + '个.xlsx' + '" id="downloadLink">download</a>');
-                                iframeDoc.close();
-                                
-                                const link = iframeDoc.getElementById('downloadLink');
-                                if (link) {
-                                    link.click();
-                                }
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(iframe);
-                                    URL.revokeObjectURL(url);
-                                }, 2000);
-                            } catch (err) {
-                                alert('下载失败，请重试');
-                            }
-                        });
-                    })(key, nums);
-                });
-            }
-            
-            // 修复一键下载按钮 - 兼容手机
-            function setupClassifyDownloadButtons() {
-                // 下载所有TXT
-                DOM.downloadAllClassifyBtnTxt.addEventListener('click', function() {
-                    if (!classifyRawNumbers || classifyRawNumbers.length === 0) {
-                        alert('没有数据可下载');
-                        return;
-                    }
-                    
-                    const prefixLen = parseInt(DOM.prefixLength.value, 10);
-                    const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
-                    
-                    const groups = {};
-                    classifyRawNumbers.forEach(num => {
-                        if (num.length >= prefixLen) {
-                            const key = num.substring(0, prefixLen);
-                            if (!groups[key]) groups[key] = [];
-                            groups[key].push(num);
-                        }
+                    txtBtn.addEventListener('click', () => {
+                        // 下载时按从小到大排序
+                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
-                    
-                    // 逐个下载，避免浏览器阻止多个下载
-                    let delay = 0;
-                    Object.entries(groups).forEach(([key, nums]) => {
-                        setTimeout(() => {
-                            const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                            const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                            
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            iframeDoc.open();
-                            iframeDoc.write('<a href="' + url + '" download="' + filePrefix + key + '_' + nums.length + '个.txt' + '" id="downloadLink">download</a>');
-                            iframeDoc.close();
-                            
-                            const link = iframeDoc.getElementById('downloadLink');
-                            if (link) {
-                                link.click();
-                            }
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                                URL.revokeObjectURL(url);
-                            }, 2000);
-                        }, delay);
-                        delay += 800;
+                    xlsxBtn.addEventListener('click', () => {
+                        // 下载时按从小到大排序
+                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
+                        const blob = createExcelBlob(data, true);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
                 });
                 
-                // 下载所有Excel
-                DOM.downloadAllClassifyBtnXlsx.addEventListener('click', function() {
-                    if (!classifyRawNumbers || classifyRawNumbers.length === 0) {
-                        alert('没有数据可下载');
-                        return;
-                    }
-                    
-                    const prefixLen = parseInt(DOM.prefixLength.value, 10);
-                    const includeFull = DOM.includeFullNumber.checked;
-                    const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
-                    
-                    const groups = {};
-                    classifyRawNumbers.forEach(num => {
-                        if (num.length >= prefixLen) {
-                            const key = num.substring(0, prefixLen);
-                            if (!groups[key]) groups[key] = [];
-                            groups[key].push(num);
-                        }
-                    });
-                    
-                    // 逐个下载，避免浏览器阻止多个下载
-                    let delay = 0;
+                // 下载所有按钮 - 修复下载功能
+                DOM.downloadAllClassifyBtnTxt.onclick = () => {
                     Object.entries(groups).forEach(([key, nums]) => {
-                        setTimeout(() => {
-                            const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
-                            const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                            
-                            try {
-                                const blob = createExcelBlob(data, true);
-                                const url = URL.createObjectURL(blob);
-                                
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                document.body.appendChild(iframe);
-                                
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + filePrefix + key + '_' + nums.length + '个.xlsx' + '" id="downloadLink">download</a>');
-                                iframeDoc.close();
-                                
-                                const link = iframeDoc.getElementById('downloadLink');
-                                if (link) {
-                                    link.click();
-                                }
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(iframe);
-                                    URL.revokeObjectURL(url);
-                                }, 2000);
-                            } catch (err) {
-                                alert(`下载 ${key} 失败`);
-                            }
-                        }, delay);
-                        delay += 800;
+                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filePrefix + key + '_' + nums.length + '个.txt';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
                     });
-                });
+                };
+                DOM.downloadAllClassifyBtnXlsx.onclick = () => {
+                    Object.entries(groups).forEach(([key, nums]) => {
+                        const sortedNums = [...nums].sort((a, b) => a.localeCompare(b));
+                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
+                        const blob = createExcelBlob(data, true);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filePrefix + key + '_' + nums.length + '个.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    });
+                };
             }
             
             DOM.resetClassifyBtn.addEventListener('click', () => {
@@ -2966,75 +2651,36 @@
                                 <span>原: ${data.length} → 去重后: ${unique.length}</span>
                             </div>
                             <div class="result-card-actions">
-                                <button class="result-download-btn result-download-txt">下载 TXT</button>
-                                <button class="result-download-btn result-download-xlsx">下载 Excel</button>
+                                <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重.txt" data-content='${JSON.stringify(unique)}'>下载 TXT</button>
+                                <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重.xlsx" data-content='${JSON.stringify(unique)}'>下载 Excel</button>
                             </div>
                         `;
                         DOM.deduplicateResultCards.appendChild(card);
                         
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
-                        
-                        // 使用闭包保存unique数据
-                        (function(currentUnique, currentFileName) {
-                            const baseName = currentFileName.replace(/\.[^/.]+$/, '');
-                            
-                            txtBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                const blob = new Blob([currentUnique.join('\n')], { type: 'text/plain' });
-                                const url = URL.createObjectURL(blob);
-                                
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                document.body.appendChild(iframe);
-                                
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + baseName + '_去重.txt' + '" id="downloadLink">download</a>');
-                                iframeDoc.close();
-                                
-                                const link = iframeDoc.getElementById('downloadLink');
-                                if (link) {
-                                    link.click();
-                                }
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(iframe);
-                                    URL.revokeObjectURL(url);
-                                }, 2000);
-                            });
-                            
-                            xlsxBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                    const blob = createExcelBlob(currentUnique);
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                    
-                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                    iframeDoc.open();
-                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_去重.xlsx' + '" id="downloadLink">download</a>');
-                                    iframeDoc.close();
-                                    
-                                    const link = iframeDoc.getElementById('downloadLink');
-                                    if (link) {
-                                        link.click();
-                                    }
-                                    
-                                    setTimeout(() => {
-                                        document.body.removeChild(iframe);
-                                        URL.revokeObjectURL(url);
-                                    }, 2000);
-                                } catch (err) {
-                                    alert('下载失败');
-                                }
-                            });
-                        })(unique, file.name);
+                        txtBtn.addEventListener('click', () => {
+                            const blob = new Blob([unique.join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                        xlsxBtn.addEventListener('click', () => {
+                            const blob = createExcelBlob(unique);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
                     });
                 });
             }
@@ -3259,8 +2905,8 @@
                                     <span>处理完成</span>
                                 </div>
                                 <div class="result-card-actions">
-                                    <button class="result-download-btn result-download-txt">下载 TXT</button>
-                                    <button class="result-download-btn result-download-xlsx">下载 Excel</button>
+                                    <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button>
+                                    <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button>
                                 </div>
                             `;
                             DOM.dataOpResultCards.appendChild(card);
@@ -3268,66 +2914,29 @@
                             const txtBtn = card.querySelector('.result-download-txt');
                             const xlsxBtn = card.querySelector('.result-download-xlsx');
                             
-                            // 使用闭包保存processed数据
-                            (function(currentProcessed, currentFileName) {
-                                const baseName = currentFileName.replace(/\.[^/.]+$/, '');
-                                
-                                txtBtn.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const blob = new Blob([currentProcessed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                    
-                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                    iframeDoc.open();
-                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.txt' + '" id="downloadLink">download</a>');
-                                    iframeDoc.close();
-                                    
-                                    const link = iframeDoc.getElementById('downloadLink');
-                                    if (link) {
-                                        link.click();
-                                    }
-                                    
-                                    setTimeout(() => {
-                                        document.body.removeChild(iframe);
-                                        URL.revokeObjectURL(url);
-                                    }, 2000);
-                                });
-                                
-                                xlsxBtn.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    try {
-                                        const blob = createExcelBlob(currentProcessed, false);
-                                        const url = URL.createObjectURL(blob);
-                                        
-                                        const iframe = document.createElement('iframe');
-                                        iframe.style.display = 'none';
-                                        document.body.appendChild(iframe);
-                                        
-                                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                        iframeDoc.open();
-                                        iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.xlsx' + '" id="downloadLink">download</a>');
-                                        iframeDoc.close();
-                                        
-                                        const link = iframeDoc.getElementById('downloadLink');
-                                        if (link) {
-                                            link.click();
-                                        }
-                                        
-                                        setTimeout(() => {
-                                            document.body.removeChild(iframe);
-                                            URL.revokeObjectURL(url);
-                                        }, 2000);
-                                    } catch (err) {
-                                        alert('下载失败');
-                                    }
-                                });
-                            })(processed, file.name);
+                            txtBtn.addEventListener('click', () => {
+                                const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = txtBtn.dataset.filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                            });
+                            
+                            xlsxBtn.addEventListener('click', () => {
+                                const blob = createExcelBlob(processed, false);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = xlsxBtn.dataset.filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                            });
                         });
                     });
                 });
@@ -3428,8 +3037,8 @@
                                 <span>处理完成</span>
                             </div>
                             <div class="result-card-actions">
-                                <button class="result-download-btn result-download-txt">下载 TXT</button>
-                                <button class="result-download-btn result-download-xlsx">下载 Excel</button>
+                                <button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button>
+                                <button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button>
                             </div>
                         `;
                         DOM.firstColResultCards.appendChild(card);
@@ -3437,66 +3046,29 @@
                         const txtBtn = card.querySelector('.result-download-txt');
                         const xlsxBtn = card.querySelector('.result-download-xlsx');
                         
-                        // 使用闭包保存processed数据
-                        (function(currentProcessed, currentFileName) {
-                            const baseName = currentFileName.replace(/\.[^/.]+$/, '');
-                            
-                            txtBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                const blob = new Blob([currentProcessed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                                const url = URL.createObjectURL(blob);
-                                
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                document.body.appendChild(iframe);
-                                
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                iframeDoc.open();
-                                iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.txt' + '" id="downloadLink">download</a>');
-                                iframeDoc.close();
-                                
-                                const link = iframeDoc.getElementById('downloadLink');
-                                if (link) {
-                                    link.click();
-                                }
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(iframe);
-                                    URL.revokeObjectURL(url);
-                                }, 2000);
-                            });
-                            
-                            xlsxBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                    const blob = createExcelBlob(currentProcessed, false);
-                                    const url = URL.createObjectURL(blob);
-                                    
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.display = 'none';
-                                    document.body.appendChild(iframe);
-                                    
-                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                    iframeDoc.open();
-                                    iframeDoc.write('<a href="' + url + '" download="' + baseName + '_处理后.xlsx' + '" id="downloadLink">download</a>');
-                                    iframeDoc.close();
-                                    
-                                    const link = iframeDoc.getElementById('downloadLink');
-                                    if (link) {
-                                        link.click();
-                                    }
-                                    
-                                    setTimeout(() => {
-                                        document.body.removeChild(iframe);
-                                        URL.revokeObjectURL(url);
-                                    }, 2000);
-                                } catch (err) {
-                                    alert('下载失败');
-                                }
-                            });
-                        })(processed, file.name);
+                        txtBtn.addEventListener('click', () => {
+                            const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                        
+                        xlsxBtn.addEventListener('click', () => {
+                            const blob = createExcelBlob(processed, false);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
                     });
                 });
             }
@@ -3509,9 +3081,6 @@
                 DOM.firstColFileInput.value = '';
                 DOM.firstColPreviewArea.style.display = 'none';
             });
-            
-            // 初始化一键下载按钮
-            setupClassifyDownloadButtons();
             
         })();
     </script>
