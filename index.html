@@ -2,188 +2,2738 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIP追剧神器 - 浏览器纯网页版（2026更新）</title>
-    <link href="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video-js.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>⚡ 极速数据处理</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: "微软雅黑", Arial, sans-serif; background: #f4f7fa; margin: 0; padding: 15px; }
-        .container { max-width: 1280px; margin: auto; background: white; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.12); overflow: hidden; }
-        header { background: linear-gradient(135deg, #0d6efd, #6610f2); color: white; padding: 25px; text-align: center; }
-        header h1 { margin: 0; font-size: 30px; }
-        .input-area { padding: 20px; background: #f8f9fa; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-        input[type="text"] { flex: 1; padding: 14px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; min-width: 400px; }
-        button { padding: 14px 24px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .parse-btn { background: #0d6efd; color: white; }
-        .play-btn { background: #198754; color: white; }
-        .switch-btn { background: #6c757d; color: white; }
-        .clear-btn { background: #dc3545; color: white; }
-        .status { padding: 12px 20px; font-size: 16px; background: #fff3cd; color: #856404; min-height: 28px; }
-        .player-container { padding: 20px; background: #000; }
-        .video-js { width: 100% !important; height: 560px !important; }
-        .result { padding: 20px; border-top: 1px solid #eee; }
-        textarea { width: 100%; height: 140px; font-family: Consolas, monospace; font-size: 14px; resize: vertical; }
-        .tips { font-size: 14px; color: #555; padding: 15px 20px; background: #f8f9fa; }
+        /* 样式代码保持不变... */
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e6f0fa 0%, #b8d9f5 100%);
+            margin: 0;
+            padding: 10px;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                padding: 35px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+                border-radius: 12px;
+            }
+            body {
+                padding: 5px;
+            }
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+            font-weight: 700;
+            position: relative;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            max-width: 30%;
+            height: 4px;
+            background: linear-gradient(90deg, #4d90fe, #34a853);
+            border-radius: 2px;
+        }
+        
+        .tool-tabs {
+            display: flex;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .tool-tab {
+            flex: 1 1 auto;
+            min-width: 120px;
+            padding: 12px 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: #666;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 600px) {
+            .tool-tab {
+                min-width: calc(50% - 5px);
+                white-space: normal;
+                padding: 10px 8px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            .tool-tab {
+                min-width: 100%;
+            }
+        }
+        
+        .tool-tab:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .tool-tab.active {
+            background-color: white;
+            color: #4d90fe;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-panel {
+            display: none;
+        }
+        
+        .tool-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .input-section {
+            margin-bottom: 25px;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .input-group {
+            flex: 1 1 250px;
+            min-width: 250px;
+        }
+        
+        @media (max-width: 600px) {
+            .input-group {
+                min-width: 100%;
+            }
+            .input-row {
+                gap: 15px;
+            }
+        }
+        
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #444;
+            font-size: clamp(0.95rem, 3vw, 1rem);
+        }
+        
+        .filename-input, .number-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        @media (max-width: 480px) {
+            .filename-input, .number-input {
+                padding: 10px 12px;
+                font-size: 15px;
+            }
+        }
+        
+        .filename-input:focus, .number-input:focus {
+            border-color: #4d90fe;
+            box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
+            outline: none;
+        }
+        
+        .filename-hint {
+            font-size: 13px;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        .quick-buttons, .column-quick-buttons, .action-buttons, .filename-prefix-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .quick-btn, .column-quick-btn, .action-btn, .prefix-btn {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #d0d7de;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 0 1 auto;
+        }
+        
+        @media (max-width: 480px) {
+            .quick-btn, .column-quick-btn, .action-btn, .prefix-btn {
+                padding: 8px 10px;
+                font-size: 13px;
+                flex: 1 1 calc(33.333% - 6px);
+                text-align: center;
+            }
+        }
+        
+        .quick-btn:hover, .column-quick-btn:hover, .action-btn:hover, .prefix-btn:hover {
+            background: linear-gradient(135deg, #e2e6ea, #d0d7de);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .quick-btn.active, .column-quick-btn.active, .prefix-btn.active {
+            background: linear-gradient(135deg, #4d90fe, #357ae8);
+            color: white;
+            border-color: #4d90fe;
+        }
+        
+        .action-btn.add-zero {
+            background: linear-gradient(135deg, #34a853, #2e8b47);
+            color: white;
+            border-color: #2e8b47;
+        }
+        
+        .action-btn.remove-zero {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border-color: #d32f2f;
+        }
+        
+        .action-btn.insert-first {
+            background: linear-gradient(135deg, #4d90fe, #357ae8);
+            color: white;
+            border-color: #357ae8;
+        }
+        
+        .action-btn.delete-first {
+            background: linear-gradient(135deg, #ea4335, #d32f2f);
+            color: white;
+            border-color: #d32f2f;
+        }
+        
+        .column-radio-hidden {
+            display: none;
+        }
+        
+        .label-with-btn {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .label-with-btn .input-label {
+            margin-bottom: 0;
+        }
+        
+        .add-prefix-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 5px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(244, 67, 54, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.5px;
+            line-height: 1.4;
+        }
+        
+        .add-prefix-btn:hover {
+            background: linear-gradient(135deg, #e53935, #c62828);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
+        }
+        
+        .filename-auto-hint {
+            font-size: 12px;
+            color: #4d90fe;
+            margin-top: 4px;
+            font-style: italic;
+            font-weight: 500;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        @media (max-width: 480px) {
+            textarea {
+                min-height: 180px;
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+        
+        textarea:focus {
+            border-color: #4d90fe;
+            box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
+            outline: none;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 0 1 auto;
+            min-width: 140px;
+        }
+        
+        @media (max-width: 600px) {
+            button {
+                width: 100%;
+                padding: 12px 16px;
+                font-size: 15px;
+                min-width: auto;
+            }
+            .controls {
+                gap: 10px;
+            }
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .generate-btn, .download-btn, .upload-btn { 
+            background: linear-gradient(135deg, #4d90fe, #357ae8); 
+            color: white; 
+        }
+
+        .generate-txt-btn {
+            background: linear-gradient(135deg, #34a853, #2e8b47);
+            color: white;
+        }
+        
+        .reset-btn { 
+            background: white; 
+            color: #444; 
+            border: 2px solid #e0e0e0; 
+        }
+        
+        .sort-btn { 
+            background: white; 
+            color: #444; 
+            border: 2px solid #e0e0e0; 
+        }
+        
+        .sort-btn.active { 
+            background: linear-gradient(135deg, #4d90fe, #357ae8); 
+            color: white; 
+            border-color: #4d90fe; 
+        }
+        
+        .duplicate-btn { 
+            background: linear-gradient(135deg, #4ecdc4, #44a08d); 
+            color: white; 
+        }
+        
+        .download-clean-btn, .download-all-btn { 
+            background: linear-gradient(135deg, #34a853, #2e8b47); 
+            color: white; 
+        }
+        
+        .status-section {
+            margin-top: 25px;
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .status-title {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: clamp(1rem, 3vw, 1.1rem);
+        }
+        
+        .status-text {
+            font-weight: 600;
+            color: #4d90fe;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+        
+        .progress-container {
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4d90fe, #34a853);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #f8f9fa, #f0f2f5);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #eaeaea;
+        }
+        
+        @media (max-width: 480px) {
+            .stat-box {
+                padding: 10px;
+            }
+        }
+        
+        .stat-value {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            font-weight: 800;
+            color: #4d90fe;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+        
+        .stat-label {
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            color: #666;
+        }
+        
+        .filter-stat-box {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border-color: #ef9a9a;
+        }
+        
+        .filter-stat-value {
+            color: #d32f2f;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4d90fe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .file-list {
+            margin-top: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .file-list-header {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: clamp(1rem, 3vw, 1.1rem);
+            margin-bottom: 15px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.2s;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        @media (max-width: 480px) {
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 10px;
+            }
+            .file-item .download-btn {
+                align-self: flex-end;
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+            }
+        }
+        
+        .file-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            word-break: break-all;
+        }
+        
+        .file-size {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .upload-section, .classification-section, .duplicate-removal-section, .data-op-section, .first-col-section {
+            margin-top: 30px;
+        }
+        
+        .upload-header, .classification-header, .duplicate-header, .data-op-header, .first-col-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .upload-title, .classification-title, .duplicate-title, .data-op-title, .first-col-title {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: clamp(1rem, 3vw, 1.1rem);
+        }
+        
+        .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box {
+            border: 2px dashed #c3cfe2;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box {
+                padding: 15px;
+            }
+        }
+        
+        .upload-area:hover, .classification-area:hover, .duplicate-upload-box:hover, .first-col-upload-box:hover {
+            border-color: #4d90fe;
+            background-color: #f5f7fa;
+        }
+        
+        .upload-icon, .classification-icon, .duplicate-upload-icon, .first-col-upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .upload-icon, .classification-icon, .duplicate-upload-icon, .first-col-upload-icon {
+                font-size: 36px;
+            }
+        }
+        
+        .upload-icon { color: #4d90fe; }
+        .classification-icon { color: #ea4335; }
+        .duplicate-upload-icon { color: #ccc; }
+        .first-col-upload-icon { color: #34a853; }
+        
+        .upload-text, .classification-text, .duplicate-upload-text, .first-col-upload-text {
+            font-size: clamp(0.95rem, 3vw, 1.1rem);
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint, .classification-hint, .first-col-hint {
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            color: #888;
+        }
+        
+        .file-list-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+        
+        .file-list-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .file-list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-list-name {
+            font-weight: 600;
+            color: #333;
+            word-break: break-all;
+            flex: 1 1 auto;
+        }
+        
+        .file-list-count {
+            color: #4d90fe;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .column-preview {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0 15px 0;
+            border: 1px solid #cce5ff;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .preview-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .preview-badge {
+            background: #4d90fe;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .preview-detail {
+            color: #333;
+        }
+        
+        .preview-zero {
+            background: #ffd966;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .multi-file-results {
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background-color: white;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .result-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .result-card-title {
+            font-weight: 700;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+        
+        .result-card-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 480px) {
+            .result-card-actions {
+                flex-direction: column;
+            }
+            .result-download-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        .result-download-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .result-download-txt {
+            background: #4d90fe;
+            color: white;
+        }
+        
+        .result-download-xlsx {
+            background: #34a853;
+            color: white;
+        }
+        
+        .result-download-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        
+        .classification-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .option-label {
+            font-weight: 600;
+            color: #444;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+        
+        .prefix-length-select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 480px) {
+            .prefix-length-select {
+                width: 100%;
+            }
+            .option-group {
+                width: 100%;
+            }
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            margin: 0 5px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #34a853;
+            transition: 0.3s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #ccc;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .classification-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .classification-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+        }
+        
+        .classification-stat {
+            background: linear-gradient(135deg, #f8f9fa, #f0f2f5);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #eaeaea;
+        }
+        
+        .stat-number {
+            font-size: clamp(1.1rem, 3.5vw, 1.3rem);
+            font-weight: 800;
+            color: #ea4335;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+        
+        .stat-desc {
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            color: #666;
+        }
+        
+        .classification-list {
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .classification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .classification-item:last-child {
+            border-bottom: none;
+        }
+        
+        @media (max-width: 480px) {
+            .classification-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 10px;
+            }
+            .download-buttons-group {
+                align-self: flex-end;
+            }
+        }
+        
+        .prefix-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .prefix-badge {
+            background: linear-gradient(135deg, #4d90fe, #357ae8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+        }
+        
+        .prefix-count {
+            font-weight: 600;
+            color: #444;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+        }
+        
+        .download-buttons-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .download-classify-btn-txt, .download-classify-btn-xlsx {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 480px) {
+            .download-classify-btn-txt, .download-classify-btn-xlsx {
+                white-space: normal;
+            }
+        }
+        
+        .download-classify-btn-txt {
+            background: #4d90fe;
+            color: white;
+        }
+        
+        .download-classify-btn-xlsx {
+            background: #34a853;
+            color: white;
+        }
+        
+        .download-classify-btn-txt:hover, .download-classify-btn-xlsx:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        
+        .actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .actions-row {
+                flex-direction: column;
+            }
+            .actions-row button,
+            .actions-row .download-all-btn {
+                width: 100%;
+            }
+        }
+        
+        .duplicate-info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+        
+        .duplicate-upload-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .duplicate-upload-box {
+            flex: 1 1 300px;
+            min-width: 250px;
+        }
+        
+        .duplicate-controls {
+            text-align: center;
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .duplicate-download-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 480px) {
+            .duplicate-download-btns {
+                flex-direction: column;
+            }
+            .duplicate-download-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        .duplicate-download-btn {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        
+        .duplicate-download-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        
+        .duplicate-error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .example-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #34a853;
+        }
+        
+        @media (max-width: 480px) {
+            .example-section {
+                padding: 15px;
+            }
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: clamp(0.95rem, 3vw, 1.1rem);
+        }
+        
+        .example-content {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .note {
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            color: #888;
+            margin-top: 25px;
+            text-align: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #fbbc05;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎬 VIP追剧神器（浏览器纯网页版 2026）</h1>
-            <p>无需安装 • 无需会员 • 支持爱奇艺、腾讯视频、优酷等 • 解析失败多切换接口</p>
-        </header>
-
-        <div class="input-area">
-            <input type="text" id="videoUrl" placeholder="粘贴VIP视频完整链接..." value="https://v.qq.com/x/cover/mzc00200k5v2z4z/m0034z9zq0z.html">
-            <button class="parse-btn" onclick="parseVideo()">一键解析</button>
-            <button class="switch-btn" onclick="switchApi()">切换接口</button>
-            <button class="clear-btn" onclick="clearAll()">清空</button>
+        <h1>⚡ 极速数据处理</h1>
+        
+        <div class="tool-tabs">
+            <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
+            <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
+            <div class="tool-tab" data-tool="classify">📂 前缀分类</div>
+            <div class="tool-tab" data-tool="duplicate">🔄 双文件去重</div>
+            <div class="tool-tab" data-tool="dataop">0️⃣ 加减前导0</div>
+            <div class="tool-tab" data-tool="firstcol">⬅️ 首列编辑</div>
         </div>
-
-        <div class="status" id="status">就绪 - 粘贴链接后点击“一键解析”</div>
-
-        <div class="player-container">
-            <video id="player" class="video-js vjs-default-skin" controls preload="auto" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
-            </video>
+        
+        <!-- 面板1: 批量生成 -->
+        <div id="panel-generate" class="tool-panel active">
+            <div class="input-section">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label">📁 输出文件名称：</label>
+                        <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 023" value="">
+                        <div class="filename-hint">自动识别所有开头并用“-”连接，可手动编辑</div>
+                        <div class="filename-auto-hint" id="filenameAutoHint">等待输入开头...</div>
+                        
+                        <div style="margin-top: 15px;">
+                            <label class="input-label" style="margin-bottom: 5px;">📊 数据列位置：</label>
+                            <div class="column-quick-buttons">
+                                <span class="column-quick-btn active" data-target="genColFirst">第一列</span>
+                                <span class="column-quick-btn" data-target="genColSecond">第二列</span>
+                            </div>
+                            <input type="radio" name="genColumnPosition" id="genColFirst" value="first" checked class="column-radio-hidden">
+                            <input type="radio" name="genColumnPosition" id="genColSecond" value="second" class="column-radio-hidden">
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <div class="option-group">
+                                <span class="option-label">🏢 区号识别命名：</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="enableAreaCodeGenerate" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="generateAreaCodeStatus" style="font-size: 12px; color: #34a853;">开启</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">🔢 每文件数据量：</label>
+                        <input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5">
+                        <div class="filename-hint">默认10万条，可调整为5-50万</div>
+                        <div class="quick-buttons">
+                            <span class="quick-btn" data-value="5">5万</span>
+                            <span class="quick-btn active" data-value="10">10万</span>
+                            <span class="quick-btn" data-value="20">20万</span>
+                            <span class="quick-btn" data-value="30">30万</span>
+                            <span class="quick-btn" data-value="40">40万</span>
+                            <span class="quick-btn" data-value="50">50万</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="label-with-btn">
+                        <label class="input-label">📝 请输入号码段规则：</label>
+                        <button class="add-prefix-btn" id="addPrefixBtn" type="button">➕ 添加开头</button>
+                    </div>
+                    <textarea id="dataInput" placeholder="示例：
+开头
+023
+110-119
+或
+110～119
+或
+110到119">开头</textarea>
+                    <div class="filename-hint">只保留"开头"两字，后面直接跟数字或范围</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button>
+                <button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button>
+                <button class="reset-btn" id="resetBtn">🔄 重置</button>
+            </div>
+            
+            <div class="status-section">
+                <div class="status-header">
+                    <div class="status-title">生成状态</div>
+                    <div id="generateStatus" class="status-text">等待生成...</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="generateProgressBar"></div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalCount">0</div>
+                        <div class="stat-label">总数据量</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="fileCount">0</div>
+                        <div class="stat-label">文件数量</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="groupCount">0</div>
+                        <div class="stat-label">号码组数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="uniqueCount">0</div>
+                        <div class="stat-label">去重后</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="fileSize">10万</div>
+                        <div class="stat-label">每文件量</div>
+                    </div>
+                </div>
+                
+                <div class="loading" id="generateLoading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">正在生成数据，请稍候...</div>
+                </div>
+            </div>
+            
+            <div class="file-list">
+                <div class="file-list-header">生成的文件列表</div>
+                <div id="generateFileList"></div>
+            </div>
         </div>
-
-        <div class="result">
-            <p><strong>当前接口：</strong> <span id="currentApi">萝卜影视（推荐）</span></p>
-            <textarea id="resultArea" readonly placeholder="解析结果将在这里显示..."></textarea>
-            <button class="play-btn" onclick="playParsedUrl()" style="margin-top:12px;">▶ 在网页中直接播放</button>
+        
+        <!-- 面板2: 单文件去重 -->
+        <div id="panel-deduplicate" class="tool-panel">
+            <div class="upload-section">
+                <div class="upload-header">
+                    <div class="upload-title">🔍 单文件去重工具</div>
+                    <div id="deduplicateStatus" class="status-text">等待上传文件...</div>
+                </div>
+                
+                <div class="upload-area" id="deduplicateUploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div>
+                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
+                    <button class="upload-btn" id="selectDeduplicateFilesBtn">📁 选择文件（可多选）</button>
+                    <input type="file" id="deduplicateFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
+                    
+                    <div id="deduplicateFilesList" class="file-list-container" style="display:none; margin-top:20px;">
+                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
+                        <div id="deduplicateFileListItems"></div>
+                    </div>
+                </div>
+                
+                <div id="deduplicatePreviewArea" class="column-preview" style="display:none;"></div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="deduplicateProgressBar"></div>
+                </div>
+                
+                <div id="deduplicateResults" class="multi-file-results" style="display:none;">
+                    <div class="file-list-header">去重结果</div>
+                    <div id="deduplicateResultCards"></div>
+                    
+                    <div class="actions-row" style="margin-top:20px;">
+                        <button class="download-all-btn" id="downloadAllDeduplicateTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllDeduplicateXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetDeduplicateBtn">🔄 清空所有</button>
+                    </div>
+                </div>
+            </div>
         </div>
+        
+        <!-- 面板3: 前缀分类 -->
+        <div id="panel-classify" class="tool-panel">
+            <div class="classification-section">
+                <div class="classification-header">
+                    <div class="classification-title">📂 按号码开头自动分类</div>
+                    <div id="classifyStatus" class="status-text">等待上传文件...</div>
+                </div>
+                
+                <div class="classification-options">
+                    <div class="option-group">
+                        <span class="option-label">号码前缀长度：</span>
+                        <select id="prefixLength" class="prefix-length-select">
+                            <option value="3">3位</option>
+                            <option value="4" selected>4位</option>
+                            <option value="5">5位</option>
+                            <option value="6">6位</option>
+                            <option value="7">7位</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group">
+                        <input type="checkbox" id="includeFullNumber" checked>
+                        <label for="includeFullNumber" class="option-label">包含完整号码</label>
+                    </div>
+                    
+                    <div class="option-group">
+                        <button id="sortAscBtn" class="sort-btn active">⬆️ 从小到大</button>
+                        <button id="sortShuffleBtn" class="sort-btn">🎲 打乱顺序</button>
+                    </div>
 
-        <div class="tips">
-            <strong>使用小贴士：</strong><br>
-            • 复制视频播放页的**完整链接**（不是分享短链）<br>
-            • 免费接口不稳定，失败时请点击“切换接口”重试<br>
-            • 推荐优先试“萝卜影视”或“黑米解析”<br>
-            • 支持m3u8/mp4格式，播放中可调节倍速、全屏
+                    <div class="option-group">
+                        <span class="option-label">文件名前缀：</span>
+                        <div class="filename-prefix-buttons">
+                            <span class="prefix-btn active" data-prefix="none">无</span>
+                            <span class="prefix-btn" data-prefix="家庭">家庭</span>
+                            <span class="prefix-btn" data-prefix="公司">公司</span>
+                        </div>
+                    </div>
+                    
+                    <div class="option-group">
+                        <span class="option-label">🏢 区号识别：</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enableAreaCode" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="areaCodeStatus" style="font-size: 12px; color: #34a853;">开启</span>
+                    </div>
+                </div>
+                
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label class="input-label">📊 提取数据列位置：</label>
+                    <div class="column-quick-buttons">
+                        <span class="column-quick-btn active" data-target="classifyColFirst">第一列</span>
+                        <span class="column-quick-btn" data-target="classifyColSecond">第二列</span>
+                    </div>
+                    <input type="radio" name="classifyColumnPosition" id="classifyColFirst" value="first" checked class="column-radio-hidden">
+                    <input type="radio" name="classifyColumnPosition" id="classifyColSecond" value="second" class="column-radio-hidden">
+                </div>
+                
+                <div class="classification-area" id="classificationArea">
+                    <div class="classification-icon">📁</div>
+                    <div class="classification-text">拖拽任意数量文件到此处（或点击选择）</div>
+                    <div class="classification-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
+                    <button class="classification-btn" id="selectClassifyFileBtn">📁 选择分类文件（可多选）</button>
+                    <input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
+                    
+                    <div id="classifyUploadedFilesList" class="file-list-container" style="display:none; margin-top:20px;">
+                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
+                        <div id="classifyFileListItems"></div>
+                    </div>
+                </div>
+                
+                <div id="classifyPreviewArea" class="column-preview" style="display:none;"></div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="classifyProgressBar"></div>
+                </div>
+                
+                <div id="classificationResults" class="classification-results" style="display: none;">
+                    <div class="results-header">分类结果</div>
+                    
+                    <div class="classification-stats">
+                        <div class="classification-stat">
+                            <div class="stat-number" id="totalFilesCount">0</div>
+                            <div class="stat-desc">上传文件数</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="totalNumbersCount">0</div>
+                            <div class="stat-desc">总号码数</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="uniquePrefixesCount">0</div>
+                            <div class="stat-desc">不同前缀数</div>
+                        </div>
+                        <div class="classification-stat">
+                            <div class="stat-number" id="maxNumbersPrefix">-</div>
+                            <div class="stat-desc">最多号码前缀</div>
+                        </div>
+                    </div>
+                    
+                    <div class="results-header">前缀分类详情</div>
+                    <div class="classification-list" id="classificationList"></div>
+                    
+                    <div class="actions-row">
+                        <button class="download-all-btn" id="downloadAllClassifyBtnTxt">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllClassifyBtnXlsx">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetClassifyBtn">🔄 重置分类</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 面板4: 双文件去重 -->
+        <div id="panel-duplicate" class="tool-panel">
+            <div class="duplicate-removal-section">
+                <div class="duplicate-header">
+                    <div class="duplicate-title">🔄 双文件重复号码删除</div>
+                    <div id="duplicateStatus" class="status-text">等待上传文件...</div>
+                </div>
+                
+                <div class="duplicate-info-box">
+                    <strong>📋 功能说明：</strong> 上传两个文件，工具会自动删除两个文件中均出现的重复号码。
+                </div>
+                
+                <div class="duplicate-upload-section">
+                    <div class="duplicate-upload-box" id="duplicateUploadBox1">
+                        <div class="duplicate-upload-icon">📁</div>
+                        <div class="duplicate-upload-text">拖拽或点击上传文件1</div>
+                        <div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div>
+                        <div class="duplicate-error-message" id="duplicateError1"></div>
+                    </div>
+                    <div class="duplicate-upload-box" id="duplicateUploadBox2">
+                        <div class="duplicate-upload-icon">📁</div>
+                        <div class="duplicate-upload-text">拖拽或点击上传文件2</div>
+                        <div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div>
+                        <div class="duplicate-error-message" id="duplicateError2"></div>
+                    </div>
+                </div>
+                
+                <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display:none;">
+                <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display:none;">
+                
+                <div id="duplicatePreviewArea" class="column-preview" style="display:none;"></div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="duplicateProgressBar"></div>
+                </div>
+                
+                <div class="duplicate-controls">
+                    <button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成下载</button>
+                    <button class="duplicate-btn" id="duplicateClearBtn">🗑️ 清空</button>
+                </div>
+                
+                <div class="duplicate-download-section" id="duplicateDownloadSection" style="display: none;">
+                    <div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div>
+                    <div class="duplicate-download-btns">
+                        <a class="duplicate-download-btn" id="duplicateDownload1Txt" download="">⬇️ 文件1 (TXT)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload1Excel" download="">⬇️ 文件1 (Excel)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload2Txt" download="">⬇️ 文件2 (TXT)</a>
+                        <a class="duplicate-download-btn" id="duplicateDownload2Excel" download="">⬇️ 文件2 (Excel)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 面板5: 加减前导0 -->
+        <div id="panel-dataop" class="tool-panel">
+            <div class="data-op-section">
+                <div class="data-op-header">
+                    <div class="data-op-title">0️⃣ 加减前导0工具</div>
+                    <div id="dataOpStatus" class="status-text">等待上传文件...</div>
+                </div>
+                
+                <div class="upload-area" id="dataOpUploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div>
+                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
+                    <button class="upload-btn" id="selectDataOpFilesBtn">📁 选择文件（可多选）</button>
+                    <input type="file" id="dataOpFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
+                    
+                    <div id="dataOpFilesList" class="file-list-container" style="display:none; margin-top:20px;">
+                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
+                        <div id="dataOpFileListItems"></div>
+                    </div>
+                </div>
+                
+                <div id="dataOpPreviewArea" class="column-preview" style="display:none;"></div>
+                
+                <div style="margin: 20px 0;">
+                    <label class="input-label">📊 选择操作列：</label>
+                    <div class="column-quick-buttons">
+                        <span class="column-quick-btn active" data-target="dataOpColFirst">第一列</span>
+                        <span class="column-quick-btn" data-target="dataOpColSecond">第二列</span>
+                    </div>
+                    <input type="radio" name="dataOpColumnPosition" id="dataOpColFirst" value="first" checked class="column-radio-hidden">
+                    <input type="radio" name="dataOpColumnPosition" id="dataOpColSecond" value="second" class="column-radio-hidden">
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <div class="action-buttons">
+                        <span class="action-btn add-zero" data-action="add">➕ 添加前导0</span>
+                        <span class="action-btn remove-zero" data-action="remove">➖ 删除前导0</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="dataOpProgressBar"></div>
+                </div>
+                
+                <div id="dataOpResults" class="multi-file-results" style="display:none;">
+                    <div class="file-list-header">处理结果</div>
+                    <div id="dataOpResultCards"></div>
+                    
+                    <div class="actions-row" style="margin-top:20px;">
+                        <button class="download-all-btn" id="downloadAllDataOpTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllDataOpXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetDataOpBtn">🔄 清空所有</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 面板6: 首列编辑 -->
+        <div id="panel-firstcol" class="tool-panel">
+            <div class="first-col-section">
+                <div class="first-col-header">
+                    <div class="first-col-title">⬅️ 首列编辑 · 智能识别空列</div>
+                    <div id="firstColStatus" class="status-text">等待上传文件...</div>
+                </div>
+                
+                <div class="first-col-upload-box" id="firstColUploadArea">
+                    <div class="first-col-upload-icon">📤</div>
+                    <div class="first-col-upload-text">拖拽任意数量文件到此处（或点击选择）</div>
+                    <div class="first-col-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
+                    <button class="upload-btn" id="selectFirstColFilesBtn">📁 选择文件（可多选）</button>
+                    <input type="file" id="firstColFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
+                    
+                    <div id="firstColFilesList" class="file-list-container" style="display:none; margin-top:20px;">
+                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
+                        <div id="firstColFileListItems"></div>
+                    </div>
+                </div>
+                
+                <div id="firstColPreviewArea" class="column-preview" style="display:none;"></div>
+                
+                <div id="firstColWarning" class="first-col-warning" style="display: none;">
+                    <span>⚠️</span>
+                    <span id="firstColWarningText"></span>
+                </div>
+                
+                <div style="margin: 25px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="action-btn insert-first" id="insertFirstColBtn" style="font-size: 1.1rem; padding: 15px 35px;">➕ 在第一列前插入空白列</button>
+                    <button class="action-btn delete-first" id="deleteFirstColBtn" style="font-size: 1.1rem; padding: 15px 35px;">✖ 删除第一列</button>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="firstColProgressBar"></div>
+                </div>
+                
+                <div id="firstColResults" class="multi-file-results" style="display:none;">
+                    <div class="file-list-header">处理完成</div>
+                    <div id="firstColResultCards"></div>
+                    
+                    <div class="actions-row" style="margin-top:20px;">
+                        <button class="download-all-btn" id="downloadAllFirstColTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
+                        <button class="download-all-btn" id="downloadAllFirstColXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
+                        <button class="reset-btn" id="resetFirstColBtn">🔄 清空所有</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="example-section">
+            <div class="example-title">📝 批量生成格式示例：</div>
+            <div class="example-content">
+开头023
+110-119      
+213-9   (代表213-219)
+6380-9  (代表6380-6389)
+            </div>
+        </div>
+        
+        <div class="note">
+            ⚡ 完整功能 | 区号识别：开启后自动匹配城市名称并命名文件
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.12.0/dist/videojs-http-streaming.min.js"></script>
-
     <script>
-        // 2026年更新后的更有效接口列表（优先稳定/推荐的排前面）
-        const parseApis = [
-            "https://ys.lbbb.cc/?url=",                    // 萝卜影视（推荐）
-            "https://www.myxin.top/jx/api/?url=",          // 黑米解析
-            "https://vip.52jiexi.top/?url=",               // 52解析
-            "https://jx.xmflv.com/?url=",                  // 虾米
-            "https://jx.m3u8.tv/jiexi/?url=",              // m3u8.tv
-            "https://www.yemu.xyz/?url=",                  // 夜幕（稳定）
-            "https://okjx.cc/?url=",                       // OK解析
-            "http://jx.kkqtv.com/jx/api/?url=",            // 快快
-            "https://jx.618g.com/?url=",                   // 618G
-            "http://jx.drgxj.com/?url="                    // drgxj
-        ];
-
-        let currentIndex = 0;
-        let currentPlayUrl = "";
-
-        const player = videojs('player', {
-            controls: true,
-            autoplay: false,
-            preload: 'auto',
-            fluid: true,
-            playbackRates: [0.5, 1, 1.25, 1.5, 2]
-        });
-
-        function getCurrentApiName() {
-            const api = parseApis[currentIndex];
-            if (api.includes('lbbb')) return "萝卜影视（推荐）";
-            if (api.includes('myxin')) return "黑米解析";
-            if (api.includes('52jiexi')) return "52解析";
-            if (api.includes('yemu')) return "夜幕解析";
-            if (api.includes('m3u8.tv')) return "m3u8.tv";
-            return `接口 ${currentIndex + 1}`;
-        }
-
-        function updateApiDisplay() {
-            document.getElementById('currentApi').textContent = getCurrentApiName();
-        }
-
-        async function parseVideo() {
-            const url = document.getElementById('videoUrl').value.trim();
-            if (!url || !url.startsWith('http')) {
-                alert("请输入正确的视频链接！");
-                return;
+        (function() {
+            // ========== 区号映射表 ==========
+            const areaCodeMap = {
+                '010': '北京', '020': '广州', '021': '上海', '022': '天津', '023': '重庆',
+                '024': '沈阳', '025': '南京', '027': '武汉', '028': '成都', '029': '西安',
+                '0310': '河北省邯郸市', '0311': '河北省石家庄市', '0312': '河北省保定市', '0313': '河北省张家口市', '0314': '河北省承德市',
+                '0315': '河北省唐山市', '0316': '河北省廊坊市', '0317': '河北省沧州市', '0318': '河北省衡水市', '0319': '河北省邢台市',
+                '0351': '山西省太原市', '0371': '河南省郑州市', '0411': '辽宁省大连市', '0451': '黑龙江省哈尔滨市', '0512': '江苏省苏州市',
+                '0516': '江苏省徐州市', '0531': '山东省济南市', '0532': '山东省青岛市', '0571': '浙江省杭州市', '0574': '浙江省宁波市',
+                '0591': '福建省福州市', '0592': '福建省厦门市', '0731': '湖南省长沙市', '0755': '广东省深圳市', '0791': '江西省南昌市',
+                '0851': '贵州省贵阳市', '0871': '云南省昆明市', '0898': '海南省海口市',
+                '0551': '安徽省合肥市', '0931': '甘肃省兰州市', '0971': '青海省西宁市', '0951': '宁夏银川市', '0991': '新疆乌鲁木齐市'
+            };
+            
+            // 获取区号对应的名称（智能匹配多种长度）
+            function getAreaName(prefix) {
+                if (areaCodeMap[prefix]) return areaCodeMap[prefix];
+                if (prefix.length >= 3 && areaCodeMap[prefix.substring(0, 3)]) return areaCodeMap[prefix.substring(0, 3)];
+                if (prefix.length >= 4 && areaCodeMap[prefix.substring(0, 4)]) return areaCodeMap[prefix.substring(0, 4)];
+                return null;
             }
-
-            const status = document.getElementById('status');
-            const resultArea = document.getElementById('resultArea');
-            status.textContent = "正在尝试解析...";
-            resultArea.value = "请求解析接口中...\n";
-
-            try {
-                const encodedUrl = encodeURIComponent(url);
-                const parseUrl = parseApis[currentIndex] + encodedUrl;
-
-                const response = await fetch(parseUrl, {
-                    method: 'GET',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+            
+            // ========== DOM元素缓存 ==========
+            const DOM = {
+                toolTabs: document.querySelectorAll('.tool-tab'),
+                toolPanels: {
+                    generate: document.getElementById('panel-generate'),
+                    deduplicate: document.getElementById('panel-deduplicate'),
+                    classify: document.getElementById('panel-classify'),
+                    duplicate: document.getElementById('panel-duplicate'),
+                    dataop: document.getElementById('panel-dataop'),
+                    firstcol: document.getElementById('panel-firstcol')
+                },
+                
+                filenameInput: document.getElementById('filenameInput'),
+                dataInput: document.getElementById('dataInput'),
+                numbersPerFile: document.getElementById('numbersPerFile'),
+                genColFirst: document.getElementById('genColFirst'),
+                genColSecond: document.getElementById('genColSecond'),
+                genColBtns: document.querySelectorAll('#panel-generate .column-quick-btn'),
+                generateTxtBtn: document.getElementById('generateTxtBtn'),
+                generateExcelBtn: document.getElementById('generateExcelBtn'),
+                resetBtn: document.getElementById('resetBtn'),
+                generateStatus: document.getElementById('generateStatus'),
+                generateProgressBar: document.getElementById('generateProgressBar'),
+                totalCount: document.getElementById('totalCount'),
+                fileCount: document.getElementById('fileCount'),
+                groupCount: document.getElementById('groupCount'),
+                uniqueCount: document.getElementById('uniqueCount'),
+                fileSize: document.getElementById('fileSize'),
+                generateLoading: document.getElementById('generateLoading'),
+                generateFileList: document.getElementById('generateFileList'),
+                filenameAutoHint: document.getElementById('filenameAutoHint'),
+                addPrefixBtn: document.getElementById('addPrefixBtn'),
+                quickBtns: document.querySelectorAll('.quick-btn'),
+                enableAreaCodeGenerate: document.getElementById('enableAreaCodeGenerate'),
+                generateAreaCodeStatus: document.getElementById('generateAreaCodeStatus'),
+                
+                deduplicateUploadArea: document.getElementById('deduplicateUploadArea'),
+                deduplicateFileInput: document.getElementById('deduplicateFileInput'),
+                selectDeduplicateFilesBtn: document.getElementById('selectDeduplicateFilesBtn'),
+                deduplicateFilesList: document.getElementById('deduplicateFilesList'),
+                deduplicateFileListItems: document.getElementById('deduplicateFileListItems'),
+                deduplicateStatus: document.getElementById('deduplicateStatus'),
+                deduplicateProgressBar: document.getElementById('deduplicateProgressBar'),
+                deduplicateResults: document.getElementById('deduplicateResults'),
+                deduplicateResultCards: document.getElementById('deduplicateResultCards'),
+                downloadAllDeduplicateTxt: document.getElementById('downloadAllDeduplicateTxt'),
+                downloadAllDeduplicateXlsx: document.getElementById('downloadAllDeduplicateXlsx'),
+                resetDeduplicateBtn: document.getElementById('resetDeduplicateBtn'),
+                deduplicatePreviewArea: document.getElementById('deduplicatePreviewArea'),
+                
+                classificationArea: document.getElementById('classificationArea'),
+                classifyFileInput: document.getElementById('classifyFileInput'),
+                selectClassifyFileBtn: document.getElementById('selectClassifyFileBtn'),
+                classifyUploadedFilesList: document.getElementById('classifyUploadedFilesList'),
+                classifyFileListItems: document.getElementById('classifyFileListItems'),
+                classifyStatus: document.getElementById('classifyStatus'),
+                classifyProgressBar: document.getElementById('classifyProgressBar'),
+                classificationResults: document.getElementById('classificationResults'),
+                classificationList: document.getElementById('classificationList'),
+                totalFilesCount: document.getElementById('totalFilesCount'),
+                totalNumbersCount: document.getElementById('totalNumbersCount'),
+                uniquePrefixesCount: document.getElementById('uniquePrefixesCount'),
+                maxNumbersPrefix: document.getElementById('maxNumbersPrefix'),
+                prefixLength: document.getElementById('prefixLength'),
+                includeFullNumber: document.getElementById('includeFullNumber'),
+                sortAscBtn: document.getElementById('sortAscBtn'),
+                sortShuffleBtn: document.getElementById('sortShuffleBtn'),
+                classifyColFirst: document.getElementById('classifyColFirst'),
+                classifyColSecond: document.getElementById('classifyColSecond'),
+                classifyColBtns: document.querySelectorAll('#panel-classify .column-quick-btn'),
+                downloadAllClassifyBtnTxt: document.getElementById('downloadAllClassifyBtnTxt'),
+                downloadAllClassifyBtnXlsx: document.getElementById('downloadAllClassifyBtnXlsx'),
+                resetClassifyBtn: document.getElementById('resetClassifyBtn'),
+                filenamePrefixBtns: document.querySelectorAll('.filename-prefix-buttons .prefix-btn'),
+                classifyPreviewArea: document.getElementById('classifyPreviewArea'),
+                enableAreaCode: document.getElementById('enableAreaCode'),
+                areaCodeStatus: document.getElementById('areaCodeStatus'),
+                
+                duplicateUploadBox1: document.getElementById('duplicateUploadBox1'),
+                duplicateUploadBox2: document.getElementById('duplicateUploadBox2'),
+                duplicateFile1Input: document.getElementById('duplicateFile1Input'),
+                duplicateFile2Input: document.getElementById('duplicateFile2Input'),
+                duplicateFile1Name: document.getElementById('duplicateFile1Name'),
+                duplicateFile2Name: document.getElementById('duplicateFile2Name'),
+                duplicateError1: document.getElementById('duplicateError1'),
+                duplicateError2: document.getElementById('duplicateError2'),
+                duplicateProcessBtn: document.getElementById('duplicateProcessBtn'),
+                duplicateClearBtn: document.getElementById('duplicateClearBtn'),
+                duplicateDownloadSection: document.getElementById('duplicateDownloadSection'),
+                duplicateDownload1Txt: document.getElementById('duplicateDownload1Txt'),
+                duplicateDownload1Excel: document.getElementById('duplicateDownload1Excel'),
+                duplicateDownload2Txt: document.getElementById('duplicateDownload2Txt'),
+                duplicateDownload2Excel: document.getElementById('duplicateDownload2Excel'),
+                duplicateStatus: document.getElementById('duplicateStatus'),
+                duplicateProgressBar: document.getElementById('duplicateProgressBar'),
+                duplicatePreviewArea: document.getElementById('duplicatePreviewArea'),
+                
+                dataOpUploadArea: document.getElementById('dataOpUploadArea'),
+                dataOpFileInput: document.getElementById('dataOpFileInput'),
+                selectDataOpFilesBtn: document.getElementById('selectDataOpFilesBtn'),
+                dataOpFilesList: document.getElementById('dataOpFilesList'),
+                dataOpFileListItems: document.getElementById('dataOpFileListItems'),
+                dataOpStatus: document.getElementById('dataOpStatus'),
+                dataOpProgressBar: document.getElementById('dataOpProgressBar'),
+                dataOpResults: document.getElementById('dataOpResults'),
+                dataOpResultCards: document.getElementById('dataOpResultCards'),
+                dataOpColFirst: document.getElementById('dataOpColFirst'),
+                dataOpColSecond: document.getElementById('dataOpColSecond'),
+                dataOpColBtns: document.querySelectorAll('#panel-dataop .column-quick-btn'),
+                dataOpActionBtns: document.querySelectorAll('#panel-dataop .action-btn'),
+                downloadAllDataOpTxt: document.getElementById('downloadAllDataOpTxt'),
+                downloadAllDataOpXlsx: document.getElementById('downloadAllDataOpXlsx'),
+                resetDataOpBtn: document.getElementById('resetDataOpBtn'),
+                dataOpPreviewArea: document.getElementById('dataOpPreviewArea'),
+                
+                firstColUploadArea: document.getElementById('firstColUploadArea'),
+                firstColFileInput: document.getElementById('firstColFileInput'),
+                selectFirstColFilesBtn: document.getElementById('selectFirstColFilesBtn'),
+                firstColFilesList: document.getElementById('firstColFilesList'),
+                firstColFileListItems: document.getElementById('firstColFileListItems'),
+                firstColStatus: document.getElementById('firstColStatus'),
+                firstColProgressBar: document.getElementById('firstColProgressBar'),
+                firstColResults: document.getElementById('firstColResults'),
+                firstColResultCards: document.getElementById('firstColResultCards'),
+                firstColWarning: document.getElementById('firstColWarning'),
+                firstColWarningText: document.getElementById('firstColWarningText'),
+                insertFirstColBtn: document.getElementById('insertFirstColBtn'),
+                deleteFirstColBtn: document.getElementById('deleteFirstColBtn'),
+                downloadAllFirstColTxt: document.getElementById('downloadAllFirstColTxt'),
+                downloadAllFirstColXlsx: document.getElementById('downloadAllFirstColXlsx'),
+                resetFirstColBtn: document.getElementById('resetFirstColBtn'),
+                firstColPreviewArea: document.getElementById('firstColPreviewArea')
+            };
+            
+            // 滑块开关状态显示
+            if (DOM.enableAreaCode && DOM.areaCodeStatus) {
+                DOM.enableAreaCode.addEventListener('change', function() {
+                    DOM.areaCodeStatus.textContent = this.checked ? '开启' : '关闭';
+                    DOM.areaCodeStatus.style.color = this.checked ? '#34a853' : '#999';
+                    if (classifyFiles && classifyFiles.length > 0) renderClassificationResults();
+                });
+                DOM.areaCodeStatus.textContent = DOM.enableAreaCode.checked ? '开启' : '关闭';
+                DOM.areaCodeStatus.style.color = DOM.enableAreaCode.checked ? '#34a853' : '#999';
+            }
+            
+            if (DOM.enableAreaCodeGenerate && DOM.generateAreaCodeStatus) {
+                DOM.enableAreaCodeGenerate.addEventListener('change', function() {
+                    DOM.generateAreaCodeStatus.textContent = this.checked ? '开启' : '关闭';
+                    DOM.generateAreaCodeStatus.style.color = this.checked ? '#34a853' : '#999';
+                    updateFilenameSuggestion();
+                });
+                DOM.generateAreaCodeStatus.textContent = DOM.enableAreaCodeGenerate.checked ? '开启' : '关闭';
+                DOM.generateAreaCodeStatus.style.color = DOM.enableAreaCodeGenerate.checked ? '#34a853' : '#999';
+            }
+            
+            let classifyFiles = [];
+            let classifyRawNumbers = [];
+            let currentSortMode = 'asc';
+            let currentFilenamePrefix = 'none';
+            let lastManualValue = '';
+            let filenameUpdateTimer = null;
+            
+            // 通用函数
+            function uniqueArray(array) { return [...new Set(array)]; }
+            function shuffleArray(array) {
+                const shuffled = array.slice();
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+            
+            function createExcelBlob(data, isArray = true) {
+                const worksheetData = isArray ? data.map(v => [v]) : data;
+                const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+                if (ws['!ref']) {
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    for (let R = range.s.r; R <= range.e.r; R++) {
+                        for (let C = range.s.c; C <= range.e.c; C++) {
+                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                            if (ws[cellRef]) ws[cellRef].t = 's';
+                        }
+                    }
+                }
+                ws['!cols'] = Array(worksheetData[0]?.length || 1).fill({ wch: 15 });
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "数据");
+                return new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/octet-stream' });
+            }
+            
+            function parseFile(file, colIndex, callback) {
+                const reader = new FileReader();
+                const ext = file.name.split('.').pop().toLowerCase();
+                reader.onload = (e) => {
+                    try {
+                        let data = [];
+                        if (ext === 'xlsx' || ext === 'xls') {
+                            const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+                            const sheet = wb.Sheets[wb.SheetNames[0]];
+                            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+                            for (let i = 0; i < rows.length; i++) {
+                                const cell = rows[i][colIndex];
+                                if (cell != null && cell.toString().trim() !== '') data.push(cell.toString().trim());
+                            }
+                        } else {
+                            const text = e.target.result;
+                            const lines = text.split(/\r\n|\n|\r/);
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i].trim();
+                                if (line) data.push(line);
+                            }
+                        }
+                        callback(null, data);
+                    } catch (err) { callback(err, null); }
+                };
+                if (ext === 'xlsx' || ext === 'xls') reader.readAsBinaryString(file);
+                else reader.readAsText(file, 'UTF-8');
+            }
+            
+            function parseFileFull(file, callback) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'xlsx' || ext === 'xls') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+                            const sheet = wb.Sheets[wb.SheetNames[0]];
+                            const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+                            callback(null, data);
+                        } catch (err) { callback(err, null); }
+                    };
+                    reader.readAsBinaryString(file);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const text = e.target.result;
+                            const lines = text.split(/\r\n|\n|\r/);
+                            const data = lines.filter(l => l.trim() !== '').map(l => [l.trim()]);
+                            callback(null, data);
+                        } catch (err) { callback(err, null); }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                }
+            }
+            
+            function showColumnPreview(container, files, colIndex) {
+                if (!files || files.length === 0) { container.style.display = 'none'; return; }
+                const file = files[0];
+                parseFile(file, colIndex, (err, data) => {
+                    if (err || !data || data.length === 0) { container.style.display = 'none'; return; }
+                    const sample = data.slice(0, 5);
+                    const hasZero = sample.some(v => v.startsWith('0'));
+                    let html = `<div class="preview-item"><span class="preview-badge">${file.name}</span><span class="preview-detail">共 ${data.length} 条数据</span>`;
+                    html += hasZero ? `<span class="preview-zero">⚠️ 存在以0开头的数据</span>` : `<span class="preview-zero">✅ 无前导0</span>`;
+                    html += `</div><div style="margin-top:8px; font-family:monospace;">预览: ${sample.join(' · ')}</div>`;
+                    container.innerHTML = html;
+                    container.style.display = 'block';
+                });
+            }
+            
+            // 批量生成相关
+            function updateFilenameSuggestion() {
+                const prefixes = [];
+                const text = DOM.dataInput.value;
+                const lines = text.split(/\r?\n/);
+                for (let line of lines) {
+                    line = line.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+                    const prefixMatch = line.match(/^开头\s*(\d+)/);
+                    if (prefixMatch) prefixes.push(prefixMatch[1]);
+                }
+                const uniquePrefixes = [...new Set(prefixes)];
+                if (uniquePrefixes.length > 0) {
+                    let suggestion;
+                    const enableArea = DOM.enableAreaCodeGenerate ? DOM.enableAreaCodeGenerate.checked : false;
+                    if (enableArea) {
+                        const names = [];
+                        for (let p of uniquePrefixes) {
+                            const area = getAreaName(p);
+                            names.push(area ? `${p}(${area})` : p);
+                        }
+                        suggestion = names.join('-');
+                    } else {
+                        suggestion = uniquePrefixes.join('-');
+                    }
+                    if (!lastManualValue || DOM.filenameInput.value === lastManualValue || DOM.filenameInput.value === '') {
+                        DOM.filenameInput.value = suggestion;
+                        DOM.filenameAutoHint.innerHTML = enableArea ? `✅ 自动识别: ${suggestion} (含区号)` : `✅ 自动识别: ${suggestion}`;
+                        lastManualValue = suggestion;
+                    } else {
+                        DOM.filenameAutoHint.innerHTML = `📋 检测到开头: ${uniquePrefixes.join('、')}`;
+                    }
+                } else {
+                    DOM.filenameAutoHint.innerHTML = DOM.filenameInput.value ? '✏️ 手动输入' : '⏳ 等待输入开头...';
+                }
+            }
+            
+            function parseInputData(text) {
+                text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                const lines = text.split(/\r?\n/);
+                const data = {};
+                let currentPrefix = null;
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line === '') continue;
+                    if (line === '开头') { currentPrefix = null; continue; }
+                    const prefixMatch = line.match(/^开头\s*(\d+)/);
+                    if (prefixMatch) {
+                        currentPrefix = prefixMatch[1];
+                        if (!data[currentPrefix]) data[currentPrefix] = [];
+                        continue;
+                    }
+                    if (/^\d+$/.test(line)) {
+                        if (currentPrefix === null) {
+                            currentPrefix = line;
+                            if (!data[currentPrefix]) data[currentPrefix] = [];
+                        } else {
+                            data[currentPrefix].push(line.padStart(3, '0'));
+                        }
+                        continue;
+                    }
+                    const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
+                    if (rangeMatch && currentPrefix) {
+                        let start = rangeMatch[1];
+                        let end = rangeMatch[2];
+                        if (end.length < start.length) {
+                            const prefix = start.substring(0, start.length - end.length);
+                            end = prefix + end;
+                        }
+                        const startNum = parseInt(start, 10);
+                        const endNum = parseInt(end, 10);
+                        if (startNum <= endNum) {
+                            for (let i = startNum; i <= endNum; i++) {
+                                data[currentPrefix].push(i.toString().padStart(3, '0'));
+                            }
+                        }
+                        continue;
+                    }
+                    if (currentPrefix) {
+                        const numbers = line.match(/\d+/g);
+                        if (numbers) {
+                            for (let num of numbers) {
+                                if (num.length >= 2 && num.length <= 4) data[currentPrefix].push(num.padStart(3, '0'));
+                            }
+                        }
+                    }
+                }
+                return data;
+            }
+            
+            function generateAllNumbers(data) {
+                const numbers = [];
+                for (let [prefix, middles] of Object.entries(data)) {
+                    for (let middle of middles) {
+                        for (let k = 1; k <= 9999; k++) numbers.push(prefix + middle + k.toString().padStart(4, '0'));
+                    }
+                }
+                return numbers;
+            }
+            
+            function generateFilesCore(format) {
+                const inputText = DOM.dataInput.value;
+                let filename = DOM.filenameInput.value.trim() || '号码数据';
+                const perFile = parseInt(DOM.numbersPerFile.value, 10) || 10;
+                const colPos = document.querySelector('input[name="genColumnPosition"]:checked').value;
+                const perFileCount = perFile * 10000;
+                DOM.generateLoading.style.display = 'block';
+                DOM.generateFileList.innerHTML = '';
+                DOM.generateStatus.textContent = '解析输入...';
+                DOM.generateProgressBar.style.width = '10%';
+                setTimeout(() => {
+                    try {
+                        const parsed = parseInputData(inputText);
+                        let totalGroups = 0;
+                        for (let m of Object.values(parsed)) totalGroups += m.length;
+                        if (totalGroups === 0) {
+                            alert('未解析到有效号码段！请检查输入格式。\n\n正确示例：\n开头\n023\n110-119');
+                            DOM.generateLoading.style.display = 'none';
+                            DOM.generateProgressBar.style.width = '0%';
+                            return;
+                        }
+                        DOM.generateStatus.textContent = '生成号码序列...';
+                        DOM.generateProgressBar.style.width = '30%';
+                        const allNumbers = generateAllNumbers(parsed);
+                        DOM.generateStatus.textContent = '打乱数据...';
+                        DOM.generateProgressBar.style.width = '50%';
+                        const shuffled = shuffleArray(allNumbers);
+                        DOM.generateStatus.textContent = '去重...';
+                        DOM.generateProgressBar.style.width = '70%';
+                        const unique = uniqueArray(shuffled);
+                        const totalFiles = Math.ceil(unique.length / perFileCount);
+                        DOM.totalCount.textContent = allNumbers.length.toLocaleString();
+                        DOM.fileCount.textContent = totalFiles;
+                        DOM.groupCount.textContent = totalGroups;
+                        DOM.uniqueCount.textContent = unique.length.toLocaleString();
+                        DOM.generateStatus.textContent = '生成文件...';
+                        DOM.generateProgressBar.style.width = '85%';
+                        for (let i = 0; i < totalFiles; i++) {
+                            const start = i * perFileCount;
+                            const end = Math.min(start + perFileCount, unique.length);
+                            const fileNumbers = unique.slice(start, end);
+                            const colSuffix = colPos === 'second' ? '_第二列' : '';
+                            const fileExt = format === 'txt' ? '.txt' : '.xlsx';
+                            const fileName = i === 0 ? `${filename}${colSuffix}${fileExt}` : `${filename}${colSuffix}_${i+1}${fileExt}`;
+                            if (format === 'txt') {
+                                let content = colPos === 'first' ? fileNumbers.join('\n') : fileNumbers.map(v => '\t' + v).join('\n');
+                                const blob = new Blob([content], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = fileName;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            } else {
+                                const data = colPos === 'first' ? fileNumbers.map(v => [v]) : fileNumbers.map(v => ['', v]);
+                                const ws = XLSX.utils.aoa_to_sheet(data);
+                                if (ws['!ref']) {
+                                    const range = XLSX.utils.decode_range(ws['!ref']);
+                                    for (let R = range.s.r; R <= range.e.r; R++) {
+                                        for (let C = range.s.c; C <= range.e.c; C++) {
+                                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                            if (ws[cellRef]) ws[cellRef].t = 's';
+                                        }
+                                    }
+                                }
+                                ws['!cols'] = colPos === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                const wb = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                XLSX.writeFile(wb, fileName);
+                            }
+                            const item = document.createElement('div');
+                            item.className = 'file-item';
+                            item.innerHTML = `<div class="file-info"><div class="file-name">${fileName}</div><div class="file-size">${fileNumbers.length} 条</div></div><button class="download-btn" data-filename="${fileName}" data-content='${JSON.stringify(fileNumbers)}' data-format="${format}" data-colpos="${colPos}">⬇️ 下载</button>`;
+                            DOM.generateFileList.appendChild(item);
+                            const downloadBtn = item.querySelector('.download-btn');
+                            downloadBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                const fn = this.dataset.filename;
+                                const nums = JSON.parse(this.dataset.content);
+                                const fmt = this.dataset.format;
+                                const cp = this.dataset.colpos;
+                                if (fmt === 'txt') {
+                                    let content = cp === 'first' ? nums.join('\n') : nums.map(v => '\t' + v).join('\n');
+                                    const blob = new Blob([content], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = fn;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                                } else {
+                                    const data = cp === 'first' ? nums.map(v => [v]) : nums.map(v => ['', v]);
+                                    const ws = XLSX.utils.aoa_to_sheet(data);
+                                    if (ws['!ref']) {
+                                        const range = XLSX.utils.decode_range(ws['!ref']);
+                                        for (let R = range.s.r; R <= range.e.r; R++) {
+                                            for (let C = range.s.c; C <= range.e.c; C++) {
+                                                const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                                                if (ws[cellRef]) ws[cellRef].t = 's';
+                                            }
+                                        }
+                                    }
+                                    ws['!cols'] = cp === 'first' ? [{ wch: 15 }] : [{ wch: 15 }, { wch: 15 }];
+                                    const wb = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(wb, ws, "数据");
+                                    XLSX.writeFile(wb, fn);
+                                }
+                            });
+                            DOM.generateProgressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
+                            DOM.generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
+                        }
+                        DOM.generateStatus.textContent = '完成！';
+                        DOM.generateProgressBar.style.width = '100%';
+                        DOM.generateLoading.style.display = 'none';
+                    } catch (e) {
+                        alert('错误：' + e.message);
+                        DOM.generateLoading.style.display = 'none';
+                        DOM.generateProgressBar.style.width = '0%';
+                    }
+                }, 50);
+            }
+            
+            DOM.generateTxtBtn.addEventListener('click', () => generateFilesCore('txt'));
+            DOM.generateExcelBtn.addEventListener('click', () => generateFilesCore('excel'));
+            DOM.resetBtn.addEventListener('click', () => {
+                DOM.filenameInput.value = '';
+                DOM.numbersPerFile.value = '10';
+                DOM.dataInput.value = '开头';
+                DOM.generateFileList.innerHTML = '';
+                DOM.totalCount.textContent = '0';
+                DOM.fileCount.textContent = '0';
+                DOM.groupCount.textContent = '0';
+                DOM.uniqueCount.textContent = '0';
+                DOM.generateStatus.textContent = '等待生成...';
+                DOM.generateProgressBar.style.width = '0%';
+                DOM.fileSize.textContent = '10万';
+                lastManualValue = '';
+                DOM.filenameAutoHint.innerHTML = '等待输入开头...';
+            });
+            DOM.addPrefixBtn.addEventListener('click', () => {
+                let val = DOM.dataInput.value;
+                if (val.trim() !== '' && !val.endsWith('\n')) val += '\n';
+                DOM.dataInput.value = val + '开头';
+                DOM.dataInput.focus();
+                updateFilenameSuggestion();
+            });
+            DOM.dataInput.addEventListener('input', () => { clearTimeout(filenameUpdateTimer); filenameUpdateTimer = setTimeout(updateFilenameSuggestion, 100); });
+            DOM.filenameInput.addEventListener('input', () => { lastManualValue = DOM.filenameInput.value; DOM.filenameAutoHint.innerHTML = '✏️ 手动编辑模式'; });
+            DOM.quickBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    DOM.quickBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    DOM.numbersPerFile.value = this.dataset.value;
+                    DOM.fileSize.textContent = this.dataset.value + '万';
+                });
+            });
+            DOM.genColBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    DOM.genColBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    DOM[this.dataset.target === 'genColFirst' ? 'genColFirst' : 'genColSecond'].checked = true;
+                });
+            });
+            
+            // ========== 前缀分类核心功能（区号识别自动命名）==========
+            function updateClassifyFileList() {
+                if (classifyFiles.length === 0) {
+                    DOM.classifyUploadedFilesList.style.display = 'none';
+                    DOM.classifyPreviewArea.style.display = 'none';
+                    return;
+                }
+                DOM.classifyUploadedFilesList.style.display = 'block';
+                let html = '';
+                classifyFiles.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span><span class="file-list-count">${(f.size/1024).toFixed(1)} KB</span></div>`; });
+                DOM.classifyFileListItems.innerHTML = html;
+                DOM.classifyStatus.innerHTML = `已上传 ${classifyFiles.length} 个文件`;
+                const colPos = document.querySelector('input[name="classifyColumnPosition"]:checked').value;
+                showColumnPreview(DOM.classifyPreviewArea, classifyFiles, colPos === 'first' ? 0 : 1);
+            }
+            
+            DOM.classificationArea.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') DOM.classifyFileInput.click(); });
+            DOM.selectClassifyFileBtn.addEventListener('click', (e) => { e.stopPropagation(); DOM.classifyFileInput.click(); });
+            DOM.classifyFileInput.addEventListener('change', (e) => { classifyFiles = Array.from(e.target.files); updateClassifyFileList(); parseAllClassifyFiles(); });
+            DOM.classificationArea.addEventListener('dragover', (e) => e.preventDefault());
+            DOM.classificationArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
+                if (files.length) { classifyFiles = files; updateClassifyFileList(); parseAllClassifyFiles(); }
+            });
+            
+            DOM.sortAscBtn.addEventListener('click', function() {
+                DOM.sortAscBtn.classList.add('active');
+                DOM.sortShuffleBtn.classList.remove('active');
+                currentSortMode = 'asc';
+                if (classifyFiles.length > 0) renderClassificationResults();
+            });
+            DOM.sortShuffleBtn.addEventListener('click', function() {
+                DOM.sortShuffleBtn.classList.add('active');
+                DOM.sortAscBtn.classList.remove('active');
+                currentSortMode = 'shuffle';
+                if (classifyFiles.length > 0) renderClassificationResults();
+            });
+            DOM.filenamePrefixBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    DOM.filenamePrefixBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilenamePrefix = this.dataset.prefix;
+                    if (classifyFiles.length > 0) renderClassificationResults();
+                });
+            });
+            DOM.prefixLength.addEventListener('change', () => { if (classifyFiles.length > 0) renderClassificationResults(); });
+            DOM.includeFullNumber.addEventListener('change', () => { if (classifyFiles.length > 0) renderClassificationResults(); });
+            DOM.classifyColBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    DOM.classifyColBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const targetId = this.dataset.target;
+                    if (targetId) document.getElementById(targetId).checked = true;
+                    if (classifyFiles.length > 0) {
+                        const colIndex = targetId === 'classifyColFirst' ? 0 : 1;
+                        showColumnPreview(DOM.classifyPreviewArea, classifyFiles, colIndex);
+                        parseAllClassifyFiles();
                     }
                 });
-
-                let body = await response.text();
-                resultArea.value += "接口返回（前800字符）：\n" + body.substring(0, 800) + (body.length > 800 ? '...' : '') + "\n\n";
-
-                // 智能提取真实播放地址（支持多种JSON格式和直接m3u8）
-                let realUrl = null;
-                try {
-                    const json = JSON.parse(body);
-                    realUrl = json.url || json.m3u8 || json.playUrl || 
-                             (json.data && (json.data.url || json.data.m3u8 || json.data.playUrl)) ||
-                             (json.result && json.result.url);
-                } catch (e) {
-                    // 非JSON时尝试正则提取http开头的m3u8/mp4
-                    const match = body.match(/https?:\/\/[^\s"']+\.(m3u8|mp4)[^\s"']*/i);
-                    if (match) realUrl = match[0];
-                }
-
-                if (realUrl && realUrl.startsWith('http')) {
-                    if (realUrl.startsWith('//')) realUrl = 'https:' + realUrl;
-                    currentPlayUrl = realUrl;
-                    resultArea.value += `✅ 解析成功！\n真实地址：\n${realUrl}\n\n现在点击下方“在网页中直接播放”即可观看`;
-                    status.textContent = "✅ 解析成功！可以播放了";
-                } else {
-                    resultArea.value += "⚠️ 本接口未提取到有效地址，请点击“切换接口”重试";
-                    status.textContent = "解析失败，建议切换接口";
-                }
-            } catch (err) {
-                resultArea.value += `❌ 请求异常：${err.message}\n建议切换接口重试`;
-                status.textContent = "接口请求失败";
+            });
+            
+            function parseAllClassifyFiles() {
+                const colPos = document.querySelector('input[name="classifyColumnPosition"]:checked').value;
+                const colIndex = colPos === 'first' ? 0 : 1;
+                let allNumbers = [];
+                let filesProcessed = 0;
+                if (classifyFiles.length === 0) return;
+                DOM.classificationResults.style.display = 'block';
+                DOM.classifyProgressBar.style.width = '10%';
+                classifyFiles.forEach(file => {
+                    parseFile(file, colIndex, (err, data) => {
+                        if (!err && data) allNumbers = allNumbers.concat(data);
+                        filesProcessed++;
+                        DOM.classifyProgressBar.style.width = 10 + (filesProcessed / classifyFiles.length * 40) + '%';
+                        if (filesProcessed === classifyFiles.length) {
+                            classifyRawNumbers = allNumbers;
+                            renderClassificationResults();
+                            DOM.classifyProgressBar.style.width = '100%';
+                            setTimeout(() => { DOM.classifyProgressBar.style.width = '0%'; }, 500);
+                        }
+                    });
+                });
             }
-        }
-
-        function playParsedUrl() {
-            if (!currentPlayUrl) {
-                alert("请先解析成功后再播放！");
-                return;
+            
+            function renderClassificationResults() {
+                if (!classifyRawNumbers || classifyRawNumbers.length === 0) { DOM.classificationResults.style.display = 'none'; return; }
+                const prefixLen = parseInt(DOM.prefixLength.value, 10);
+                const includeFull = DOM.includeFullNumber.checked;
+                const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
+                const enableArea = DOM.enableAreaCode ? DOM.enableAreaCode.checked : false;
+                
+                DOM.classificationResults.style.display = 'block';
+                DOM.totalFilesCount.textContent = classifyFiles.length;
+                DOM.totalNumbersCount.textContent = classifyRawNumbers.length;
+                
+                const groups = {};
+                classifyRawNumbers.forEach(num => {
+                    if (num.length >= prefixLen) {
+                        const key = num.substring(0, prefixLen);
+                        if (!groups[key]) groups[key] = [];
+                        groups[key].push(num);
+                    }
+                });
+                
+                DOM.uniquePrefixesCount.textContent = Object.keys(groups).length;
+                let maxPrefix = '-', maxCount = 0;
+                Object.entries(groups).forEach(([k, v]) => { if (v.length > maxCount) { maxCount = v.length; maxPrefix = k; } });
+                DOM.maxNumbersPrefix.textContent = maxPrefix;
+                
+                let entriesToShow;
+                if (currentSortMode === 'asc') entriesToShow = Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+                else if (currentSortMode === 'shuffle') {
+                    entriesToShow = Object.entries(groups);
+                    for (let i = entriesToShow.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [entriesToShow[i], entriesToShow[j]] = [entriesToShow[j], entriesToShow[i]];
+                    }
+                } else entriesToShow = Object.entries(groups);
+                
+                DOM.classificationList.innerHTML = '';
+                entriesToShow.forEach(([key, nums]) => {
+                    let displayKey = key;
+                    let areaName = '';
+                    if (enableArea) {
+                        const area = getAreaName(key);
+                        if (area) { areaName = area; displayKey = `${key} (${area})`; }
+                    }
+                    const item = document.createElement('div');
+                    item.className = 'classification-item';
+                    item.innerHTML = `
+                        <div class="prefix-info">
+                            <span class="prefix-badge">${displayKey}</span>
+                            <span class="prefix-count">${nums.length} 个号码</span>
+                        </div>
+                        <div class="download-buttons-group">
+                            <button class="download-classify-btn-txt" data-prefix="${key}" data-nums='${JSON.stringify(nums)}' data-area="${areaName}">TXT</button>
+                            <button class="download-classify-btn-xlsx" data-prefix="${key}" data-nums='${JSON.stringify(nums)}' data-area="${areaName}">Excel</button>
+                        </div>
+                    `;
+                    DOM.classificationList.appendChild(item);
+                    const txtBtn = item.querySelector('.download-classify-btn-txt');
+                    const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
+                    const buildFileName = (key, area, ext) => {
+                        let namePart = key;
+                        if (enableArea && area) namePart = `${key}_${area}`;
+                        return filePrefix + namePart + '_' + nums.length + '个' + ext;
+                    };
+                    txtBtn.addEventListener('click', () => {
+                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArray(nums) : [...nums].sort((a, b) => a.localeCompare(b));
+                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = buildFileName(key, txtBtn.dataset.area, '.txt');
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    });
+                    xlsxBtn.addEventListener('click', () => {
+                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArray(nums) : [...nums].sort((a, b) => a.localeCompare(b));
+                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
+                        const blob = createExcelBlob(data, true);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = buildFileName(key, xlsxBtn.dataset.area, '.xlsx');
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    });
+                });
+                
+                DOM.downloadAllClassifyBtnTxt.onclick = () => {
+                    Object.entries(groups).forEach(([key, nums]) => {
+                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArray(nums) : [...nums].sort((a, b) => a.localeCompare(b));
+                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        let areaName = '';
+                        if (enableArea) { const area = getAreaName(key); if (area) areaName = `_${area}`; }
+                        a.download = filePrefix + key + areaName + '_' + nums.length + '个.txt';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    });
+                };
+                DOM.downloadAllClassifyBtnXlsx.onclick = () => {
+                    Object.entries(groups).forEach(([key, nums]) => {
+                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArray(nums) : [...nums].sort((a, b) => a.localeCompare(b));
+                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
+                        const blob = createExcelBlob(data, true);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        let areaName = '';
+                        if (enableArea) { const area = getAreaName(key); if (area) areaName = `_${area}`; }
+                        a.download = filePrefix + key + areaName + '_' + nums.length + '个.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    });
+                };
             }
-            const type = currentPlayUrl.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4';
-            player.src({ src: currentPlayUrl, type: type });
-            player.play().catch(e => alert("播放失败：可能是地址过期或浏览器限制，请重试解析"));
-        }
-
-        function switchApi() {
-            currentIndex = (currentIndex + 1) % parseApis.length;
-            updateApiDisplay();
-            document.getElementById('status').textContent = `已切换 → ${getCurrentApiName()}，请重新解析`;
-        }
-
-        function clearAll() {
-            document.getElementById('videoUrl').value = "";
-            document.getElementById('resultArea').value = "";
-            currentPlayUrl = "";
-            player.pause();
-            document.getElementById('status').textContent = "已清空";
-        }
-
-        // 初始化
-        window.onload = updateApiDisplay;
+            
+            DOM.resetClassifyBtn.addEventListener('click', () => {
+                classifyFiles = [];
+                classifyRawNumbers = [];
+                DOM.classifyUploadedFilesList.style.display = 'none';
+                DOM.classificationResults.style.display = 'none';
+                DOM.classifyStatus.innerHTML = '等待上传文件...';
+                DOM.classifyFileInput.value = '';
+                DOM.classifyPreviewArea.style.display = 'none';
+            });
+            
+            // ========== 单文件去重（文件名包含数量）==========
+            let deduplicateFilesList = [];
+            function updateDeduplicateFileList() {
+                if (deduplicateFilesList.length === 0) { DOM.deduplicateFilesList.style.display = 'none'; DOM.deduplicatePreviewArea.style.display = 'none'; return; }
+                DOM.deduplicateFilesList.style.display = 'block';
+                let html = '';
+                deduplicateFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span><span class="file-list-count">${(f.size/1024).toFixed(1)} KB</span></div>`; });
+                DOM.deduplicateFileListItems.innerHTML = html;
+                DOM.deduplicateStatus.innerHTML = `已上传 ${deduplicateFilesList.length} 个文件`;
+                const colPos = document.querySelector('input[name="genColumnPosition"]:checked')?.value || 'first';
+                showColumnPreview(DOM.deduplicatePreviewArea, deduplicateFilesList, colPos === 'first' ? 0 : 1);
+            }
+            DOM.deduplicateUploadArea.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') DOM.deduplicateFileInput.click(); });
+            DOM.selectDeduplicateFilesBtn.addEventListener('click', (e) => { e.stopPropagation(); DOM.deduplicateFileInput.click(); });
+            DOM.deduplicateFileInput.addEventListener('change', (e) => { deduplicateFilesList = Array.from(e.target.files); updateDeduplicateFileList(); processDeduplicateFiles(deduplicateFilesList); });
+            DOM.deduplicateUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); DOM.deduplicateUploadArea.style.borderColor = '#4d90fe'; });
+            DOM.deduplicateUploadArea.addEventListener('dragleave', () => { DOM.deduplicateUploadArea.style.borderColor = '#c3cfe2'; });
+            DOM.deduplicateUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                DOM.deduplicateUploadArea.style.borderColor = '#c3cfe2';
+                const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
+                if (files.length) { deduplicateFilesList = files; updateDeduplicateFileList(); processDeduplicateFiles(files); }
+            });
+            function processDeduplicateFiles(files) {
+                DOM.deduplicateResults.style.display = 'block';
+                DOM.deduplicateResultCards.innerHTML = '';
+                const colPos = document.querySelector('input[name="genColumnPosition"]:checked')?.value || 'first';
+                const colIndex = colPos === 'first' ? 0 : 1;
+                files.forEach(file => {
+                    parseFile(file, colIndex, (err, data) => {
+                        if (err) { DOM.deduplicateResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; return; }
+                        const unique = uniqueArray(data);
+                        const uniqueCount = unique.length;
+                        const card = document.createElement('div');
+                        card.className = 'result-card';
+                        card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>原: ${data.length} → 去重后: ${uniqueCount}</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重_${uniqueCount}条.txt" data-content='${JSON.stringify(unique)}'>下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重_${uniqueCount}条.xlsx" data-content='${JSON.stringify(unique)}'>下载 Excel</button></div>`;
+                        DOM.deduplicateResultCards.appendChild(card);
+                        const txtBtn = card.querySelector('.result-download-txt');
+                        const xlsxBtn = card.querySelector('.result-download-xlsx');
+                        txtBtn.addEventListener('click', () => {
+                            const blob = new Blob([unique.join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                        xlsxBtn.addEventListener('click', () => {
+                            const blob = createExcelBlob(unique);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                    });
+                });
+            }
+            DOM.resetDeduplicateBtn.addEventListener('click', () => {
+                deduplicateFilesList = [];
+                DOM.deduplicateFilesList.style.display = 'none';
+                DOM.deduplicateResults.style.display = 'none';
+                DOM.deduplicateStatus.innerHTML = '等待上传文件...';
+                DOM.deduplicateFileInput.value = '';
+                DOM.deduplicatePreviewArea.style.display = 'none';
+            });
+            
+            // 双文件去重、加减前导0、首列编辑功能保持原样（代码省略但功能完整）
+            let duplicateFileData = { file1: { name: '', data: [], rawData: [] }, file2: { name: '', data: [], rawData: [] } };
+            function checkDuplicateFilesReady() { DOM.duplicateProcessBtn.disabled = !(duplicateFileData.file1.data.length && duplicateFileData.file2.data.length); }
+            function showDuplicatePreview() {
+                let html = [];
+                if (duplicateFileData.file1.data.length) html.push(`<div class="preview-item"><span class="preview-badge">文件1</span> ${duplicateFileData.file1.name} | 共 ${duplicateFileData.file1.data.length} 条</div>`);
+                if (duplicateFileData.file2.data.length) html.push(`<div class="preview-item"><span class="preview-badge">文件2</span> ${duplicateFileData.file2.name} | 共 ${duplicateFileData.file2.data.length} 条</div>`);
+                DOM.duplicatePreviewArea.innerHTML = html.join('');
+                DOM.duplicatePreviewArea.style.display = html.length ? 'block' : 'none';
+            }
+            function setupDuplicateUpload(box, input, nameSpan, errorSpan, fileKey) {
+                box.addEventListener('click', () => input.click());
+                input.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    nameSpan.textContent = file.name;
+                    errorSpan.style.display = 'none';
+                    parseFileFull(file, (err, data) => {
+                        if (err) { errorSpan.textContent = '解析失败'; errorSpan.style.display = 'block'; duplicateFileData[fileKey] = { name: '', data: [], rawData: [] }; }
+                        else { const numbers = data.map(row => row[0]?.toString().trim() || '').filter(v => v); duplicateFileData[fileKey] = { name: file.name, data: numbers, rawData: data }; }
+                        showDuplicatePreview(); checkDuplicateFilesReady();
+                    });
+                });
+                box.addEventListener('dragover', (e) => e.preventDefault());
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const file = Array.from(e.dataTransfer.files).find(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
+                    if (!file) return;
+                    nameSpan.textContent = file.name;
+                    errorSpan.style.display = 'none';
+                    parseFileFull(file, (err, data) => {
+                        if (err) { errorSpan.textContent = '解析失败'; errorSpan.style.display = 'block'; duplicateFileData[fileKey] = { name: '', data: [], rawData: [] }; }
+                        else { const numbers = data.map(row => row[0]?.toString().trim() || '').filter(v => v); duplicateFileData[fileKey] = { name: file.name, data: numbers, rawData: data }; }
+                        showDuplicatePreview(); checkDuplicateFilesReady();
+                    });
+                });
+            }
+            setupDuplicateUpload(DOM.duplicateUploadBox1, DOM.duplicateFile1Input, DOM.duplicateFile1Name, DOM.duplicateError1, 'file1');
+            setupDuplicateUpload(DOM.duplicateUploadBox2, DOM.duplicateFile2Input, DOM.duplicateFile2Name, DOM.duplicateError2, 'file2');
+            DOM.duplicateClearBtn.addEventListener('click', () => {
+                duplicateFileData = { file1: { name: '', data: [], rawData: [] }, file2: { name: '', data: [], rawData: [] } };
+                DOM.duplicateFile1Name.textContent = '未选择文件';
+                DOM.duplicateFile2Name.textContent = '未选择文件';
+                DOM.duplicateDownloadSection.style.display = 'none';
+                DOM.duplicateStatus.innerHTML = '等待上传文件...';
+                DOM.duplicateProgressBar.style.width = '0%';
+                DOM.duplicateFile1Input.value = '';
+                DOM.duplicateFile2Input.value = '';
+                DOM.duplicateProcessBtn.disabled = true;
+                DOM.duplicatePreviewArea.style.display = 'none';
+            });
+            DOM.duplicateProcessBtn.addEventListener('click', () => {
+                DOM.duplicateStatus.innerHTML = '处理中...';
+                DOM.duplicateProgressBar.style.width = '30%';
+                const set1 = new Set(duplicateFileData.file1.data);
+                const set2 = new Set(duplicateFileData.file2.data);
+                const common = new Set([...set1].filter(x => set2.has(x)));
+                const filtered1 = duplicateFileData.file1.rawData.filter(row => { const val = row[0]?.toString().trim() || ''; return val && !common.has(val); });
+                const filtered2 = duplicateFileData.file2.rawData.filter(row => { const val = row[0]?.toString().trim() || ''; return val && !common.has(val); });
+                DOM.duplicateProgressBar.style.width = '80%';
+                const blob1Txt = new Blob([filtered1.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                const blob1Xlsx = createExcelBlob(filtered1, false);
+                const blob2Txt = new Blob([filtered2.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                const blob2Xlsx = createExcelBlob(filtered2, false);
+                DOM.duplicateDownload1Txt.href = URL.createObjectURL(blob1Txt);
+                DOM.duplicateDownload1Txt.download = duplicateFileData.file1.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
+                DOM.duplicateDownload1Excel.href = URL.createObjectURL(blob1Xlsx);
+                DOM.duplicateDownload1Excel.download = duplicateFileData.file1.name.replace(/\.[^/.]+$/, '') + '_去重.xlsx';
+                DOM.duplicateDownload2Txt.href = URL.createObjectURL(blob2Txt);
+                DOM.duplicateDownload2Txt.download = duplicateFileData.file2.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
+                DOM.duplicateDownload2Excel.href = URL.createObjectURL(blob2Xlsx);
+                DOM.duplicateDownload2Excel.download = duplicateFileData.file2.name.replace(/\.[^/.]+$/, '') + '_去重.xlsx';
+                DOM.duplicateProgressBar.style.width = '100%';
+                DOM.duplicateDownloadSection.style.display = 'block';
+                DOM.duplicateStatus.innerHTML = '处理完成';
+            });
+            
+            // 加减前导0
+            let dataOpFilesList = [];
+            function updateDataOpFileList() {
+                if (dataOpFilesList.length === 0) { DOM.dataOpFilesList.style.display = 'none'; DOM.dataOpPreviewArea.style.display = 'none'; return; }
+                DOM.dataOpFilesList.style.display = 'block';
+                let html = '';
+                dataOpFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span></div>`; });
+                DOM.dataOpFileListItems.innerHTML = html;
+                DOM.dataOpStatus.innerHTML = `已上传 ${dataOpFilesList.length} 个文件`;
+                const colPos = document.querySelector('input[name="dataOpColumnPosition"]:checked').value;
+                showColumnPreview(DOM.dataOpPreviewArea, dataOpFilesList, colPos === 'first' ? 0 : 1);
+            }
+            DOM.dataOpUploadArea.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') DOM.dataOpFileInput.click(); });
+            DOM.selectDataOpFilesBtn.addEventListener('click', (e) => { e.stopPropagation(); DOM.dataOpFileInput.click(); });
+            DOM.dataOpFileInput.addEventListener('change', (e) => { dataOpFilesList = Array.from(e.target.files); updateDataOpFileList(); });
+            DOM.dataOpUploadArea.addEventListener('dragover', (e) => e.preventDefault());
+            DOM.dataOpUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
+                if (files.length) { dataOpFilesList = files; updateDataOpFileList(); }
+            });
+            DOM.dataOpActionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (dataOpFilesList.length === 0) { alert('请先上传文件'); return; }
+                    const action = this.dataset.action;
+                    const colPos = document.querySelector('input[name="dataOpColumnPosition"]:checked').value;
+                    const colIndex = colPos === 'first' ? 0 : 1;
+                    DOM.dataOpResults.style.display = 'block';
+                    DOM.dataOpResultCards.innerHTML = '';
+                    dataOpFilesList.forEach(file => {
+                        parseFileFull(file, (err, data) => {
+                            if (err) { DOM.dataOpResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; return; }
+                            const processed = data.map(row => {
+                                if (row.length <= colIndex) return row;
+                                let val = row[colIndex]?.toString().trim() || '';
+                                if (action === 'add') { if (/^\d+$/.test(val)) row[colIndex] = '0' + val; }
+                                else { if (/^0+\d+$/.test(val)) row[colIndex] = val.replace(/^0+/, ''); }
+                                return row;
+                            });
+                            const card = document.createElement('div');
+                            card.className = 'result-card';
+                            card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>处理完成</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button></div>`;
+                            DOM.dataOpResultCards.appendChild(card);
+                            const txtBtn = card.querySelector('.result-download-txt');
+                            const xlsxBtn = card.querySelector('.result-download-xlsx');
+                            txtBtn.addEventListener('click', () => {
+                                const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = txtBtn.dataset.filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                            });
+                            xlsxBtn.addEventListener('click', () => {
+                                const blob = createExcelBlob(processed, false);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = xlsxBtn.dataset.filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                setTimeout(() => URL.revokeObjectURL(url), 100);
+                            });
+                        });
+                    });
+                });
+            });
+            DOM.resetDataOpBtn.addEventListener('click', () => {
+                dataOpFilesList = [];
+                DOM.dataOpFilesList.style.display = 'none';
+                DOM.dataOpResults.style.display = 'none';
+                DOM.dataOpStatus.innerHTML = '等待上传文件...';
+                DOM.dataOpFileInput.value = '';
+                DOM.dataOpPreviewArea.style.display = 'none';
+            });
+            
+            // 首列编辑
+            let firstColFilesList = [];
+            function updateFirstColFileList() {
+                if (firstColFilesList.length === 0) { DOM.firstColFilesList.style.display = 'none'; DOM.firstColPreviewArea.style.display = 'none'; return; }
+                DOM.firstColFilesList.style.display = 'block';
+                let html = '';
+                firstColFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span></div>`; });
+                DOM.firstColFileListItems.innerHTML = html;
+                DOM.firstColStatus.innerHTML = `已上传 ${firstColFilesList.length} 个文件`;
+                showColumnPreview(DOM.firstColPreviewArea, firstColFilesList, 0);
+            }
+            DOM.firstColUploadArea.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') DOM.firstColFileInput.click(); });
+            DOM.selectFirstColFilesBtn.addEventListener('click', (e) => { e.stopPropagation(); DOM.firstColFileInput.click(); });
+            DOM.firstColFileInput.addEventListener('change', (e) => { firstColFilesList = Array.from(e.target.files); updateFirstColFileList(); });
+            DOM.firstColUploadArea.addEventListener('dragover', (e) => e.preventDefault());
+            DOM.firstColUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
+                if (files.length) { firstColFilesList = files; updateFirstColFileList(); }
+            });
+            function processFirstCol(action) {
+                if (firstColFilesList.length === 0) { alert('请先上传文件'); return; }
+                DOM.firstColResults.style.display = 'block';
+                DOM.firstColResultCards.innerHTML = '';
+                firstColFilesList.forEach(file => {
+                    parseFileFull(file, (err, data) => {
+                        if (err) { DOM.firstColResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; return; }
+                        let processed = action === 'insert' ? data.map(row => ['', ...row]) : data.map(row => row.slice(1));
+                        const card = document.createElement('div');
+                        card.className = 'result-card';
+                        card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>处理完成</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button></div>`;
+                        DOM.firstColResultCards.appendChild(card);
+                        const txtBtn = card.querySelector('.result-download-txt');
+                        const xlsxBtn = card.querySelector('.result-download-xlsx');
+                        txtBtn.addEventListener('click', () => {
+                            const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = txtBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                        xlsxBtn.addEventListener('click', () => {
+                            const blob = createExcelBlob(processed, false);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = xlsxBtn.dataset.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        });
+                    });
+                });
+            }
+            DOM.insertFirstColBtn.addEventListener('click', () => processFirstCol('insert'));
+            DOM.deleteFirstColBtn.addEventListener('click', () => processFirstCol('delete'));
+            DOM.resetFirstColBtn.addEventListener('click', () => {
+                firstColFilesList = [];
+                DOM.firstColFilesList.style.display = 'none';
+                DOM.firstColResults.style.display = 'none';
+                DOM.firstColStatus.innerHTML = '等待上传文件...';
+                DOM.firstColFileInput.value = '';
+                DOM.firstColPreviewArea.style.display = 'none';
+            });
+            
+            // 工具切换
+            DOM.toolTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tool = this.dataset.tool;
+                    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    if (DOM.toolPanels[tool]) DOM.toolPanels[tool].classList.add('active');
+                });
+            });
+            
+            updateFilenameSuggestion();
+            console.log('所有功能加载完成，区号识别默认开启，下载文件自动包含区号名称');
+        })();
     </script>
 </body>
 </html>
