@@ -2,53 +2,220 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>测试页面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>批量生成测试版</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { padding: 20px; font-family: sans-serif; }
+        textarea { width: 100%; height: 150px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        .file-item { border-bottom: 1px solid #ccc; padding: 10px; margin: 5px 0; display: flex; justify-content: space-between; }
+        .file-list { margin-top: 20px; }
+        .status { color: blue; margin: 10px 0; }
+        .progress { height: 10px; background: #ccc; border-radius: 5px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: green; transition: width 0.3s; }
+    </style>
 </head>
 <body>
-    <h3>测试1: 普通按钮</h3>
-    <button id="btn1">点我 (onclick)</button>
-    <span id="count1">0</span>
+    <h2>批量生成测试</h2>
     
-    <h3>测试2: 动态生成按钮</h3>
-    <button id="createBtn">生成新按钮</button>
-    <div id="dynamicArea"></div>
-    <span id="count2">0</span>
+    <div>
+        <label>输出文件名：</label>
+        <input type="text" id="filename" value="测试文件" style="width: 200px;">
+    </div>
     
+    <div>
+        <label>每文件数据量：</label>
+        <select id="perFile">
+            <option value="1">1万（测试用）</option>
+            <option value="5">5万</option>
+            <option value="10" selected>10万</option>
+        </select>
+    </div>
+    
+    <div>
+        <label>号码段规则：</label>
+        <textarea id="dataInput">开头
+023</textarea>
+    </div>
+    
+    <div>
+        <button id="genTxt">生成 TXT 文件</button>
+        <button id="reset">重置</button>
+    </div>
+    
+    <div class="status" id="status">等待生成...</div>
+    <div class="progress"><div class="progress-bar" id="progress"></div></div>
+    
+    <div class="file-list" id="fileList"></div>
+
     <script>
-        // 测试1: 普通按钮
-        let c1 = 0;
-        document.getElementById('btn1').onclick = function() {
-            c1++;
-            document.getElementById('count1').innerHTML = c1;
-        };
+        // 简化的区号映射
+        const areaMap = { '023': '重庆', '010': '北京', '021': '上海' };
         
-        // 测试2: 动态生成按钮 - 使用事件委托
-        let c2 = 0;
-        const dynamicArea = document.getElementById('dynamicArea');
-        const count2Span = document.getElementById('count2');
+        function getAreaName(p) { return areaMap[p] || null; }
         
-        // 事件委托
-        dynamicArea.addEventListener('click', function(e) {
-            if(e.target.classList.contains('dynamic-btn')) {
-                c2++;
-                count2Span.innerHTML = c2;
+        // 下载函数
+        function download(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        }
+        
+        // 解析输入
+        function parseInput(text) {
+            const lines = text.split(/\r?\n/);
+            const result = {};
+            let cur = null;
+            for(let line of lines) {
+                line = line.trim();
+                if(!line) continue;
+                if(line === '开头') { cur = null; continue; }
+                let m = line.match(/^开头\s*(\d+)/);
+                if(m) { cur = m[1]; if(!result[cur]) result[cur]=[]; continue; }
+                if(/^\d+$/.test(line)) {
+                    if(cur === null) { cur = line; if(!result[cur]) result[cur]=[]; }
+                    else result[cur].push(line.padStart(3,'0'));
+                }
+            }
+            return result;
+        }
+        
+        // 生成号码
+        function generateNumbers(data) {
+            const nums = [];
+            for(let p in data) {
+                for(let m of data[p]) {
+                    const pm = p + m;
+                    for(let k=1; k<=9999; k++) {
+                        nums.push(pm + k.toString().padStart(4,'0'));
+                    }
+                }
+            }
+            return nums;
+        }
+        
+        // 打乱
+        function shuffle(arr) {
+            const a = [...arr];
+            for(let i=a.length-1; i>0; i--) {
+                const j = Math.floor(Math.random()*(i+1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+        
+        // 去重
+        function unique(arr) {
+            return [...new Set(arr)];
+        }
+        
+        // 生成文件
+        let isGenerating = false;
+        
+        function generateFiles() {
+            if(isGenerating) { alert('正在生成中，请稍候'); return; }
+            
+            const filename = document.getElementById('filename').value.trim() || '号码数据';
+            const perFile = parseInt(document.getElementById('perFile').value) * 10000;
+            const inputText = document.getElementById('dataInput').value;
+            const statusDiv = document.getElementById('status');
+            const progressBar = document.getElementById('progress');
+            const fileListDiv = document.getElementById('fileList');
+            
+            isGenerating = true;
+            statusDiv.innerHTML = '解析中...';
+            progressBar.style.width = '10%';
+            fileListDiv.innerHTML = '';
+            
+            setTimeout(() => {
+                try {
+                    const parsed = parseInput(inputText);
+                    let groups = 0;
+                    for(let k in parsed) groups += parsed[k].length;
+                    if(groups === 0) {
+                        alert('未解析到有效号码段');
+                        isGenerating = false;
+                        return;
+                    }
+                    
+                    statusDiv.innerHTML = '生成号码...';
+                    progressBar.style.width = '30%';
+                    const all = generateNumbers(parsed);
+                    
+                    statusDiv.innerHTML = '打乱...';
+                    progressBar.style.width = '50%';
+                    const shuffled = shuffle(all);
+                    
+                    statusDiv.innerHTML = '去重...';
+                    progressBar.style.width = '70%';
+                    const uniqueArr = unique(shuffled);
+                    
+                    const totalFiles = Math.ceil(uniqueArr.length / perFile);
+                    statusDiv.innerHTML = `生成 ${totalFiles} 个文件...`;
+                    
+                    for(let i=0; i<totalFiles; i++) {
+                        const start = i * perFile;
+                        const end = Math.min(start + perFile, uniqueArr.length);
+                        const nums = uniqueArr.slice(start, end);
+                        const name = i===0 ? `${filename}.txt` : `${filename}_${i+1}.txt`;
+                        
+                        // 生成TXT文件并下载
+                        const content = nums.join('\n');
+                        const blob = new Blob([content], {type:'text/plain'});
+                        download(blob, name);
+                        
+                        // 添加到列表
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+                        item.innerHTML = `<span>${name} (${nums.length}条)</span><button class="re-download" data-name="${name}" data-content="${encodeURIComponent(JSON.stringify(nums))}">⬇️重新下载</button>`;
+                        fileListDiv.appendChild(item);
+                        
+                        progressBar.style.width = 85 + ((i+1)/totalFiles * 15) + '%';
+                        statusDiv.innerHTML = `文件 ${i+1}/${totalFiles}`;
+                    }
+                    
+                    statusDiv.innerHTML = '完成！';
+                    progressBar.style.width = '100%';
+                    isGenerating = false;
+                    
+                } catch(e) {
+                    alert('错误：' + e.message);
+                    isGenerating = false;
+                }
+            }, 50);
+        }
+        
+        // 重置
+        function reset() {
+            document.getElementById('filename').value = '测试文件';
+            document.getElementById('perFile').value = '10';
+            document.getElementById('dataInput').value = '开头\n023';
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('status').innerHTML = '等待生成...';
+            document.getElementById('progress').style.width = '0%';
+        }
+        
+        // 事件委托：重新下载按钮
+        document.getElementById('fileList').addEventListener('click', function(e) {
+            const btn = e.target.closest('.re-download');
+            if(btn) {
+                const name = btn.dataset.name;
+                const numsStr = decodeURIComponent(btn.dataset.content);
+                const nums = JSON.parse(numsStr);
+                const content = nums.join('\n');
+                const blob = new Blob([content], {type:'text/plain'});
+                download(blob, name);
             }
         });
         
-        // 生成按钮
-        document.getElementById('createBtn').onclick = function() {
-            const btn = document.createElement('button');
-            btn.className = 'dynamic-btn';
-            btn.textContent = '动态按钮 - 点我';
-            dynamicArea.appendChild(btn);
-        };
-        
-        // 初始生成一个按钮
-        const initBtn = document.createElement('button');
-        initBtn.className = 'dynamic-btn';
-        initBtn.textContent = '动态按钮 - 点我';
-        dynamicArea.appendChild(initBtn);
+        // 绑定按钮
+        document.getElementById('genTxt').onclick = generateFiles;
+        document.getElementById('reset').onclick = reset;
     </script>
 </body>
 </html>
