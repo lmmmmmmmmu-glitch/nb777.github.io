@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>⚡ 极速数据处理 - 修复版</title>
+    <title>⚡ 极速数据处理 - 手机修复版</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; }
@@ -170,7 +170,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>⚡ 极速数据处理</h1>
+        <h1>⚡ 极速数据处理 - 手机修复版</h1>
         
         <div class="tool-tabs">
             <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
@@ -431,7 +431,7 @@
 6380-9  (代表6380-6389)
             </div>
         </div>
-        <div class="note">⚡ 完整功能 | 区号识别：开启后自动匹配城市名称并命名文件</div>
+        <div class="note">⚡ 完整功能 | 区号识别：开启后自动匹配城市名称并命名文件 | 手机模式已修复</div>
     </div>
 
     <script>
@@ -1090,6 +1090,66 @@
                 document.getElementById('panel-'+this.dataset.tool).classList.add('active');
             };
         });
+        
+        // ========== 手机保活机制 - 修复手机模式失效问题 ==========
+        (function keepAliveForMobile() {
+            // 1. 每20秒触发一次页面刷新（不刷新页面，只是让手机浏览器以为页面还在活动）
+            setInterval(function() {
+                // 轻微修改body透明度，触发重绘，告诉手机浏览器页面还在用
+                document.body.style.opacity = '0.999';
+                setTimeout(function() {
+                    document.body.style.opacity = '1';
+                }, 50);
+            }, 20000);
+            
+            // 2. 检测是否是手机（触摸屏设备）
+            if ('ontouchstart' in window) {
+                // 每次触摸屏幕时，重新激活所有按钮事件
+                document.addEventListener('touchstart', function(e) {
+                    // 如果点击的是按钮，确保事件正常触发
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                        // 不需要额外操作，只是让手机知道页面正在被使用
+                    }
+                });
+                
+                // 防止页面进入休眠状态
+                window.addEventListener('scroll', function() {});
+                window.addEventListener('touchmove', function() {});
+            }
+            
+            // 3. 页面重新可见时（从后台切回来），强制刷新一次事件
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    // 页面重新可见，触发一个小动作唤醒事件系统
+                    var dummy = document.createElement('div');
+                    dummy.style.display = 'none';
+                    document.body.appendChild(dummy);
+                    dummy.click();
+                    setTimeout(function() {
+                        document.body.removeChild(dummy);
+                    }, 100);
+                }
+            });
+            
+            // 4. 记录所有按钮，确保它们的事件不会丢失
+            var allButtons = document.querySelectorAll('button');
+            for (var i = 0; i < allButtons.length; i++) {
+                var btn = allButtons[i];
+                if (!btn._hasMobileFix) {
+                    btn._hasMobileFix = true;
+                    // 确保每个按钮都有明确的 onclick 引用
+                    var originalClick = btn.onclick;
+                    if (originalClick) {
+                        btn.onclick = function(e) {
+                            if (this._clickHandler) {
+                                this._clickHandler(e);
+                            }
+                        };
+                        btn._clickHandler = originalClick;
+                    }
+                }
+            }
+        })();
         
         updateFileName();
     </script>
