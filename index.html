@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>⚡ 极速数据处理 - 手机修复版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
+    <title>⚡ 极速数据处理 - 手机稳定版</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; }
@@ -13,7 +13,6 @@
         @media (max-width: 480px) { .container { padding: 15px; border-radius: 12px; } body { padding: 5px; } }
         .container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335); }
         h1 { color: #2c3e50; text-align: center; margin-top: 0; padding-bottom: 15px; border-bottom: 1px solid #eaeaea; font-weight: 700; position: relative; font-size: clamp(1.5rem, 5vw, 2.5rem); }
-        @media (max-width: 480px) { h1 { padding-bottom: 10px; margin-bottom: 15px; } }
         h1::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; max-width: 30%; height: 4px; background: linear-gradient(90deg, #4d90fe, #34a853); border-radius: 2px; }
         .tool-tabs { display: flex; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; padding: 5px; margin-bottom: 20px; flex-wrap: wrap; gap: 5px; }
         .tool-tab { flex: 1 1 auto; min-width: 120px; padding: 12px 15px; text-align: center; cursor: pointer; font-weight: 600; border-radius: 8px; transition: all 0.3s; color: #666; font-size: clamp(0.9rem, 3vw, 1rem); white-space: nowrap; }
@@ -170,7 +169,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>⚡ 极速数据处理 - 手机修复版</h1>
+        <h1>⚡ 极速数据处理 - 手机稳定版</h1>
         
         <div class="tool-tabs">
             <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
@@ -431,7 +430,7 @@
 6380-9  (代表6380-6389)
             </div>
         </div>
-        <div class="note">⚡ 完整功能 | 区号识别：开启后自动匹配城市名称并命名文件 | 手机模式已修复</div>
+        <div class="note">⚡ 完整功能 | 手机模式已稳定 | 支持连续操作不刷新</div>
     </div>
 
     <script>
@@ -683,21 +682,8 @@
                         }
                         let item = document.createElement('div');
                         item.className='file-item';
-                        item.innerHTML=`<div><strong>${name}</strong> (${nums.length}条)</div><button class="download-btn" data-filename="${name}" data-content='${JSON.stringify(nums)}' data-format="${format}" data-col="${colPos}">⬇️下载</button>`;
+                        item.innerHTML = `<div><strong>${name}</strong> (${nums.length}条)</div><button class="download-btn" data-filename="${name}" data-content='${JSON.stringify(nums)}' data-format="${format}" data-col="${colPos}">⬇️下载</button>`;
                         generateFileList.appendChild(item);
-                        item.querySelector('.download-btn').onclick=function(){
-                            let fn=this.dataset.filename;
-                            let ns=JSON.parse(this.dataset.content);
-                            let fmt=this.dataset.format;
-                            let cp=this.dataset.col;
-                            if(fmt==='txt'){
-                                let c=cp==='first'?ns.join('\n'):ns.map(v=>'\t'+v).join('\n');
-                                safeDownload(new Blob([c],{type:'text/plain'}),fn);
-                            }else{
-                                let d=cp==='first'?ns.map(v=>[v]):ns.map(v=>['',v]);
-                                safeDownload(createExcelBlob(d,false),fn);
-                            }
-                        };
                         generateProgress.style.width = 85+((i+1)/totalFiles*15)+'%';
                         generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
                     }
@@ -707,6 +693,24 @@
                 } catch(e) { alert('错误:'+e.message); generateLoading.style.display='none'; }
             },50);
         }
+        
+        // 事件委托：动态生成的下载按钮
+        generateFileList.addEventListener('click', function(e) {
+            let btn = e.target.closest('.download-btn');
+            if(btn) {
+                let filename = btn.dataset.filename;
+                let nums = JSON.parse(btn.dataset.content);
+                let format = btn.dataset.format;
+                let colPos = btn.dataset.col;
+                if(format === 'txt') {
+                    let content = colPos === 'first' ? nums.join('\n') : nums.map(v=>'\t'+v).join('\n');
+                    safeDownload(new Blob([content],{type:'text/plain'}), filename);
+                } else {
+                    let data = colPos === 'first' ? nums.map(v=>[v]) : nums.map(v=>['',v]);
+                    safeDownload(createExcelBlob(data,false), filename);
+                }
+            }
+        });
         
         document.getElementById('generateTxtBtn').onclick=()=>generateFiles('txt');
         document.getElementById('generateExcelBtn').onclick=()=>generateFiles('excel');
@@ -765,17 +769,27 @@
                     let uniq = unique(data);
                     let card = document.createElement('div');
                     card.className='result-card';
-                    card.innerHTML=`<div class="result-card-header"><strong>${file.name}</strong> 原${data.length} → 去重后${uniq.length}</div><div class="result-card-actions"><button class="result-download-txt">下载TXT</button><button class="result-download-xlsx">下载Excel</button></div>`;
+                    card.innerHTML = `<div class="result-card-header"><strong>${file.name}</strong> 原${data.length} → 去重后${uniq.length}</div><div class="result-card-actions"><button class="result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_去重.txt" data-content='${JSON.stringify(uniq)}'>下载TXT</button><button class="result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_去重.xlsx" data-content='${JSON.stringify(uniq)}'>下载Excel</button></div>`;
                     dedupCards.appendChild(card);
-                    let txtBtn=card.querySelector('.result-download-txt');
-                    let xlsxBtn=card.querySelector('.result-download-xlsx');
-                    txtBtn.onclick=()=>safeDownload(new Blob([uniq.join('\n')],{type:'text/plain'}), file.name.replace(/\.[^/.]+$/,'')+'_去重.txt');
-                    xlsxBtn.onclick=()=>safeDownload(createExcelBlob(uniq,true), file.name.replace(/\.[^/.]+$/,'')+'_去重.xlsx');
                     done++;
                     dedupProgress.style.width = (done/files.length*100)+'%';
                 });
             });
         }
+        
+        // 事件委托：去重结果按钮
+        dedupCards.addEventListener('click', function(e) {
+            let btn = e.target.closest('.result-download-txt, .result-download-xlsx');
+            if(btn) {
+                let filename = btn.dataset.filename;
+                let nums = JSON.parse(btn.dataset.content);
+                if(btn.classList.contains('result-download-txt')) {
+                    safeDownload(new Blob([nums.join('\n')],{type:'text/plain'}), filename);
+                } else {
+                    safeDownload(createExcelBlob(nums,true), filename);
+                }
+            }
+        });
         
         function setupUpload(area, input, select, onFiles) {
             select.onclick=(e)=>{ e.stopPropagation(); input.value=''; input.click(); };
@@ -854,31 +868,45 @@
                 if(areaOn){ let a=getAreaName(k); if(a) display=k+'('+a+')'; }
                 let item=document.createElement('div');
                 item.className='classification-item';
-                item.innerHTML=`<div><span class="prefix-badge">${display}</span> <span class="prefix-count">${nums.length}个号码</span></div><div><button class="download-classify-btn-txt">TXT</button><button class="download-classify-btn-xlsx">Excel</button></div>`;
+                item.innerHTML = `<div><span class="prefix-badge">${display}</span> <span class="prefix-count">${nums.length}个号码</span></div><div><button class="download-classify-btn-txt" data-prefix="${k}" data-nums='${JSON.stringify(nums)}' data-area="${areaOn?getAreaName(k):''}">TXT</button><button class="download-classify-btn-xlsx" data-prefix="${k}" data-nums='${JSON.stringify(nums)}' data-area="${areaOn?getAreaName(k):''}">Excel</button></div>`;
                 classListDiv.appendChild(item);
-                let txt=item.querySelector('.download-classify-btn-txt');
-                let xlsx=item.querySelector('.download-classify-btn-xlsx');
-                let sorted = classSort==='shuffle'?shuffle([...nums]):[...nums].sort((a,b)=>a.localeCompare(b));
-                txt.onclick=()=>safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}), pre+k+(areaOn?('_'+getAreaName(k)):'')+'_'+nums.length+'个.txt');
-                xlsx.onclick=()=>{
-                    let data = includeFull.checked?sorted.map(n=>[n]):[[`前缀 ${k}`]];
-                    safeDownload(createExcelBlob(data,true), pre+k+(areaOn?('_'+getAreaName(k)):'')+'_'+nums.length+'个.xlsx');
-                };
             }
+            
+            // 下载所有按钮事件
             document.getElementById('downloadAllClassifyBtnTxt').onclick=()=>{
                 for(let [k,nums] of entries){
                     let sorted = classSort==='shuffle'?shuffle([...nums]):[...nums].sort((a,b)=>a.localeCompare(b));
-                    safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}), pre+k+(areaOn?('_'+getAreaName(k)):'')+'_'+nums.length+'个.txt');
+                    let areaName = areaOn?getAreaName(k):'';
+                    safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}), pre+k+(areaName?'_'+areaName:'')+'_'+nums.length+'个.txt');
                 }
             };
             document.getElementById('downloadAllClassifyBtnXlsx').onclick=()=>{
                 for(let [k,nums] of entries){
                     let sorted = classSort==='shuffle'?shuffle([...nums]):[...nums].sort((a,b)=>a.localeCompare(b));
+                    let areaName = areaOn?getAreaName(k):'';
                     let data = includeFull.checked?sorted.map(n=>[n]):[[`前缀 ${k}`]];
-                    safeDownload(createExcelBlob(data,true), pre+k+(areaOn?('_'+getAreaName(k)):'')+'_'+nums.length+'个.xlsx');
+                    safeDownload(createExcelBlob(data,true), pre+k+(areaName?'_'+areaName:'')+'_'+nums.length+'个.xlsx');
                 }
             };
         }
+        
+        // 事件委托：分类列表按钮
+        classListDiv.addEventListener('click', function(e) {
+            let btn = e.target.closest('.download-classify-btn-txt, .download-classify-btn-xlsx');
+            if(btn) {
+                let prefix = btn.dataset.prefix;
+                let nums = JSON.parse(btn.dataset.nums);
+                let areaName = btn.dataset.area;
+                let pre = classPrefix==='none'?'':classPrefix+'_';
+                let sorted = classSort==='shuffle'?shuffle([...nums]):[...nums].sort((a,b)=>a.localeCompare(b));
+                if(btn.classList.contains('download-classify-btn-txt')) {
+                    safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}), pre+prefix+(areaName?'_'+areaName:'')+'_'+nums.length+'个.txt');
+                } else {
+                    let data = includeFull.checked?sorted.map(n=>[n]):[[`前缀 ${prefix}`]];
+                    safeDownload(createExcelBlob(data,true), pre+prefix+(areaName?'_'+areaName:'')+'_'+nums.length+'个.xlsx');
+                }
+            }
+        });
         
         setupUpload(classArea, classInput, classSelect, (files)=>{ classFiles=files; updateClassList(); parseAllClass(); });
         document.getElementById('sortAscBtn').onclick=function(){ document.getElementById('sortAscBtn').classList.add('active'); document.getElementById('sortShuffleBtn').classList.remove('active'); classSort='asc'; if(classFiles.length) renderClass(); };
@@ -1014,20 +1042,31 @@
                             else{ if(/^0+\d+$/.test(v)) row[col]=v.replace(/^0+/,''); }
                             return row;
                         });
-                        let card=document.createElement('div');
+                        let card = document.createElement('div');
                         card.className='result-card';
-                        card.innerHTML=`<div class="result-card-header"><strong>${file.name}</strong> 处理完成</div><div class="result-card-actions"><button class="result-download-txt">下载TXT</button><button class="result-download-xlsx">下载Excel</button></div>`;
+                        card.innerHTML = `<div class="result-card-header"><strong>${file.name}</strong> 处理完成</div><div class="result-card-actions"><button class="result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_处理后.txt" data-content='${JSON.stringify(processed)}'>下载TXT</button><button class="result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_处理后.xlsx" data-content='${JSON.stringify(processed)}'>下载Excel</button></div>`;
                         dataOpCards.appendChild(card);
-                        let txt=card.querySelector('.result-download-txt');
-                        let xlsx=card.querySelector('.result-download-xlsx');
-                        txt.onclick=()=>safeDownload(new Blob([processed.map(r=>r.join('\t')).join('\n')],{type:'text/plain'}), file.name.replace(/\.[^/.]+$/,'')+'_处理后.txt');
-                        xlsx.onclick=()=>safeDownload(createExcelBlob(processed,false), file.name.replace(/\.[^/.]+$/,'')+'_处理后.xlsx');
                         done++;
                         dataOpProgress.style.width=(done/dataOpFiles.length*100)+'%';
                     });
                 });
             };
         });
+        
+        // 事件委托：加减前导0结果按钮
+        dataOpCards.addEventListener('click', function(e) {
+            let btn = e.target.closest('.result-download-txt, .result-download-xlsx');
+            if(btn) {
+                let filename = btn.dataset.filename;
+                let data = JSON.parse(btn.dataset.content);
+                if(btn.classList.contains('result-download-txt')) {
+                    safeDownload(new Blob([data.map(r=>r.join('\t')).join('\n')],{type:'text/plain'}), filename);
+                } else {
+                    safeDownload(createExcelBlob(data,false), filename);
+                }
+            }
+        });
+        
         document.getElementById('resetDataOpBtn').onclick=()=>{ dataOpFiles=[]; dataOpList.style.display='none'; dataOpResultsDiv.style.display='none'; dataOpStatus.innerHTML='等待上传文件...'; dataOpInput.value=''; dataOpPreview.style.display='none'; dataOpProgress.style.width='0%'; };
         document.querySelectorAll('#panel-dataop .column-quick-btn').forEach(btn=>{
             btn.onclick=function(){ document.querySelectorAll('#panel-dataop .column-quick-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); document.getElementById(this.dataset.target).checked=true; if(dataOpFiles.length) updateDataOpList(); };
@@ -1064,19 +1103,30 @@
                 parseFileFull(file,(err,data)=>{
                     if(err){ firstCards.innerHTML+=`<div class="result-card">${file.name} 解析失败</div>`; done++; return; }
                     let processed = action==='insert' ? data.map(row=>['',...row]) : data.map(row=>row.slice(1));
-                    let card=document.createElement('div');
+                    let card = document.createElement('div');
                     card.className='result-card';
-                    card.innerHTML=`<div class="result-card-header"><strong>${file.name}</strong> 处理完成</div><div class="result-card-actions"><button class="result-download-txt">下载TXT</button><button class="result-download-xlsx">下载Excel</button></div>`;
+                    card.innerHTML = `<div class="result-card-header"><strong>${file.name}</strong> 处理完成</div><div class="result-card-actions"><button class="result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_处理后.txt" data-content='${JSON.stringify(processed)}'>下载TXT</button><button class="result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/,'')}_处理后.xlsx" data-content='${JSON.stringify(processed)}'>下载Excel</button></div>`;
                     firstCards.appendChild(card);
-                    let txt=card.querySelector('.result-download-txt');
-                    let xlsx=card.querySelector('.result-download-xlsx');
-                    txt.onclick=()=>safeDownload(new Blob([processed.map(r=>r.join('\t')).join('\n')],{type:'text/plain'}), file.name.replace(/\.[^/.]+$/,'')+'_处理后.txt');
-                    xlsx.onclick=()=>safeDownload(createExcelBlob(processed,false), file.name.replace(/\.[^/.]+$/,'')+'_处理后.xlsx');
                     done++;
                     firstProgress.style.width=(done/firstColFiles.length*100)+'%';
                 });
             });
         }
+        
+        // 事件委托：首列编辑结果按钮
+        firstCards.addEventListener('click', function(e) {
+            let btn = e.target.closest('.result-download-txt, .result-download-xlsx');
+            if(btn) {
+                let filename = btn.dataset.filename;
+                let data = JSON.parse(btn.dataset.content);
+                if(btn.classList.contains('result-download-txt')) {
+                    safeDownload(new Blob([data.map(r=>r.join('\t')).join('\n')],{type:'text/plain'}), filename);
+                } else {
+                    safeDownload(createExcelBlob(data,false), filename);
+                }
+            }
+        });
+        
         document.getElementById('insertFirstColBtn').onclick=()=>processFirstCol('insert');
         document.getElementById('deleteFirstColBtn').onclick=()=>processFirstCol('delete');
         document.getElementById('resetFirstColBtn').onclick=()=>{ firstColFiles=[]; firstList.style.display='none'; firstResults.style.display='none'; firstStatus.innerHTML='等待上传文件...'; firstInput.value=''; firstPreview.style.display='none'; firstProgress.style.width='0%'; };
@@ -1090,66 +1140,6 @@
                 document.getElementById('panel-'+this.dataset.tool).classList.add('active');
             };
         });
-        
-        // ========== 手机保活机制 - 修复手机模式失效问题 ==========
-        (function keepAliveForMobile() {
-            // 1. 每20秒触发一次页面刷新（不刷新页面，只是让手机浏览器以为页面还在活动）
-            setInterval(function() {
-                // 轻微修改body透明度，触发重绘，告诉手机浏览器页面还在用
-                document.body.style.opacity = '0.999';
-                setTimeout(function() {
-                    document.body.style.opacity = '1';
-                }, 50);
-            }, 20000);
-            
-            // 2. 检测是否是手机（触摸屏设备）
-            if ('ontouchstart' in window) {
-                // 每次触摸屏幕时，重新激活所有按钮事件
-                document.addEventListener('touchstart', function(e) {
-                    // 如果点击的是按钮，确保事件正常触发
-                    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-                        // 不需要额外操作，只是让手机知道页面正在被使用
-                    }
-                });
-                
-                // 防止页面进入休眠状态
-                window.addEventListener('scroll', function() {});
-                window.addEventListener('touchmove', function() {});
-            }
-            
-            // 3. 页面重新可见时（从后台切回来），强制刷新一次事件
-            document.addEventListener('visibilitychange', function() {
-                if (!document.hidden) {
-                    // 页面重新可见，触发一个小动作唤醒事件系统
-                    var dummy = document.createElement('div');
-                    dummy.style.display = 'none';
-                    document.body.appendChild(dummy);
-                    dummy.click();
-                    setTimeout(function() {
-                        document.body.removeChild(dummy);
-                    }, 100);
-                }
-            });
-            
-            // 4. 记录所有按钮，确保它们的事件不会丢失
-            var allButtons = document.querySelectorAll('button');
-            for (var i = 0; i < allButtons.length; i++) {
-                var btn = allButtons[i];
-                if (!btn._hasMobileFix) {
-                    btn._hasMobileFix = true;
-                    // 确保每个按钮都有明确的 onclick 引用
-                    var originalClick = btn.onclick;
-                    if (originalClick) {
-                        btn.onclick = function(e) {
-                            if (this._clickHandler) {
-                                this._clickHandler(e);
-                            }
-                        };
-                        btn._clickHandler = originalClick;
-                    }
-                }
-            }
-        })();
         
         updateFileName();
     </script>
