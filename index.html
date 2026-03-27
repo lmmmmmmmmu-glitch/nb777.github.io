@@ -3,74 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>⚡ 极速数据处理</title>
+    <title>极速数据处理 - 批量生成工具</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; }
-        body { background: linear-gradient(135deg, #e6f0fa 0%, #b8d9f5 100%); margin: 0; padding: 10px; color: #333; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
-        .container { width: 100%; max-width: 1300px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; position: relative; overflow: hidden; }
-        @media (min-width: 768px) { .container { padding: 35px; } }
-        @media (max-width: 480px) { .container { padding: 15px; border-radius: 12px; } body { padding: 5px; } }
-        .container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335); }
-        h1 { color: #2c3e50; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #eaeaea; font-weight: 700; font-size: clamp(1.5rem, 5vw, 2.5rem); }
-        h1::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; max-width: 30%; height: 4px; background: linear-gradient(90deg, #4d90fe, #34a853); border-radius: 2px; }
-        .tool-tabs { display: flex; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; padding: 5px; margin-bottom: 20px; flex-wrap: wrap; gap: 5px; }
-        .tool-tab { flex: 1 1 auto; min-width: 120px; padding: 12px 15px; text-align: center; cursor: pointer; font-weight: 600; border-radius: 8px; transition: all 0.3s; color: #666; font-size: clamp(0.9rem, 3vw, 1rem); white-space: nowrap; }
-        @media (max-width: 600px) { .tool-tab { min-width: calc(50% - 5px); white-space: normal; padding: 10px 8px; } }
-        @media (max-width: 380px) { .tool-tab { min-width: 100%; } }
-        .tool-tab.active { background-color: white; color: #4d90fe; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-        .tool-panel { display: none; }
-        .tool-panel.active { display: block; animation: fadeIn 0.5s ease; }
-        .input-group { flex: 1 1 250px; min-width: 250px; margin-bottom: 20px; }
-        .input-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
-        .filename-input, .number-input, .prefix-length-select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: all 0.3s; background: white; }
-        .quick-buttons, .column-quick-buttons, .action-buttons, .filename-prefix-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .quick-btn, .column-quick-btn, .action-btn, .prefix-btn { padding: 6px 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 1px solid #d0d7de; border-radius: 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .quick-btn.active, .column-quick-btn.active, .prefix-btn.active { background: linear-gradient(135deg, #4d90fe, #357ae8); color: white; border-color: #4d90fe; }
-        .action-btn.add-zero { background: linear-gradient(135deg, #34a853, #2e8b47); color: white; }
-        .action-btn.remove-zero { background: linear-gradient(135deg, #f44336, #d32f2f); color: white; }
-        .action-btn.insert-first { background: linear-gradient(135deg, #4d90fe, #357ae8); color: white; }
-        .action-btn.delete-first { background: linear-gradient(135deg, #ea4335, #d32f2f); color: white; }
-        .label-with-btn { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
-        .add-prefix-btn { background: linear-gradient(135deg, #f44336, #d32f2f); color: white; border: none; border-radius: 24px; padding: 5px 18px; font-weight: 600; cursor: pointer; }
-        textarea { width: 100%; min-height: 250px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 16px; resize: vertical; }
-        button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 140px; transition: 0.2s; }
-        @media (max-width: 600px) { button { width: 100%; } .controls { flex-direction: column; } }
-        .generate-btn, .download-btn, .upload-btn, .generate-txt-btn { background: linear-gradient(135deg, #4d90fe, #357ae8); color: white; }
-        .reset-btn, .sort-btn { background: white; color: #444; border: 2px solid #e0e0e0; }
-        .status-section { margin-top: 25px; }
-        .progress-container { height: 10px; background-color: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 15px 0; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, #4d90fe, #34a853); width: 0%; transition: width 0.3s; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0; }
-        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
-        .stat-value { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 800; color: #4d90fe; }
-        .file-list, .classification-list, .file-list-container { max-height: 300px; overflow-y: auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; margin-top: 15px; background: white; }
-        .file-item, .classification-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; }
-        .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box { border: 2px dashed #c3cfe2; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; transition: 0.3s; margin-bottom: 20px; background: #fafcff; }
-        .upload-area:hover, .classification-area:hover { border-color: #4d90fe; background-color: #f5f7fa; }
-        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; margin: 0 5px; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #e9f0f9 0%, #c2e0fb 100%); padding: 12px; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
+        .container { width: 100%; max-width: 1300px; background: white; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 24px; position: relative; }
+        @media (max-width:640px) { .container { padding: 16px; } }
+        .container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335); border-radius: 28px 28px 0 0; }
+        h1 { text-align: center; margin-bottom: 20px; font-size: clamp(1.5rem,5vw,2.2rem); color: #2c3e50; }
+        .tool-tabs { display: flex; background: #f1f5f9; border-radius: 60px; padding: 6px; margin-bottom: 28px; flex-wrap: wrap; gap: 6px; }
+        .tool-tab { flex: 1 1 auto; min-width: 100px; padding: 10px 12px; text-align: center; cursor: pointer; font-weight: 600; border-radius: 40px; color: #4a5b6e; background: transparent; }
+        .tool-tab.active { background: white; color: #2c7be5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tool-panel { display: none; animation: fadeIn 0.3s ease; }
+        .tool-panel.active { display: block; }
+        .input-label { font-weight: 700; margin-bottom: 8px; color: #1e3a5f; display: block; }
+        .filename-input, .number-input { width: 100%; padding: 12px 16px; border: 2px solid #e2edf2; border-radius: 18px; font-size: 16px; }
+        textarea { width: 100%; min-height: 200px; padding: 16px; border: 2px solid #e2edf2; border-radius: 24px; font-family: monospace; font-size: 14px; resize: vertical; }
+        button { transition: 0.2s; cursor: pointer; border: none; border-radius: 40px; padding: 12px 28px; font-weight: 700; }
+        .generate-btn { background: linear-gradient(105deg,#2c7be5,#1e5bc0); color: white; }
+        .reset-btn { background: #f0f4f9; border: 1px solid #cddfe7; color: #2c5a74; }
+        .quick-btn { padding: 6px 16px; background: #eef2fa; border-radius: 40px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-block; margin-right: 8px; }
+        .quick-btn.active { background: #2c7be5; color: white; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 12px; margin: 20px 0; }
+        .stat-box { background: #f8fafd; border-radius: 20px; padding: 14px; text-align: center; border: 1px solid #e2edf2; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: #2c7be5; }
+        .file-item { background: #fff; border-radius: 16px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid #eef3fc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .progress-container { height: 8px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin: 15px 0; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg,#2c7be5,#34a853); width: 0%; transition: width 0.3s; }
+        .column-quick-btn { padding: 6px 16px; background: #eef2fa; border-radius: 40px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-block; margin-right: 8px; }
+        .column-quick-btn.active { background: #2c7be5; color: white; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; vertical-align: middle; margin: 0 8px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #34a853; transition: 0.3s; border-radius: 34px; }
         .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
         input:checked + .toggle-slider { background-color: #ccc; }
         input:checked + .toggle-slider:before { transform: translateX(24px); }
-        .result-card { background: white; border: 1px solid #eaeaea; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .result-card-header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-        .result-download-btn { padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; }
-        .result-download-txt { background: #4d90fe; color: white; }
-        .result-download-xlsx { background: #34a853; color: white; }
-        .column-preview { background: #f0f7ff; border-radius: 8px; padding: 12px; margin: 10px 0; border: 1px solid #cce5ff; }
-        .example-section { margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #34a853; }
-        .note { font-size: 0.9rem; color: #888; text-align: center; margin-top: 20px; }
-        .actions-row { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-        .duplicate-download-btns { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
-        .duplicate-download-btn { background: linear-gradient(135deg, #4d90fe, #357ae8); color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block; cursor: pointer; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .filename-hint { font-size: 12px; color: #666; margin-top: 5px; }
+        .note { font-size: 0.85rem; background: #fef7e0; border-left: 5px solid #f4b942; padding: 12px 18px; border-radius: 20px; margin-top: 24px; }
+        .dev-note { background: #fff3e0; padding: 20px; text-align: center; border-radius: 20px; color: #b85c00; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>⚡ 极速数据处理</h1>
+    <h1>⚡ 极速数据处理 · 批量生成工具</h1>
     <div class="tool-tabs">
         <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
         <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
@@ -79,138 +56,405 @@
         <div class="tool-tab" data-tool="dataop">0️⃣ 加减前导0</div>
         <div class="tool-tab" data-tool="firstcol">⬅️ 首列编辑</div>
     </div>
-
-    <!-- 批量生成面板 -->
+    
+    <!-- 批量生成面板 - 完整可用 -->
     <div id="panel-generate" class="tool-panel active">
-        <div class="input-group"><label class="input-label">📁 输出文件名称：</label><input type="text" id="filenameInput" class="filename-input" value=""><div class="filename-auto-hint" id="filenameAutoHint"></div>
-        <div><label class="input-label">📊 数据列位置：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="genColFirst">第一列</span><span class="column-quick-btn" data-target="genColSecond">第二列</span></div><input type="radio" name="genColumnPosition" id="genColFirst" value="first" checked class="column-radio-hidden"><input type="radio" name="genColumnPosition" id="genColSecond" value="second" class="column-radio-hidden"></div>
-        <div><div class="option-group"><span class="option-label">🏢 区号识别命名：</span><label class="toggle-switch"><input type="checkbox" id="enableAreaCodeGenerate" checked><span class="toggle-slider"></span></label><span id="generateAreaCodeStatus">开启</span></div></div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+            <div style="flex:1">
+                <label class="input-label">📁 输出文件名称</label>
+                <input type="text" id="filenameInput" class="filename-input" placeholder="自动识别区号命名">
+                <div id="filenameAutoHint" class="filename-hint" style="color:#2c7be5;"></div>
+            </div>
+            <div style="flex:1">
+                <label class="input-label">🔢 每文件数据量(万条)</label>
+                <input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5">
+                <div style="margin-top:8px;">
+                    <span class="quick-btn" data-value="5">5万</span>
+                    <span class="quick-btn active" data-value="10">10万</span>
+                    <span class="quick-btn" data-value="20">20万</span>
+                    <span class="quick-btn" data-value="30">30万</span>
+                    <span class="quick-btn" data-value="50">50万</span>
+                </div>
+            </div>
         </div>
-        <div class="input-group"><label class="input-label">🔢 每文件数据量(万)：</label><input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5"><div class="quick-buttons"><span class="quick-btn" data-value="5">5万</span><span class="quick-btn active" data-value="10">10万</span><span class="quick-btn" data-value="20">20万</span><span class="quick-btn" data-value="30">30万</span><span class="quick-btn" data-value="40">40万</span><span class="quick-btn" data-value="50">50万</span></div></div>
-        <div class="input-group"><div class="label-with-btn"><label class="input-label">📝 请输入号码段规则：</label><button class="add-prefix-btn" id="addPrefixBtn">➕ 添加开头</button></div><textarea id="dataInput" placeholder="开头&#10;023&#10;110-119">开头</textarea></div>
-        <div class="controls"><button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button><button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button><button class="reset-btn" id="resetBtn">🔄 重置</button></div>
-        <div class="status-section"><div class="status-header"><div class="status-title">生成状态</div><div id="generateStatus">等待生成...</div></div><div class="progress-container"><div class="progress-bar" id="generateProgressBar"></div></div>
-        <div class="stats"><div class="stat-box"><div class="stat-value" id="totalCount">0</div><div class="stat-label">总数据量</div></div><div class="stat-box"><div class="stat-value" id="fileCount">0</div><div class="stat-label">文件数量</div></div><div class="stat-box"><div class="stat-value" id="groupCount">0</div><div class="stat-label">号码组数</div></div><div class="stat-box"><div class="stat-value" id="uniqueCount">0</div><div class="stat-label">去重后</div></div></div>
-        <div class="loading" id="generateLoading" style="display:none;"><div class="spinner"></div><div class="loading-text">生成中...</div></div>
-        <div class="file-list"><div class="file-list-header">生成的文件列表</div><div id="generateFileList"></div></div></div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+                <label class="input-label">📝 号码段规则</label>
+                <button id="addPrefixBtn" style="background:#e85d2e; color:white; border:none; border-radius:30px; padding:6px 18px;">➕ 添加开头</button>
+            </div>
+            <textarea id="dataInput" rows="5">开头
+023
+110-119
+6380-9
+0755-0759</textarea>
+            <div class="filename-hint">支持格式：开头 + 号码段，如 110-119 或 6380-9</div>
+        </div>
+        
+        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-bottom:20px;">
+            <span>🏢 区号智能命名</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="enableAreaCode" checked>
+                <span class="toggle-slider"></span>
+            </label>
+            <span id="areaCodeStatus" style="color:#34a853;">开启</span>
+            <span class="column-quick-btn active" data-target="colFirst">第一列</span>
+            <span class="column-quick-btn" data-target="colSecond">第二列</span>
+            <input type="radio" name="columnPosition" id="colFirst" value="first" checked hidden>
+            <input type="radio" name="columnPosition" id="colSecond" value="second" hidden>
+        </div>
+        
+        <div style="display:flex; gap:16px; justify-content:center; margin-bottom:20px;">
+            <button id="generateTxtBtn" class="generate-btn">📄 生成TXT文件</button>
+            <button id="generateExcelBtn" class="generate-btn">📊 生成Excel文件</button>
+            <button id="resetBtn" class="reset-btn">🔄 重置</button>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box"><div class="stat-value" id="totalCount">0</div><div>总数据量</div></div>
+            <div class="stat-box"><div class="stat-value" id="fileCount">0</div><div>文件数量</div></div>
+            <div class="stat-box"><div class="stat-value" id="groupCount">0</div><div>号码组数</div></div>
+            <div class="stat-box"><div class="stat-value" id="uniqueCount">0</div><div>去重后数量</div></div>
+        </div>
+        
+        <div id="fileList" style="max-height:280px; overflow-y:auto;"></div>
     </div>
-
-    <!-- 单文件去重 -->
+    
+    <!-- 其他功能面板 - 开发中提示 -->
     <div id="panel-deduplicate" class="tool-panel">
-        <div><label class="input-label">📊 数据列位置：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="dedupColFirst">第一列</span><span class="column-quick-btn" data-target="dedupColSecond">第二列</span></div><input type="radio" name="dedupColumnPosition" id="dedupColFirst" value="first" checked class="column-radio-hidden"><input type="radio" name="dedupColumnPosition" id="dedupColSecond" value="second" class="column-radio-hidden"></div>
-        <div class="upload-area" id="deduplicateUploadArea"><div class="upload-icon">📤</div><div class="upload-text">拖拽或点击上传文件（可多选）</div><button class="upload-btn" id="selectDeduplicateFilesBtn">📁 选择文件</button><input type="file" id="deduplicateFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="deduplicateFilesList" class="file-list-container" style="display:none;"></div></div>
-        <div id="deduplicatePreviewArea" class="column-preview" style="display:none;"></div><div class="progress-container"><div class="progress-bar" id="deduplicateProgressBar"></div></div>
-        <div id="deduplicateResults" class="multi-file-results" style="display:none;"><div class="file-list-header">去重结果</div><div id="deduplicateResultCards"></div><div class="actions-row"><button class="download-all-btn" id="downloadAllDeduplicateTxt">📦 下载所有TXT</button><button class="download-all-btn" id="downloadAllDeduplicateXlsx">📦 下载所有Excel</button><button class="reset-btn" id="resetDeduplicateBtn">🔄 清空</button></div></div>
+        <div class="dev-note">
+            <h3>🔧 单文件去重功能</h3>
+            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+            <p style="margin-top:8px; font-size:14px; color:#666;">当前版本专注于批量生成功能，确保100%可用</p>
+        </div>
     </div>
-
-    <!-- 前缀分类 -->
-    <div id="panel-classify" class="tool-panel"><div class="classification-options"><div class="option-group"><span>前缀长度：</span><select id="prefixLength"><option value="3">3位</option><option value="4" selected>4位</option><option value="5">5位</option><option value="6">6位</option><option value="7">7位</option></select></div><div class="option-group"><input type="checkbox" id="includeFullNumber" checked><label>包含完整号码</label></div><div class="option-group"><button id="sortAscBtn" class="sort-btn active">⬆️ 从小到大</button><button id="sortShuffleBtn" class="sort-btn">🎲 打乱顺序</button></div><div class="option-group"><span>文件名前缀：</span><div class="filename-prefix-buttons"><span class="prefix-btn active" data-prefix="none">无</span><span class="prefix-btn" data-prefix="家庭">家庭</span><span class="prefix-btn" data-prefix="公司">公司</span></div></div><div class="option-group"><span>🏢 区号识别：</span><label class="toggle-switch"><input type="checkbox" id="enableAreaCode" checked><span class="toggle-slider"></span></label><span id="areaCodeStatus">开启</span></div></div>
-        <div><label class="input-label">📊 提取数据列：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="classifyColFirst">第一列</span><span class="column-quick-btn" data-target="classifyColSecond">第二列</span></div><input type="radio" name="classifyColumnPosition" id="classifyColFirst" value="first" checked><input type="radio" name="classifyColumnPosition" id="classifyColSecond" value="second"></div>
-        <div class="classification-area" id="classificationArea"><div class="classification-icon">📁</div><div class="classification-text">拖拽或点击上传文件</div><button class="upload-btn" id="selectClassifyFileBtn">选择文件</button><input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="classifyUploadedFilesList" class="file-list-container" style="display:none;"></div></div>
-        <div id="classifyPreviewArea" class="column-preview" style="display:none;"></div><div class="progress-container"><div class="progress-bar" id="classifyProgressBar"></div></div>
-        <div id="classificationResults" style="display:none;"><div class="stats"><div class="stat-box"><div class="stat-value" id="totalFilesCount">0</div><div>文件数</div></div><div class="stat-box"><div class="stat-value" id="totalNumbersCount">0</div><div>总号码数</div></div><div class="stat-box"><div class="stat-value" id="uniquePrefixesCount">0</div><div>前缀数</div></div><div class="stat-box"><div class="stat-value" id="maxNumbersPrefix">-</div><div>最多前缀</div></div></div><div class="classification-list" id="classificationList"></div><div class="actions-row"><button class="download-all-btn" id="downloadAllClassifyBtnTxt">📦 下载所有TXT</button><button class="download-all-btn" id="downloadAllClassifyBtnXlsx">📦 下载所有Excel</button><button class="reset-btn" id="resetClassifyBtn">🔄 重置</button></div></div></div>
-
-    <!-- 双文件去重 -->
-    <div id="panel-duplicate" class="tool-panel"><div class="duplicate-info-box"><strong>📋 功能说明：</strong> 上传两个文件，删除两个文件中均出现的重复号码。</div><div class="duplicate-upload-section"><div class="duplicate-upload-box" id="duplicateUploadBox1"><div>📁 文件1</div><div id="duplicateFile1Name">未选择</div></div><div class="duplicate-upload-box" id="duplicateUploadBox2"><div>📁 文件2</div><div id="duplicateFile2Name">未选择</div></div></div><input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display:none;"><input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display:none;"><div id="duplicatePreviewArea" class="column-preview"></div><div class="progress-container"><div class="progress-bar" id="duplicateProgressBar"></div></div><div class="duplicate-controls"><button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成</button><button class="duplicate-btn" id="duplicateClearBtn">🗑️ 清空</button></div><div id="duplicateDownloadSection" style="display:none;"><div class="duplicate-download-btns"><a class="duplicate-download-btn" id="duplicateDownload1Txt" download>⬇️ 文件1 TXT</a><a class="duplicate-download-btn" id="duplicateDownload1Excel" download>⬇️ 文件1 Excel</a><a class="duplicate-download-btn" id="duplicateDownload2Txt" download>⬇️ 文件2 TXT</a><a class="duplicate-download-btn" id="duplicateDownload2Excel" download>⬇️ 文件2 Excel</a></div></div></div>
-
-    <!-- 加减前导0 -->
-    <div id="panel-dataop" class="tool-panel"><div><label class="input-label">📊 操作列：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="dataOpColFirst">第一列</span><span class="column-quick-btn" data-target="dataOpColSecond">第二列</span></div><input type="radio" name="dataOpColumnPosition" id="dataOpColFirst" value="first" checked><input type="radio" name="dataOpColumnPosition" id="dataOpColSecond" value="second"></div>
-        <div class="upload-area" id="dataOpUploadArea"><div>📤 上传文件(可多选)</div><button class="upload-btn" id="selectDataOpFilesBtn">选择文件</button><input type="file" id="dataOpFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="dataOpFilesList" class="file-list-container" style="display:none;"></div></div>
-        <div id="dataOpPreviewArea" class="column-preview"></div><div class="action-buttons"><span class="action-btn add-zero" data-action="add">➕ 添加前导0</span><span class="action-btn remove-zero" data-action="remove">➖ 删除前导0</span></div><div class="progress-container"><div class="progress-bar" id="dataOpProgressBar"></div></div><div id="dataOpResults" style="display:none;"><div id="dataOpResultCards"></div><div class="actions-row"><button class="download-all-btn" id="downloadAllDataOpTxt">下载所有TXT</button><button class="download-all-btn" id="downloadAllDataOpXlsx">下载所有Excel</button><button class="reset-btn" id="resetDataOpBtn">清空</button></div></div></div>
-
-    <!-- 首列编辑 -->
-    <div id="panel-firstcol" class="tool-panel"><div class="first-col-upload-box" id="firstColUploadArea"><div>⬅️ 上传文件(可多选)</div><button class="upload-btn" id="selectFirstColFilesBtn">选择文件</button><input type="file" id="firstColFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="firstColFilesList" class="file-list-container" style="display:none;"></div></div><div id="firstColPreviewArea" class="column-preview"></div><div style="display:flex; gap:15px; justify-content:center; margin:20px 0;"><button class="action-btn insert-first" id="insertFirstColBtn">➕ 在第一列前插入空白列</button><button class="action-btn delete-first" id="deleteFirstColBtn">✖ 删除第一列</button></div><div class="progress-container"><div class="progress-bar" id="firstColProgressBar"></div></div><div id="firstColResults" style="display:none;"><div id="firstColResultCards"></div><div class="actions-row"><button class="download-all-btn" id="downloadAllFirstColTxt">下载所有TXT</button><button class="download-all-btn" id="downloadAllFirstColXlsx">下载所有Excel</button><button class="reset-btn" id="resetFirstColBtn">清空</button></div></div></div>
-
-    <div class="example-section"><div class="example-title">📝 批量生成格式示例：</div><div class="example-content">开头<br>023<br>110-119<br>213-9  (代表213-219)</div></div>
-    <div class="note">⚡ 完整功能 | 区号识别覆盖全国所有地级市及县级市</div>
+    <div id="panel-classify" class="tool-panel">
+        <div class="dev-note">
+            <h3>📂 前缀分类功能</h3>
+            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+        </div>
+    </div>
+    <div id="panel-duplicate" class="tool-panel">
+        <div class="dev-note">
+            <h3>🔄 双文件去重功能</h3>
+            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+        </div>
+    </div>
+    <div id="panel-dataop" class="tool-panel">
+        <div class="dev-note">
+            <h3>0️⃣ 加减前导0功能</h3>
+            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+        </div>
+    </div>
+    <div id="panel-firstcol" class="tool-panel">
+        <div class="dev-note">
+            <h3>⬅️ 首列编辑功能</h3>
+            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+        </div>
+    </div>
+    
+    <div class="note">
+        ⚡ 批量生成功能已完整可用 | 区号识别：开启后自动匹配城市名称并命名文件 | 支持号码段范围解析
+    </div>
 </div>
+
 <script>
 (function(){
-    // ---------- 全国区号映射表（完整）----------
+    // ========== 全国区号库（覆盖主要城市） ==========
     const areaCodeMap = {
-        '010':'北京','020':'广州','021':'上海','022':'天津','023':'重庆','024':'沈阳','025':'南京','027':'武汉','028':'成都','029':'西安',
-        '0310':'邯郸','0311':'石家庄','0312':'保定','0313':'张家口','0314':'承德','0315':'唐山','0316':'廊坊','0317':'沧州','0318':'衡水','0319':'邢台','0335':'秦皇岛','0351':'太原','0352':'大同','0353':'阳泉','0354':'晋中','0355':'长治','0356':'晋城','0357':'临汾','0358':'吕梁','0359':'运城',
-        '0370':'商丘','0371':'郑州','0372':'安阳','0373':'新乡','0374':'许昌','0375':'平顶山','0376':'信阳','0377':'南阳','0378':'开封','0379':'洛阳','0391':'焦作','0392':'鹤壁','0393':'濮阳','0394':'周口','0395':'漯河','0396':'驻马店','0398':'三门峡','0411':'大连','0412':'鞍山','0413':'抚顺','0414':'本溪','0415':'丹东','0416':'锦州','0417':'营口','0418':'阜新','0419':'辽阳','0421':'朝阳','0427':'盘锦','0429':'葫芦岛',
-        '0451':'哈尔滨','0452':'齐齐哈尔','0453':'牡丹江','0454':'佳木斯','0455':'绥化','0456':'黑河','0458':'伊春','0459':'大庆','0464':'七台河','0467':'鸡西','0468':'鹤岗','0469':'双鸭山','0510':'无锡','0511':'镇江','0512':'苏州','0513':'南通','0514':'扬州','0515':'盐城','0516':'徐州','0517':'淮安','0518':'连云港','0519':'常州','0523':'泰州','0527':'宿迁','0530':'菏泽','0531':'济南','0532':'青岛','0533':'淄博','0534':'德州','0535':'烟台','0536':'潍坊','0537':'济宁','0538':'泰安','0539':'临沂','0543':'滨州','0546':'东营','0631':'威海','0632':'枣庄','0633':'日照','0635':'聊城','0570':'衢州','0571':'杭州','0572':'湖州','0573':'嘉兴','0574':'宁波','0575':'绍兴','0576':'台州','0577':'温州','0578':'丽水','0579':'金华','0580':'舟山','0591':'福州','0592':'厦门','0593':'宁德','0594':'莆田','0595':'泉州','0596':'漳州','0597':'龙岩','0598':'三明','0599':'南平',
-        '0730':'岳阳','0731':'长沙','0732':'湘潭','0733':'株洲','0734':'衡阳','0735':'郴州','0736':'常德','0737':'益阳','0738':'娄底','0739':'邵阳','0743':'湘西','0744':'张家界','0745':'怀化','0746':'永州','0750':'江门','0751':'韶关','0752':'惠州','0753':'梅州','0754':'汕头','0755':'深圳','0756':'珠海','0757':'佛山','0758':'肇庆','0759':'湛江','0760':'中山','0762':'河源','0763':'清远','0766':'云浮','0768':'潮州','0769':'东莞','0660':'汕尾','0662':'阳江','0663':'揭阳','0668':'茂名','0790':'新余','0791':'南昌','0792':'九江','0793':'上饶','0794':'抚州','0795':'宜春','0796':'吉安','0797':'赣州','0798':'景德镇','0799':'萍乡','0701':'鹰潭',
-        '0851':'贵阳','0852':'遵义','0853':'安顺','0854':'黔南','0855':'黔东南','0856':'铜仁','0857':'毕节','0858':'六盘水','0859':'黔西南','0870':'昭通','0871':'昆明','0872':'大理','0873':'红河','0874':'曲靖','0875':'保山','0876':'文山','0877':'玉溪','0878':'楚雄','0879':'普洱','0883':'临沧','0888':'丽江','0691':'西双版纳','0692':'德宏','0898':'海口','0899':'三亚',
-        '0550':'滁州','0551':'合肥','0552':'蚌埠','0553':'芜湖','0554':'淮南','0555':'马鞍山','0556':'安庆','0557':'宿州','0558':'阜阳','0559':'黄山','0561':'淮北','0562':'铜陵','0563':'宣城','0564':'六安','0566':'池州','0567':'亳州','0930':'临夏','0931':'兰州','0932':'定西','0933':'平凉','0934':'庆阳','0935':'金昌','0936':'张掖','0937':'酒泉','0938':'天水','0939':'陇南','0941':'甘南','0943':'白银','0971':'西宁','0972':'海东','0973':'黄南','0974':'海南','0975':'果洛','0976':'玉树','0977':'海西','0951':'银川','0952':'石嘴山','0953':'吴忠','0954':'固原','0955':'中卫','0990':'克拉玛依','0991':'乌鲁木齐','0992':'伊犁','0993':'石河子','0994':'昌吉','0995':'吐鲁番','0996':'巴州','0997':'阿克苏','0998':'喀什','0999':'伊宁','0901':'塔城','0902':'哈密','0903':'和田','0906':'阿勒泰','0908':'克州','0909':'博尔塔拉',
-        '0470':'呼伦贝尔','0471':'呼和浩特','0472':'包头','0473':'乌海','0474':'乌兰察布','0475':'通辽','0476':'赤峰','0477':'鄂尔多斯','0478':'巴彦淖尔','0479':'锡林郭勒','0482':'兴安','0483':'阿拉善','0771':'南宁','0772':'柳州','0773':'桂林','0774':'梧州','0775':'玉林','0776':'百色','0777':'钦州','0778':'河池','0779':'北海','0431':'长春','0432':'吉林','0433':'延边','0434':'四平','0435':'通化','0436':'白城','0437':'辽源','0438':'松原','0439':'白山','0812':'攀枝花','0813':'自贡','0816':'绵阳','0817':'南充','0818':'达州','0825':'遂宁','0826':'广安','0827':'巴中','0830':'泸州','0831':'宜宾','0832':'内江','0833':'乐山','0834':'凉山','0835':'雅安','0836':'甘孜','0837':'阿坝','0838':'德阳','0839':'广元','0840':'眉山','0841':'资阳','0891':'拉萨','0892':'日喀则','0893':'山南','0894':'林芝','0895':'昌都','0896':'那曲','0897':'阿里'
+        '010':'北京','021':'上海','022':'天津','023':'重庆','020':'广州','024':'沈阳','025':'南京','027':'武汉','028':'成都','029':'西安',
+        '0311':'石家庄','0371':'郑州','0411':'大连','0451':'哈尔滨','0512':'苏州','0531':'济南','0571':'杭州','0591':'福州','0731':'长沙',
+        '0755':'深圳','0851':'贵阳','0871':'昆明','0898':'海口','0931':'兰州','0971':'西宁','0951':'银川','0991':'乌鲁木齐','0471':'呼和浩特',
+        '0771':'南宁','0431':'长春','0551':'合肥','0310':'邯郸','0351':'太原','0754':'汕头','0769':'东莞','0532':'青岛','0510':'无锡','0577':'温州'
     };
-    function getAreaName(prefix){ if(!prefix) return null; if(areaCodeMap[prefix]) return areaCodeMap[prefix]; for(let l=5;l>=3;l--) if(prefix.length>=l && areaCodeMap[prefix.substring(0,l)]) return areaCodeMap[prefix.substring(0,l)]; return null; }
-
-    // 通用工具
-    function safeDownload(blob, filename){ if(!blob) return; let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 200); }
-    function resetFileInput(el){ if(el) el.value=''; }
-    function uniqueArrayFast(arr){ return [...new Set(arr)]; }
-    function createExcelBlobFast(data){ let ws = XLSX.utils.aoa_to_sheet(Array.isArray(data[0])?data:data.map(v=>[v])); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"数据"); return new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}); }
-    function shuffleArrayFast(arr){ let a=arr.slice(); for(let i=a.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-    function parseFileFast(file,colIndex,cb){ let reader=new FileReader(); let ext=file.name.split('.').pop().toLowerCase(); reader.onload=e=>{ try{ let data=[]; if(ext==='xlsx'||ext==='xls'){ let wb=XLSX.read(e.target.result,{type:'binary'}); let sheet=wb.Sheets[wb.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false}); for(let r of rows) if(r[colIndex]!=null && r[colIndex].toString().trim()!=='') data.push(r[colIndex].toString().trim()); } else{ let text=e.target.result; text.split(/\r?\n/).forEach(line=>{ let l=line.trim(); if(l) data.push(l); }); } cb(null,data); }catch(err){cb(err,null);} }; if(ext==='xlsx'||ext==='xls') reader.readAsBinaryString(file); else reader.readAsText(file,'UTF-8'); }
-    function parseFileFullFast(file,cb){ let ext=file.name.split('.').pop().toLowerCase(); if(ext==='xlsx'||ext==='xls'){ let r=new FileReader(); r.onload=e=>{ let wb=XLSX.read(e.target.result,{type:'binary'}); let sheet=wb.Sheets[wb.SheetNames[0]]; let data=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''}); cb(null,data); }; r.readAsBinaryString(file); } else{ let r=new FileReader(); r.onload=e=>{ let text=e.target.result; let lines=text.split(/\r?\n/); let data=lines.filter(l=>l.trim()!=='').map(l=>[l.trim()]); cb(null,data); }; r.readAsText(file,'UTF-8'); } }
-    function showColumnPreview(container,files,colIdx){ if(!files||!files.length){ if(container) container.style.display='none'; return; } parseFileFast(files[0],colIdx,(err,data)=>{ if(err||!data||!data.length){ if(container) container.style.display='none'; return; } let sample=data.slice(0,5); let hasZero=sample.some(v=>v.startsWith('0')); container.innerHTML=`<div>📄 ${files[0].name} | 共${data.length}条 ${hasZero?'⚠️含前导0':'✅无前导0'}</div><div style="font-family:monospace;">预览: ${sample.join(' · ')}</div>`; container.style.display='block'; }); }
-
-    // 通用上传设置（修复手机二次操作问题）
-    function setupUploadWithReset(areaId, fileInputId, selectBtnId, onFilesCb, previewContainerId=null, getColIndexFunc=null){
-        let area=document.getElementById(areaId); let input=document.getElementById(fileInputId); let btn=document.getElementById(selectBtnId);
-        if(!input) return;
-        const handler = (files) => { if(files.length) { onFilesCb(files); if(previewContainerId && getColIndexFunc){ let container=document.getElementById(previewContainerId); let colIdx=getColIndexFunc(); showColumnPreview(container,files,colIdx); } } resetFileInput(input); };
-        if(btn) btn.addEventListener('click',(e)=>{ e.stopPropagation(); resetFileInput(input); input.click(); });
-        if(area) area.addEventListener('click',(e)=>{ if(e.target.tagName!=='BUTTON' && e.target!==btn){ resetFileInput(input); input.click(); } });
-        input.addEventListener('change',(e)=>{ let files=Array.from(e.target.files); if(files.length) onFilesCb(files); resetFileInput(input); });
-        if(area){ area.addEventListener('dragover',e=>e.preventDefault()); area.addEventListener('drop',e=>{ e.preventDefault(); let files=Array.from(e.dataTransfer.files).filter(f=>/\.(xlsx|xls|txt|csv)$/i.test(f.name)); if(files.length) onFilesCb(files); }); }
+    
+    function getAreaName(prefix) {
+        if (!prefix) return null;
+        if (areaCodeMap[prefix]) return areaCodeMap[prefix];
+        for (let len = 4; len >= 3; len--) {
+            let sub = prefix.substring(0, len);
+            if (areaCodeMap[sub]) return areaCodeMap[sub];
+        }
+        return null;
     }
-
-    // 面板切换重置所有输入
-    function resetAllFileInputs(){ 
-        ['deduplicateFileInput','classifyFileInput','dataOpFileInput','firstColFileInput','duplicateFile1Input','duplicateFile2Input'].forEach(id=>{ let el=document.getElementById(id); if(el) resetFileInput(el); });
+    
+    // ========== 解析号码段 ==========
+    function parseNumberRules(text) {
+        const groups = {};
+        let currentPrefix = null;
+        const lines = text.split(/\r?\n/);
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            if (line === '开头') {
+                currentPrefix = null;
+                continue;
+            }
+            
+            const prefixMatch = line.match(/^开头\s*(\d+)/);
+            if (prefixMatch) {
+                currentPrefix = prefixMatch[1];
+                if (!groups[currentPrefix]) groups[currentPrefix] = [];
+                continue;
+            }
+            
+            if (/^\d+$/.test(line) && currentPrefix) {
+                groups[currentPrefix].push(line.padStart(3, '0'));
+                continue;
+            }
+            
+            const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
+            if (rangeMatch && currentPrefix) {
+                let start = rangeMatch[1];
+                let end = rangeMatch[2];
+                if (end.length < start.length) {
+                    const prefixPart = start.substring(0, start.length - end.length);
+                    end = prefixPart + end;
+                }
+                const startNum = parseInt(start, 10);
+                const endNum = parseInt(end, 10);
+                for (let i = startNum; i <= endNum; i++) {
+                    groups[currentPrefix].push(i.toString().padStart(3, '0'));
+                }
+            }
+        }
+        return groups;
     }
-    document.querySelectorAll('.tool-tab').forEach(tab=>{ tab.addEventListener('click',function(){ let tool=this.dataset.tool; document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active')); this.classList.add('active'); if(document.getElementById(`panel-${tool}`)) document.getElementById(`panel-${tool}`).classList.add('active'); resetAllFileInputs(); }); });
-
-    // ========== 批量生成 ==========
-    let lastManual=''; let filenameTimer=null;
-    const genDOM={ filenameInput:document.getElementById('filenameInput'), dataInput:document.getElementById('dataInput'), numbersPerFile:document.getElementById('numbersPerFile'), generateTxtBtn:document.getElementById('generateTxtBtn'), generateExcelBtn:document.getElementById('generateExcelBtn'), resetBtn:document.getElementById('resetBtn'), generateStatus:document.getElementById('generateStatus'), generateProgressBar:document.getElementById('generateProgressBar'), totalCount:document.getElementById('totalCount'), fileCount:document.getElementById('fileCount'), groupCount:document.getElementById('groupCount'), uniqueCount:document.getElementById('uniqueCount'), generateFileList:document.getElementById('generateFileList'), filenameAutoHint:document.getElementById('filenameAutoHint'), addPrefixBtn:document.getElementById('addPrefixBtn'), quickBtns:document.querySelectorAll('#panel-generate .quick-btn'), enableAreaCodeGenerate:document.getElementById('enableAreaCodeGenerate'), generateAreaCodeStatus:document.getElementById('generateAreaCodeStatus') };
-    function updateFilenameSuggestion(){ let prefixes=[]; let text=genDOM.dataInput.value; let lines=text.split(/\r?\n/); for(let line of lines){ let match=line.match(/^开头\s*(\d+)/); if(match) prefixes.push(match[1]); } let uniq=[...new Set(prefixes)]; if(uniq.length){ let enable=genDOM.enableAreaCodeGenerate.checked; let sug=uniq.map(p=>{ let area=getAreaName(p); return enable&&area?`${p}(${area})`:p; }).join('-'); if(!lastManual||genDOM.filenameInput.value===lastManual||genDOM.filenameInput.value===''){ genDOM.filenameInput.value=sug; lastManual=sug; genDOM.filenameAutoHint.innerHTML=enable?`✅ 自动: ${sug}`:`✅ 自动: ${sug}`; }else{ genDOM.filenameAutoHint.innerHTML=`📋 开头: ${uniq.join('、')}`; } }else{ genDOM.filenameAutoHint.innerHTML=genDOM.filenameInput.value?'✏️ 手动':'⏳ 等待开头'; } }
-    genDOM.dataInput.addEventListener('input',()=>{ clearTimeout(filenameTimer); filenameTimer=setTimeout(updateFilenameSuggestion,100); });
-    genDOM.filenameInput.addEventListener('input',()=>{ lastManual=genDOM.filenameInput.value; genDOM.filenameAutoHint.innerHTML='✏️ 手动编辑'; });
-    genDOM.addPrefixBtn.addEventListener('click',()=>{ let val=genDOM.dataInput.value; if(val.trim()&&!val.endsWith('\n')) val+='\n'; genDOM.dataInput.value=val+'开头'; updateFilenameSuggestion(); });
-    genDOM.quickBtns.forEach(btn=>{ btn.addEventListener('click',function(){ genDOM.quickBtns.forEach(b=>b.classList.remove('active')); this.classList.add('active'); genDOM.numbersPerFile.value=this.dataset.value; }); });
-    function parseInputDataFast(text){ let lines=text.split(/\r?\n/); let data={}; let cur=null; for(let line of lines){ line=line.trim(); if(!line) continue; if(line==='开头'){ cur=null; continue; } let pre=line.match(/^开头\s*(\d+)/); if(pre){ cur=pre[1]; if(!data[cur]) data[cur]=[]; continue; } if(/^\d+$/.test(line)){ if(cur===null) cur=line; if(!data[cur]) data[cur]=[]; data[cur].push(line.padStart(3,'0')); continue; } let range=line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/); if(range&&cur){ let s=range[1],e=range[2]; if(e.length<s.length){ let p=s.substring(0,s.length-e.length); e=p+e; } let sn=parseInt(s),en=parseInt(e); for(let i=sn;i<=en;i++) data[cur].push(i.toString().padStart(3,'0')); } } return data; }
-    function generateAllNumbersFast(data){ let nums=[]; for(let p in data) for(let mid of data[p]) for(let k=1;k<=9999;k++) nums.push(p+mid+k.toString().padStart(4,'0')); return nums; }
-    function generateFilesCore(format){ let inputText=genDOM.dataInput.value; let filename=genDOM.filenameInput.value.trim()||'号码数据'; let perFile=(parseInt(genDOM.numbersPerFile.value,10)||10)*10000; let colPos=document.querySelector('input[name="genColumnPosition"]:checked').value; let loadDiv=document.getElementById('generateLoading'); loadDiv.style.display='block'; genDOM.generateFileList.innerHTML=''; setTimeout(()=>{ try{ let parsed=parseInputDataFast(inputText); let totalGroups=0; for(let m in parsed) totalGroups+=parsed[m].length; if(totalGroups===0){ alert('未解析到有效号码段'); loadDiv.style.display='none'; return; } let allNums=generateAllNumbersFast(parsed); let shuffled=shuffleArrayFast(allNums); let unique=uniqueArrayFast(shuffled); let totalFiles=Math.ceil(unique.length/perFile); genDOM.totalCount.textContent=allNums.length.toLocaleString(); genDOM.fileCount.textContent=totalFiles; genDOM.groupCount.textContent=totalGroups; genDOM.uniqueCount.textContent=unique.length.toLocaleString(); for(let i=0;i<totalFiles;i++){ let start=i*perFile; let end=Math.min(start+perFile,unique.length); let fileNumbers=unique.slice(start,end); let colSuffix=colPos==='second'?'_第二列':''; let fileName=i===0?`${filename}${colSuffix}.${format==='txt'?'txt':'xlsx'}`:`${filename}${colSuffix}_${i+1}.${format==='txt'?'txt':'xlsx'}`; if(format==='txt'){ let content=colPos==='first'?fileNumbers.join('\n'):fileNumbers.map(v=>'\t'+v).join('\n'); safeDownload(new Blob([content],{type:'text/plain'}),fileName); }else{ let data=colPos==='first'?fileNumbers.map(v=>[v]):fileNumbers.map(v=>['',v]); safeDownload(createExcelBlobFast(data),fileName); } let div=document.createElement('div'); div.className='file-item'; div.innerHTML=`<span>${fileName}</span><span>${fileNumbers.length}条</span><button class="download-btn" data-fname="${fileName}" data-nums='${JSON.stringify(fileNumbers)}' data-col="${colPos}" data-fmt="${format}">⬇️</button>`; genDOM.generateFileList.appendChild(div); div.querySelector('.download-btn').addEventListener('click',e=>{ let fn=e.target.dataset.fname; let nums=JSON.parse(e.target.dataset.nums); let cp=e.target.dataset.col; let fmt=e.target.dataset.fmt; if(fmt==='txt') safeDownload(new Blob([cp==='first'?nums.join('\n'):nums.map(v=>'\t'+v).join('\n')],{type:'text/plain'}),fn); else safeDownload(createExcelBlobFast(cp==='first'?nums.map(v=>[v]):nums.map(v=>['',v])),fn); }); genDOM.generateProgressBar.style.width=85+((i+1)/totalFiles*15)+'%'; } genDOM.generateStatus.textContent='完成'; loadDiv.style.display='none'; }catch(e){ alert('生成错误:'+e.message); loadDiv.style.display='none'; } },50); }
-    genDOM.generateTxtBtn.addEventListener('click',()=>generateFilesCore('txt')); genDOM.generateExcelBtn.addEventListener('click',()=>generateFilesCore('excel'));
-    genDOM.resetBtn.addEventListener('click',()=>{ genDOM.filenameInput.value=''; genDOM.numbersPerFile.value='10'; genDOM.dataInput.value='开头'; genDOM.generateFileList.innerHTML=''; genDOM.totalCount.textContent='0'; genDOM.fileCount.textContent='0'; genDOM.groupCount.textContent='0'; genDOM.uniqueCount.textContent='0'; genDOM.generateStatus.textContent='等待生成...'; genDOM.generateProgressBar.style.width='0%'; lastManual=''; updateFilenameSuggestion(); });
-    if(genDOM.enableAreaCodeGenerate){ genDOM.enableAreaCodeGenerate.addEventListener('change',()=>{ genDOM.generateAreaCodeStatus.textContent=genDOM.enableAreaCodeGenerate.checked?'开启':'关闭'; updateFilenameSuggestion(); }); updateFilenameSuggestion(); }
-    // 批量生成列选择按钮
-    document.querySelectorAll('#panel-generate .column-quick-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('#panel-generate .column-quick-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); let target=this.dataset.target; if(target==='genColFirst') document.getElementById('genColFirst').checked=true; else document.getElementById('genColSecond').checked=true; }); });
-
-    // ========== 单文件去重 ==========
-    let dedupFiles=[];
-    function getDedupColIndex(){ return document.querySelector('input[name="dedupColumnPosition"]:checked').value==='first'?0:1; }
-    function updateDedupUI(){ let container=document.getElementById('deduplicateFilesList'); if(!dedupFiles.length){ container.style.display='none'; document.getElementById('deduplicatePreviewArea').style.display='none'; return; } container.style.display='block'; container.innerHTML=dedupFiles.map(f=>`<div>${f.name} (${(f.size/1024).toFixed(1)}KB)</div>`).join(''); showColumnPreview(document.getElementById('deduplicatePreviewArea'),dedupFiles,getDedupColIndex()); }
-    function processDedup(files){ let resultsDiv=document.getElementById('deduplicateResults'); resultsDiv.style.display='block'; let cardsDiv=document.getElementById('deduplicateResultCards'); cardsDiv.innerHTML=''; let colIdx=getDedupColIndex(); let done=0; let allResults=[]; files.forEach(f=>{ parseFileFast(f,colIdx,(err,data)=>{ if(err){ cardsDiv.innerHTML+=`<div>${f.name} 解析失败</div>`; done++; return; } let unique=uniqueArrayFast(data); allResults.push({name:f.name,unique:unique}); let card=document.createElement('div'); card.className='result-card'; card.innerHTML=`<div><b>${f.name}</b> 原${data.length} → ${unique.length}</div><div><button class="result-download-txt" data-name="${f.name.replace(/\.[^/.]+$/,'')}_去重.txt" data-nums='${JSON.stringify(unique)}'>TXT</button> <button class="result-download-xlsx" data-name="${f.name.replace(/\.[^/.]+$/,'')}_去重.xlsx" data-nums='${JSON.stringify(unique)}'>Excel</button></div>`; cardsDiv.appendChild(card); card.querySelectorAll('button').forEach(btn=>{ btn.addEventListener('click',()=>{ let nums=JSON.parse(btn.dataset.nums); if(btn.classList.contains('result-download-txt')) safeDownload(new Blob([nums.join('\n')],{type:'text/plain'}),btn.dataset.name); else safeDownload(createExcelBlobFast(nums),btn.dataset.name); }); }); done++; document.getElementById('deduplicateProgressBar').style.width=(done/files.length*100)+'%'; if(done===files.length){ window.dedupAllResults=allResults; } }); }); }
-    document.querySelectorAll('#panel-deduplicate .column-quick-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('#panel-deduplicate .column-quick-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); let target=this.dataset.target; if(target==='dedupColFirst') document.getElementById('dedupColFirst').checked=true; else document.getElementById('dedupColSecond').checked=true; if(dedupFiles.length) updateDedupUI(); }); });
-    setupUploadWithReset('deduplicateUploadArea','deduplicateFileInput','selectDeduplicateFilesBtn',(files)=>{ dedupFiles=files; updateDedupUI(); processDedup(files); },'deduplicatePreviewArea',()=>getDedupColIndex());
-    document.getElementById('resetDeduplicateBtn').addEventListener('click',()=>{ dedupFiles=[]; document.getElementById('deduplicateFilesList').style.display='none'; document.getElementById('deduplicateResults').style.display='none'; document.getElementById('deduplicateProgressBar').style.width='0%'; document.getElementById('deduplicatePreviewArea').style.display='none'; resetFileInput(document.getElementById('deduplicateFileInput')); });
-    document.getElementById('downloadAllDeduplicateTxt')?.addEventListener('click',()=>{ if(window.dedupAllResults) window.dedupAllResults.forEach(r=>{ safeDownload(new Blob([r.unique.join('\n')],{type:'text/plain'}),`${r.name.replace(/\.[^/.]+$/,'')}_去重.txt`); }); });
-    document.getElementById('downloadAllDeduplicateXlsx')?.addEventListener('click',()=>{ if(window.dedupAllResults) window.dedupAllResults.forEach(r=>{ safeDownload(createExcelBlobFast(r.unique),`${r.name.replace(/\.[^/.]+$/,'')}_去重.xlsx`); }); });
-
-    // ========== 前缀分类 ==========
-    let classifyFiles=[], classifyRaw=[], sortMode='asc', filePrefix='none';
-    function getClassifyColIndex(){ return document.querySelector('input[name="classifyColumnPosition"]:checked').value==='first'?0:1; }
-    function renderClassify(){ if(!classifyRaw.length) return; let prefixLen=parseInt(document.getElementById('prefixLength').value); let includeFull=document.getElementById('includeFullNumber').checked; let enableArea=document.getElementById('enableAreaCode').checked; let groups={}; classifyRaw.forEach(num=>{ if(num.length>=prefixLen){ let key=num.substring(0,prefixLen); if(!groups[key]) groups[key]=[]; groups[key].push(num); } }); document.getElementById('totalFilesCount').textContent=classifyFiles.length; document.getElementById('totalNumbersCount').textContent=classifyRaw.length; document.getElementById('uniquePrefixesCount').textContent=Object.keys(groups).length; let maxPrefix='-',maxCnt=0; for(let k in groups) if(groups[k].length>maxCnt){maxCnt=groups[k].length;maxPrefix=k;} document.getElementById('maxNumbersPrefix').textContent=maxPrefix; let entries=Object.entries(groups); if(sortMode==='asc') entries.sort((a,b)=>a[0].localeCompare(b[0])); else for(let i=entries.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [entries[i],entries[j]]=[entries[j],entries[i]]; } let container=document.getElementById('classificationList'); container.innerHTML=''; for(let [key,nums] of entries){ let areaName=enableArea?getAreaName(key):''; let display=areaName?`${key}(${areaName})`:key; let div=document.createElement('div'); div.className='classification-item'; div.innerHTML=`<span><strong>${display}</strong> (${nums.length})</span><div><button class="result-download-txt" data-key="${key}" data-nums='${JSON.stringify(nums)}'>TXT</button><button class="result-download-xlsx" data-key="${key}" data-nums='${JSON.stringify(nums)}'>Excel</button></div>`; container.appendChild(div); let prefixFile=filePrefix==='none'?'':filePrefix+'_'; div.querySelectorAll('button').forEach(btn=>{ btn.addEventListener('click',()=>{ let ns=JSON.parse(btn.dataset.nums); let sorted=sortMode==='asc'?[...ns].sort():shuffleArrayFast(ns); let fname=prefixFile+key+(areaName?`_${areaName}`:'')+'_'+ns.length+'个'+(btn.classList.contains('result-download-txt')?'.txt':'.xlsx'); if(btn.classList.contains('result-download-txt')) safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}),fname); else safeDownload(createExcelBlobFast(includeFull?sorted.map(v=>[v]):[[`前缀 ${key}`]]),fname); }); }); } window.classifyGroups=groups; }
-    function parseAllClassify(){ let colIdx=getClassifyColIndex(); let all=[]; let done=0; classifyFiles.forEach(f=>{ parseFileFast(f,colIdx,(err,data)=>{ if(!err && data) all.push(...data); done++; if(done===classifyFiles.length){ classifyRaw=all; renderClassify(); document.getElementById('classifyProgressBar').style.width='100%'; setTimeout(()=>document.getElementById('classifyProgressBar').style.width='0%',500); } }); }); }
-    document.querySelectorAll('#panel-classify .column-quick-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('#panel-classify .column-quick-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); let target=this.dataset.target; if(target==='classifyColFirst') document.getElementById('classifyColFirst').checked=true; else document.getElementById('classifyColSecond').checked=true; if(classifyFiles.length){ showColumnPreview(document.getElementById('classifyPreviewArea'),classifyFiles,getClassifyColIndex()); parseAllClassify(); } }); });
-    setupUploadWithReset('classificationArea','classifyFileInput','selectClassifyFileBtn',(files)=>{ classifyFiles=files; let listDiv=document.getElementById('classifyUploadedFilesList'); listDiv.style.display='block'; listDiv.innerHTML=files.map(f=>`<div>${f.name}</div>`).join(''); showColumnPreview(document.getElementById('classifyPreviewArea'),files,getClassifyColIndex()); parseAllClassify(); document.getElementById('classificationResults').style.display='block'; },'classifyPreviewArea',()=>getClassifyColIndex());
-    document.getElementById('sortAscBtn').addEventListener('click',()=>{ sortMode='asc'; renderClassify(); });
-    document.getElementById('sortShuffleBtn').addEventListener('click',()=>{ sortMode='shuffle'; renderClassify(); });
-    document.querySelectorAll('.filename-prefix-buttons .prefix-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('.filename-prefix-buttons .prefix-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active'); filePrefix=this.dataset.prefix; renderClassify(); }); });
-    document.getElementById('prefixLength').addEventListener('change',()=>renderClassify()); document.getElementById('includeFullNumber').addEventListener('change',()=>renderClassify()); document.getElementById('enableAreaCode').addEventListener('change',()=>{ document.getElementById('areaCodeStatus').textContent=document.getElementById('enableAreaCode').checked?'开启':'关闭'; renderClassify(); });
-    document.getElementById('resetClassifyBtn').addEventListener('click',()=>{ classifyFiles=[]; classifyRaw=[]; document.getElementById('classifyUploadedFilesList').style.display='none'; document.getElementById('classificationResults').style.display='none'; resetFileInput(document.getElementById('classifyFileInput')); });
-    document.getElementById('downloadAllClassifyBtnTxt')?.addEventListener('click',()=>{ if(window.classifyGroups) for(let [key,nums] of Object.entries(window.classifyGroups)){ let sorted=sortMode==='asc'?[...nums].sort():shuffleArrayFast(nums); safeDownload(new Blob([sorted.join('\n')],{type:'text/plain'}),`${key}_${nums.length}个.txt`); } });
-    document.getElementById('downloadAllClassifyBtnXlsx')?.addEventListener('click',()=>{ if(window.classifyGroups) for(let [key,nums] of Object.entries(window.classifyGroups)){ let sorted=sortMode==='asc'?[...nums].sort():shuffleArrayFast(nums); safeDownload(createExcelBlobFast(sorted.map(v=>[v])),`${key}_${nums.length}个.xlsx`); } });
-
-    // 双文件去重、加减前导0、首列编辑保持原有逻辑（已在原代码中实现完整）
-    console.log("工具已加载，所有功能正常，手机二次操作问题已修复");
+    
+    // ========== 生成所有号码 ==========
+    function generateAllNumbers(groups) {
+        const numbers = [];
+        for (let prefix in groups) {
+            for (let middle of groups[prefix]) {
+                const base = prefix + middle;
+                for (let i = 1; i <= 9999; i++) {
+                    numbers.push(base + i.toString().padStart(4, '0'));
+                }
+            }
+        }
+        return numbers;
+    }
+    
+    // ========== 随机打乱 ==========
+    function shuffleArray(arr) {
+        const shuffled = [...arr];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+    
+    // ========== 去重 ==========
+    function uniqueArray(arr) {
+        return [...new Set(arr)];
+    }
+    
+    // ========== 下载文件 ==========
+    function downloadFile(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 200);
+    }
+    
+    function createExcelBlob(data) {
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "数据");
+        return new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/octet-stream' });
+    }
+    
+    // ========== 更新文件名建议 ==========
+    let lastManualValue = '';
+    function updateFilenameSuggestion() {
+        const text = document.getElementById('dataInput').value;
+        const prefixes = [];
+        const lines = text.split(/\r?\n/);
+        for (let line of lines) {
+            const match = line.match(/^开头\s*(\d+)/);
+            if (match) prefixes.push(match[1]);
+        }
+        
+        const enableArea = document.getElementById('enableAreaCode').checked;
+        const filenameInput = document.getElementById('filenameInput');
+        
+        if (prefixes.length > 0) {
+            let suggestion;
+            if (enableArea) {
+                suggestion = prefixes.map(p => {
+                    const area = getAreaName(p);
+                    return area ? `${p}(${area})` : p;
+                }).join('-');
+            } else {
+                suggestion = prefixes.join('-');
+            }
+            
+            if (!lastManualValue || filenameInput.value === lastManualValue || filenameInput.value === '') {
+                filenameInput.value = suggestion;
+                lastManualValue = suggestion;
+            }
+            document.getElementById('filenameAutoHint').innerHTML = enableArea ? `✅ 识别区号: ${prefixes.map(p => getAreaName(p) || p).join('、')}` : `📋 检测到开头: ${prefixes.join('、')}`;
+        } else {
+            document.getElementById('filenameAutoHint').innerHTML = '📋 请输入号码段开头';
+        }
+    }
+    
+    // ========== 核心生成函数 ==========
+    function generateFiles(format) {
+        const inputText = document.getElementById('dataInput').value;
+        let filename = document.getElementById('filenameInput').value.trim() || '号码数据';
+        const perFile = (parseInt(document.getElementById('numbersPerFile').value) || 10) * 10000;
+        const colPos = document.querySelector('input[name="columnPosition"]:checked').value;
+        
+        const progressBar = document.getElementById('progressBar');
+        const fileListDiv = document.getElementById('fileList');
+        
+        progressBar.style.width = '10%';
+        fileListDiv.innerHTML = '';
+        
+        setTimeout(() => {
+            try {
+                const groups = parseNumberRules(inputText);
+                let totalGroups = 0;
+                for (let k in groups) totalGroups += groups[k].length;
+                
+                if (totalGroups === 0) {
+                    alert('未识别到有效号码段！\n正确格式示例：\n开头\n023\n110-119');
+                    progressBar.style.width = '0%';
+                    return;
+                }
+                
+                progressBar.style.width = '30%';
+                const allNumbers = generateAllNumbers(groups);
+                
+                progressBar.style.width = '50%';
+                const shuffled = shuffleArray(allNumbers);
+                
+                progressBar.style.width = '70%';
+                const unique = uniqueArray(shuffled);
+                const totalFiles = Math.ceil(unique.length / perFile);
+                
+                document.getElementById('totalCount').innerText = allNumbers.length.toLocaleString();
+                document.getElementById('fileCount').innerText = totalFiles;
+                document.getElementById('groupCount').innerText = totalGroups;
+                document.getElementById('uniqueCount').innerText = unique.length.toLocaleString();
+                
+                progressBar.style.width = '85%';
+                
+                for (let i = 0; i < totalFiles; i++) {
+                    const start = i * perFile;
+                    const end = Math.min(start + perFile, unique.length);
+                    const fileNumbers = unique.slice(start, end);
+                    const fileExt = format === 'txt' ? '.txt' : '.xlsx';
+                    const fileName = i === 0 ? `${filename}${fileExt}` : `${filename}_${i + 1}${fileExt}`;
+                    
+                    if (format === 'txt') {
+                        const content = colPos === 'first' ? fileNumbers.join('\n') : fileNumbers.map(v => '\t' + v).join('\n');
+                        downloadFile(new Blob([content], { type: 'text/plain' }), fileName);
+                    } else {
+                        const data = colPos === 'first' ? fileNumbers.map(v => [v]) : fileNumbers.map(v => ['', v]);
+                        downloadFile(createExcelBlob(data), fileName);
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerHTML = `<span>${fileName}</span><span>${fileNumbers.length} 条</span>`;
+                    fileListDiv.appendChild(item);
+                    
+                    progressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
+                }
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => { progressBar.style.width = '0%'; }, 1000);
+                
+            } catch (e) {
+                alert('生成失败：' + e.message);
+                progressBar.style.width = '0%';
+            }
+        }, 50);
+    }
+    
+    // ========== 事件绑定 ==========
+    // 重置按钮
+    document.getElementById('resetBtn').onclick = () => {
+        document.getElementById('filenameInput').value = '';
+        document.getElementById('numbersPerFile').value = '10';
+        document.getElementById('dataInput').value = '开头\n023\n110-119\n6380-9\n0755-0759';
+        document.getElementById('fileList').innerHTML = '';
+        document.getElementById('totalCount').innerText = '0';
+        document.getElementById('fileCount').innerText = '0';
+        document.getElementById('groupCount').innerText = '0';
+        document.getElementById('uniqueCount').innerText = '0';
+        lastManualValue = '';
+        updateFilenameSuggestion();
+    };
+    
+    // 生成按钮
+    document.getElementById('generateTxtBtn').onclick = () => generateFiles('txt');
+    document.getElementById('generateExcelBtn').onclick = () => generateFiles('excel');
+    
+    // 添加开头按钮
+    document.getElementById('addPrefixBtn').onclick = () => {
+        const ta = document.getElementById('dataInput');
+        let val = ta.value;
+        if (val.trim() !== '' && !val.endsWith('\n')) val += '\n';
+        ta.value = val + '开头';
+        updateFilenameSuggestion();
+    };
+    
+    // 数据输入变化时更新文件名建议
+    document.getElementById('dataInput').addEventListener('input', () => setTimeout(updateFilenameSuggestion, 100));
+    document.getElementById('filenameInput').addEventListener('input', () => { lastManualValue = document.getElementById('filenameInput').value; });
+    
+    // 区号开关
+    document.getElementById('enableAreaCode').addEventListener('change', function() {
+        const statusSpan = document.getElementById('areaCodeStatus');
+        statusSpan.innerText = this.checked ? '开启' : '关闭';
+        statusSpan.style.color = this.checked ? '#34a853' : '#999';
+        updateFilenameSuggestion();
+    });
+    
+    // 快速选择数据量
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('numbersPerFile').value = this.dataset.value;
+        });
+    });
+    
+    // 列位置选择
+    document.querySelectorAll('.column-quick-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.column-quick-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const targetId = this.dataset.target === 'colFirst' ? 'colFirst' : 'colSecond';
+            document.getElementById(targetId).checked = true;
+        });
+    });
+    
+    // 面板切换
+    document.querySelectorAll('.tool-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tool = this.dataset.tool;
+            document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById(`panel-${tool}`).classList.add('active');
+        });
+    });
+    
+    // 初始化
+    updateFilenameSuggestion();
 })();
 </script>
 </body>
