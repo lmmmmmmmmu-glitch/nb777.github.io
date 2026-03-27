@@ -3,51 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>极速数据处理 - 批量生成工具</title>
+    <title>⚡ 极速数据处理</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
-        body { background: linear-gradient(135deg, #e9f0f9 0%, #c2e0fb 100%); padding: 12px; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
-        .container { width: 100%; max-width: 1300px; background: white; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 24px; position: relative; }
-        @media (max-width:640px) { .container { padding: 16px; } }
-        .container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335); border-radius: 28px 28px 0 0; }
-        h1 { text-align: center; margin-bottom: 20px; font-size: clamp(1.5rem,5vw,2.2rem); color: #2c3e50; }
-        .tool-tabs { display: flex; background: #f1f5f9; border-radius: 60px; padding: 6px; margin-bottom: 28px; flex-wrap: wrap; gap: 6px; }
-        .tool-tab { flex: 1 1 auto; min-width: 100px; padding: 10px 12px; text-align: center; cursor: pointer; font-weight: 600; border-radius: 40px; color: #4a5b6e; background: transparent; }
-        .tool-tab.active { background: white; color: #2c7be5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .tool-panel { display: none; animation: fadeIn 0.3s ease; }
-        .tool-panel.active { display: block; }
-        .input-label { font-weight: 700; margin-bottom: 8px; color: #1e3a5f; display: block; }
-        .filename-input, .number-input { width: 100%; padding: 12px 16px; border: 2px solid #e2edf2; border-radius: 18px; font-size: 16px; }
-        textarea { width: 100%; min-height: 200px; padding: 16px; border: 2px solid #e2edf2; border-radius: 24px; font-family: monospace; font-size: 14px; resize: vertical; }
-        button { transition: 0.2s; cursor: pointer; border: none; border-radius: 40px; padding: 12px 28px; font-weight: 700; }
-        .generate-btn { background: linear-gradient(105deg,#2c7be5,#1e5bc0); color: white; }
-        .reset-btn { background: #f0f4f9; border: 1px solid #cddfe7; color: #2c5a74; }
-        .quick-btn { padding: 6px 16px; background: #eef2fa; border-radius: 40px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-block; margin-right: 8px; }
-        .quick-btn.active { background: #2c7be5; color: white; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 12px; margin: 20px 0; }
-        .stat-box { background: #f8fafd; border-radius: 20px; padding: 14px; text-align: center; border: 1px solid #e2edf2; }
-        .stat-value { font-size: 1.6rem; font-weight: 800; color: #2c7be5; }
-        .file-item { background: #fff; border-radius: 16px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid #eef3fc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .progress-container { height: 8px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin: 15px 0; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg,#2c7be5,#34a853); width: 0%; transition: width 0.3s; }
-        .column-quick-btn { padding: 6px 16px; background: #eef2fa; border-radius: 40px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-block; margin-right: 8px; }
-        .column-quick-btn.active { background: #2c7be5; color: white; }
-        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; vertical-align: middle; margin: 0 8px; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #e6f0fa 0%, #b8d9f5 100%); margin: 0; padding: 10px; color: #333; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; }
+        .container { width: 100%; max-width: 1300px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; position: relative; }
+        @media (min-width:768px){ .container{ padding:35px; } }
+        @media (max-width:480px){ .container{ padding:15px; } body{ padding:5px; } }
+        .container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg,#4d90fe,#34a853,#fbbc05,#ea4335); border-radius: 16px 16px 0 0; }
+        h1 { color: #2c3e50; text-align: center; padding-bottom: 15px; border-bottom: 1px solid #eaeaea; font-weight: 700; font-size: clamp(1.5rem,5vw,2.5rem); }
+        .tool-tabs { display: flex; background: #f8f9fa; border-radius: 12px; padding: 5px; margin-bottom: 20px; flex-wrap: wrap; gap: 5px; }
+        .tool-tab { flex: 1 1 auto; min-width: 120px; padding: 12px 15px; text-align: center; cursor: pointer; font-weight: 600; border-radius: 8px; color: #666; }
+        @media (max-width:600px){ .tool-tab{ min-width:calc(50% - 5px); padding:10px 8px; } }
+        .tool-tab.active { background: white; color: #4d90fe; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .tool-panel { display: none; }
+        .tool-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        .input-label { font-weight: 600; margin-bottom: 8px; color: #444; }
+        .filename-input, .number-input { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; }
+        textarea { width: 100%; min-height: 250px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: monospace; resize: vertical; }
+        .quick-buttons, .column-quick-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .quick-btn, .column-quick-btn { padding: 6px 12px; background: #e9ecef; border-radius: 16px; cursor: pointer; }
+        .quick-btn.active, .column-quick-btn.active { background: #4d90fe; color: white; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .generate-btn, .generate-txt-btn { background: #4d90fe; color: white; }
+        .reset-btn { background: white; color: #444; border: 2px solid #e0e0e0; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; margin: 20px 0; }
+        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: #4d90fe; }
+        .file-item { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; }
+        .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box { border: 2px dashed #c3cfe2; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; margin-bottom: 20px; }
+        .progress-container { height: 10px; background: #e0e0e0; border-radius: 5px; margin: 15px 0; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg,#4d90fe,#34a853); width: 0%; transition: width 0.3s; border-radius: 5px; }
+        .column-preview { background: #f0f7ff; border-radius: 8px; padding: 12px; margin: 10px 0; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #34a853; transition: 0.3s; border-radius: 34px; }
         .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
         input:checked + .toggle-slider { background-color: #ccc; }
         input:checked + .toggle-slider:before { transform: translateX(24px); }
-        .filename-hint { font-size: 12px; color: #666; margin-top: 5px; }
-        .note { font-size: 0.85rem; background: #fef7e0; border-left: 5px solid #f4b942; padding: 12px 18px; border-radius: 20px; margin-top: 24px; }
-        .dev-note { background: #fff3e0; padding: 20px; text-align: center; border-radius: 20px; color: #b85c00; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .filename-hint { font-size: 12px; color: #666; margin-top: 6px; }
+        .note { font-size: 0.85rem; color: #888; margin-top: 25px; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>⚡ 极速数据处理 · 批量生成工具</h1>
+    <h1>⚡ 极速数据处理</h1>
+    
     <div class="tool-tabs">
         <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
         <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
@@ -57,119 +60,135 @@
         <div class="tool-tab" data-tool="firstcol">⬅️ 首列编辑</div>
     </div>
     
-    <!-- 批量生成面板 - 完整可用 -->
+    <!-- 面板1: 批量生成 - 完整可用 -->
     <div id="panel-generate" class="tool-panel active">
-        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
-            <div style="flex:1">
-                <label class="input-label">📁 输出文件名称</label>
-                <input type="text" id="filenameInput" class="filename-input" placeholder="自动识别区号命名">
-                <div id="filenameAutoHint" class="filename-hint" style="color:#2c7be5;"></div>
+        <div class="input-section">
+            <div class="input-row">
+                <div class="input-group">
+                    <label class="input-label">📁 输出文件名称：</label>
+                    <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 023" value="">
+                    <div class="filename-hint">自动识别所有开头并用"-"连接，可手动编辑</div>
+                    <div class="filename-auto-hint" id="filenameAutoHint">等待输入开头...</div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">🔢 每文件数据量：</label>
+                    <input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5">
+                    <div class="quick-buttons">
+                        <span class="quick-btn" data-value="5">5万</span>
+                        <span class="quick-btn active" data-value="10">10万</span>
+                        <span class="quick-btn" data-value="20">20万</span>
+                        <span class="quick-btn" data-value="30">30万</span>
+                        <span class="quick-btn" data-value="40">40万</span>
+                        <span class="quick-btn" data-value="50">50万</span>
+                    </div>
+                </div>
             </div>
-            <div style="flex:1">
-                <label class="input-label">🔢 每文件数据量(万条)</label>
-                <input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5">
-                <div style="margin-top:8px;">
-                    <span class="quick-btn" data-value="5">5万</span>
-                    <span class="quick-btn active" data-value="10">10万</span>
-                    <span class="quick-btn" data-value="20">20万</span>
-                    <span class="quick-btn" data-value="30">30万</span>
-                    <span class="quick-btn" data-value="50">50万</span>
+            <div class="input-group">
+                <div class="label-with-btn" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label class="input-label">📝 请输入号码段规则：</label>
+                    <button class="add-prefix-btn" id="addPrefixBtn" style="background:#f44336; color:white; border:none; border-radius:24px; padding:5px 18px;">➕ 添加开头</button>
+                </div>
+                <textarea id="dataInput" placeholder="示例：
+开头
+023
+110-119
+或
+110～119
+或
+110到119">开头</textarea>
+                <div class="filename-hint">只保留"开头"两字，后面直接跟数字或范围</div>
+            </div>
+            <div style="margin-top:15px;">
+                <div class="option-group" style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                    <span class="option-label">🏢 区号识别命名：</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableAreaCodeGenerate" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="generateAreaCodeStatus" style="font-size:12px; color:#34a853;">开启</span>
+                    <span class="column-quick-btn active" data-target="genColFirst">第一列</span>
+                    <span class="column-quick-btn" data-target="genColSecond">第二列</span>
+                    <input type="radio" name="genColumnPosition" id="genColFirst" value="first" checked hidden>
+                    <input type="radio" name="genColumnPosition" id="genColSecond" value="second" hidden>
                 </div>
             </div>
         </div>
         
-        <div style="margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
-                <label class="input-label">📝 号码段规则</label>
-                <button id="addPrefixBtn" style="background:#e85d2e; color:white; border:none; border-radius:30px; padding:6px 18px;">➕ 添加开头</button>
+        <div class="controls" style="display:flex; justify-content:center; gap:15px; margin-bottom:25px; flex-wrap:wrap;">
+            <button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button>
+            <button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button>
+            <button class="reset-btn" id="resetBtn">🔄 重置</button>
+        </div>
+        
+        <div class="status-section">
+            <div class="status-header" style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <div class="status-title">生成状态</div>
+                <div id="generateStatus" class="status-text">等待生成...</div>
             </div>
-            <textarea id="dataInput" rows="5">开头
-023
-110-119
-6380-9
-0755-0759</textarea>
-            <div class="filename-hint">支持格式：开头 + 号码段，如 110-119 或 6380-9</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="generateProgressBar"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-box"><div class="stat-value" id="totalCount">0</div><div class="stat-label">总数据量</div></div>
+                <div class="stat-box"><div class="stat-value" id="fileCount">0</div><div class="stat-label">文件数量</div></div>
+                <div class="stat-box"><div class="stat-value" id="groupCount">0</div><div class="stat-label">号码组数</div></div>
+                <div class="stat-box"><div class="stat-value" id="uniqueCount">0</div><div class="stat-label">去重后</div></div>
+            </div>
         </div>
         
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-bottom:20px;">
-            <span>🏢 区号智能命名</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="enableAreaCode" checked>
-                <span class="toggle-slider"></span>
-            </label>
-            <span id="areaCodeStatus" style="color:#34a853;">开启</span>
-            <span class="column-quick-btn active" data-target="colFirst">第一列</span>
-            <span class="column-quick-btn" data-target="colSecond">第二列</span>
-            <input type="radio" name="columnPosition" id="colFirst" value="first" checked hidden>
-            <input type="radio" name="columnPosition" id="colSecond" value="second" hidden>
+        <div class="file-list">
+            <div class="file-list-header" style="font-weight:700; margin-bottom:15px;">生成的文件列表</div>
+            <div id="generateFileList"></div>
         </div>
-        
-        <div style="display:flex; gap:16px; justify-content:center; margin-bottom:20px;">
-            <button id="generateTxtBtn" class="generate-btn">📄 生成TXT文件</button>
-            <button id="generateExcelBtn" class="generate-btn">📊 生成Excel文件</button>
-            <button id="resetBtn" class="reset-btn">🔄 重置</button>
-        </div>
-        
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-box"><div class="stat-value" id="totalCount">0</div><div>总数据量</div></div>
-            <div class="stat-box"><div class="stat-value" id="fileCount">0</div><div>文件数量</div></div>
-            <div class="stat-box"><div class="stat-value" id="groupCount">0</div><div>号码组数</div></div>
-            <div class="stat-box"><div class="stat-value" id="uniqueCount">0</div><div>去重后数量</div></div>
-        </div>
-        
-        <div id="fileList" style="max-height:280px; overflow-y:auto;"></div>
     </div>
     
-    <!-- 其他功能面板 - 开发中提示 -->
+    <!-- 面板2-6: 完整保留您原来的界面结构（功能待实现，界面完整） -->
     <div id="panel-deduplicate" class="tool-panel">
-        <div class="dev-note">
-            <h3>🔧 单文件去重功能</h3>
-            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
-            <p style="margin-top:8px; font-size:14px; color:#666;">当前版本专注于批量生成功能，确保100%可用</p>
-        </div>
-    </div>
-    <div id="panel-classify" class="tool-panel">
-        <div class="dev-note">
-            <h3>📂 前缀分类功能</h3>
-            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
-        </div>
-    </div>
-    <div id="panel-duplicate" class="tool-panel">
-        <div class="dev-note">
-            <h3>🔄 双文件去重功能</h3>
-            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
-        </div>
-    </div>
-    <div id="panel-dataop" class="tool-panel">
-        <div class="dev-note">
-            <h3>0️⃣ 加减前导0功能</h3>
-            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
-        </div>
-    </div>
-    <div id="panel-firstcol" class="tool-panel">
-        <div class="dev-note">
-            <h3>⬅️ 首列编辑功能</h3>
-            <p style="margin-top:12px;">功能开发中，敬请期待下一版本</p>
+        <div class="upload-section">
+            <div class="upload-header"><div class="upload-title">🔍 单文件去重工具</div><div id="deduplicateStatus" class="status-text">等待上传文件...</div></div>
+            <div class="upload-area" id="deduplicateUploadArea"><div class="upload-icon" style="font-size:48px;">📤</div><div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div><div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)</div><button class="upload-btn" id="selectDeduplicateFilesBtn" style="background:#4d90fe; color:white; border:none; border-radius:40px; padding:10px 20px;">📁 选择文件</button><input type="file" id="deduplicateFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="deduplicateFilesList" class="file-list-container" style="display:none;"></div></div>
+            <div id="deduplicatePreviewArea" class="column-preview"></div>
+            <div class="progress-container"><div class="progress-bar" id="deduplicateProgressBar"></div></div>
+            <div id="deduplicateResults" style="display:none;"><div id="deduplicateResultCards"></div><div class="actions-row"><button id="downloadAllDeduplicateTxt" style="background:#4d90fe; color:white;">📦 下载所有TXT</button><button id="downloadAllDeduplicateXlsx" style="background:#34a853; color:white;">📦 下载所有Excel</button><button id="resetDeduplicateBtn" class="reset-btn">🔄 清空所有</button></div></div>
         </div>
     </div>
     
-    <div class="note">
-        ⚡ 批量生成功能已完整可用 | 区号识别：开启后自动匹配城市名称并命名文件 | 支持号码段范围解析
+    <div id="panel-classify" class="tool-panel">
+        <div class="classification-section">
+            <div class="classification-header"><div class="classification-title">📂 按号码开头自动分类</div><div id="classifyStatus" class="status-text">等待上传文件...</div></div>
+            <div class="classification-options"><div class="option-group"><span class="option-label">号码前缀长度：</span><select id="prefixLength"><option value="3">3位</option><option value="4" selected>4位</option><option value="5">5位</option><option value="6">6位</option></select></div><div class="option-group"><input type="checkbox" id="includeFullNumber" checked><label for="includeFullNumber">包含完整号码</label></div><div class="option-group"><button id="sortAscBtn" class="sort-btn active">⬆️ 从小到大</button><button id="sortShuffleBtn" class="sort-btn">🎲 打乱顺序</button></div><div class="option-group"><span class="option-label">文件名前缀：</span><div class="filename-prefix-buttons"><span class="prefix-btn active" data-prefix="none">无</span><span class="prefix-btn" data-prefix="家庭">家庭</span><span class="prefix-btn" data-prefix="公司">公司</span></div></div><div class="option-group"><span class="option-label">🏢 区号识别：</span><label class="toggle-switch"><input type="checkbox" id="enableAreaCode" checked><span class="toggle-slider"></span></label><span id="areaCodeStatus">开启</span></div></div>
+            <div class="input-group"><label class="input-label">📊 提取数据列位置：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="classifyColFirst">第一列</span><span class="column-quick-btn" data-target="classifyColSecond">第二列</span></div><input type="radio" name="classifyColumnPosition" id="classifyColFirst" value="first" checked hidden><input type="radio" name="classifyColumnPosition" id="classifyColSecond" value="second" hidden></div>
+            <div class="classification-area" id="classificationArea"><div class="classification-icon" style="font-size:48px;">📁</div><div class="classification-text">拖拽任意数量文件到此处（或点击选择）</div><button class="classification-btn" id="selectClassifyFileBtn" style="background:#4d90fe; color:white; border:none; border-radius:40px; padding:10px 20px;">📁 选择分类文件</button><input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="classifyUploadedFilesList" class="file-list-container" style="display:none;"></div></div>
+            <div id="classifyPreviewArea" class="column-preview"></div>
+            <div class="progress-container"><div class="progress-bar" id="classifyProgressBar"></div></div>
+            <div id="classificationResults" style="display:none;"><div class="classification-stats"><div class="classification-stat"><div class="stat-number" id="totalFilesCount">0</div><div>上传文件数</div></div><div class="classification-stat"><div class="stat-number" id="totalNumbersCount">0</div><div>总号码数</div></div><div class="classification-stat"><div class="stat-number" id="uniquePrefixesCount">0</div><div>不同前缀数</div></div></div><div class="classification-list" id="classificationList"></div><div class="actions-row"><button id="downloadAllClassifyBtnTxt" style="background:#4d90fe;">📦 下载所有TXT</button><button id="downloadAllClassifyBtnXlsx" style="background:#34a853;">📦 下载所有Excel</button><button id="resetClassifyBtn" class="reset-btn">🔄 重置分类</button></div></div>
+        </div>
     </div>
+    
+    <div id="panel-duplicate" class="tool-panel">
+        <div class="duplicate-removal-section"><div class="duplicate-header"><div class="duplicate-title">🔄 双文件重复号码删除</div><div id="duplicateStatus" class="status-text">等待上传文件...</div></div><div class="duplicate-info-box"><strong>📋 功能说明：</strong> 上传两个文件，工具会自动删除两个文件中均出现的重复号码。</div><div class="duplicate-upload-section"><div class="duplicate-upload-box" id="duplicateUploadBox1"><div class="duplicate-upload-icon" style="font-size:40px;">📁</div><div class="duplicate-upload-text">拖拽或点击上传文件1</div><div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div></div><div class="duplicate-upload-box" id="duplicateUploadBox2"><div class="duplicate-upload-icon" style="font-size:40px;">📁</div><div class="duplicate-upload-text">拖拽或点击上传文件2</div><div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div></div></div><input type="file" id="duplicateFile1Input" style="display:none;"><input type="file" id="duplicateFile2Input" style="display:none;"><div id="duplicatePreviewArea" class="column-preview"></div><div class="progress-container"><div class="progress-bar" id="duplicateProgressBar"></div></div><div class="duplicate-controls"><button id="duplicateProcessBtn" disabled class="duplicate-btn">🔍 处理并生成下载</button><button id="duplicateClearBtn" class="duplicate-btn">🗑️ 清空</button></div><div id="duplicateDownloadSection" style="display:none;"><div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div><div class="duplicate-download-btns"><a id="duplicateDownload1Txt" download="">⬇️ 文件1 (TXT)</a><a id="duplicateDownload1Excel" download="">⬇️ 文件1 (Excel)</a><a id="duplicateDownload2Txt" download="">⬇️ 文件2 (TXT)</a><a id="duplicateDownload2Excel" download="">⬇️ 文件2 (Excel)</a></div></div></div>
+    </div>
+    
+    <div id="panel-dataop" class="tool-panel">
+        <div class="data-op-section"><div class="data-op-header"><div class="data-op-title">0️⃣ 加减前导0工具</div><div id="dataOpStatus" class="status-text">等待上传文件...</div></div><div class="upload-area" id="dataOpUploadArea"><div class="upload-icon" style="font-size:48px;">📤</div><div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div><button class="upload-btn" id="selectDataOpFilesBtn" style="background:#4d90fe; color:white; border:none; border-radius:40px; padding:10px 20px;">📁 选择文件</button><input type="file" id="dataOpFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="dataOpFilesList" class="file-list-container" style="display:none;"></div></div><div id="dataOpPreviewArea" class="column-preview"></div><div><label class="input-label">📊 选择操作列：</label><div class="column-quick-buttons"><span class="column-quick-btn active" data-target="dataOpColFirst">第一列</span><span class="column-quick-btn" data-target="dataOpColSecond">第二列</span></div><input type="radio" name="dataOpColumnPosition" id="dataOpColFirst" value="first" checked hidden><input type="radio" name="dataOpColumnPosition" id="dataOpColSecond" value="second" hidden></div><div class="action-buttons"><span class="action-btn add-zero" data-action="add" style="background:#34a853; color:white; padding:10px 25px; border-radius:40px;">➕ 添加前导0</span><span class="action-btn remove-zero" data-action="remove" style="background:#f44336; color:white; padding:10px 25px; border-radius:40px;">➖ 删除前导0</span></div><div class="progress-container"><div class="progress-bar" id="dataOpProgressBar"></div></div><div id="dataOpResults" style="display:none;"><div id="dataOpResultCards"></div><div class="actions-row"><button id="downloadAllDataOpTxt" style="background:#4d90fe;">📦 下载所有TXT</button><button id="downloadAllDataOpXlsx" style="background:#34a853;">📦 下载所有Excel</button><button id="resetDataOpBtn" class="reset-btn">🔄 清空所有</button></div></div></div>
+    </div>
+    
+    <div id="panel-firstcol" class="tool-panel">
+        <div class="first-col-section"><div class="first-col-header"><div class="first-col-title">⬅️ 首列编辑 · 智能识别空列</div><div id="firstColStatus" class="status-text">等待上传文件...</div></div><div class="first-col-upload-box" id="firstColUploadArea"><div class="first-col-upload-icon" style="font-size:48px;">📤</div><div class="first-col-upload-text">拖拽任意数量文件到此处（或点击选择）</div><button class="upload-btn" id="selectFirstColFilesBtn" style="background:#4d90fe; color:white; border:none; border-radius:40px; padding:10px 20px;">📁 选择文件</button><input type="file" id="firstColFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;"><div id="firstColFilesList" class="file-list-container" style="display:none;"></div></div><div id="firstColPreviewArea" class="column-preview"></div><div style="margin:25px 0; display:flex; gap:15px; justify-content:center;"><button id="insertFirstColBtn" class="action-btn insert-first" style="background:#4d90fe; color:white; padding:12px 30px; border-radius:40px;">➕ 在第一列前插入空白列</button><button id="deleteFirstColBtn" class="action-btn delete-first" style="background:#f44336; color:white; padding:12px 30px; border-radius:40px;">✖ 删除第一列</button></div><div class="progress-container"><div class="progress-bar" id="firstColProgressBar"></div></div><div id="firstColResults" style="display:none;"><div id="firstColResultCards"></div><div class="actions-row"><button id="downloadAllFirstColTxt" style="background:#4d90fe;">📦 下载所有TXT</button><button id="downloadAllFirstColXlsx" style="background:#34a853;">📦 下载所有Excel</button><button id="resetFirstColBtn" class="reset-btn">🔄 清空所有</button></div></div></div>
+    </div>
+    
+    <div class="note">⚡ 批量生成功能完整可用 | 区号识别：开启后自动匹配城市名称并命名文件</div>
 </div>
 
 <script>
 (function(){
-    // ========== 全国区号库（覆盖主要城市） ==========
+    // ========== 区号映射表 ==========
     const areaCodeMap = {
         '010':'北京','021':'上海','022':'天津','023':'重庆','020':'广州','024':'沈阳','025':'南京','027':'武汉','028':'成都','029':'西安',
         '0311':'石家庄','0371':'郑州','0411':'大连','0451':'哈尔滨','0512':'苏州','0531':'济南','0571':'杭州','0591':'福州','0731':'长沙',
         '0755':'深圳','0851':'贵阳','0871':'昆明','0898':'海口','0931':'兰州','0971':'西宁','0951':'银川','0991':'乌鲁木齐','0471':'呼和浩特',
-        '0771':'南宁','0431':'长春','0551':'合肥','0310':'邯郸','0351':'太原','0754':'汕头','0769':'东莞','0532':'青岛','0510':'无锡','0577':'温州'
+        '0771':'南宁','0431':'长春','0551':'合肥','0310':'邯郸','0351':'太原','0754':'汕头','0769':'东莞','0532':'青岛','0510':'无锡'
     };
     
     function getAreaName(prefix) {
@@ -191,11 +210,7 @@
         for (let line of lines) {
             line = line.trim();
             if (!line) continue;
-            
-            if (line === '开头') {
-                currentPrefix = null;
-                continue;
-            }
+            if (line === '开头') { currentPrefix = null; continue; }
             
             const prefixMatch = line.match(/^开头\s*(\d+)/);
             if (prefixMatch) {
@@ -227,7 +242,6 @@
         return groups;
     }
     
-    // ========== 生成所有号码 ==========
     function generateAllNumbers(groups) {
         const numbers = [];
         for (let prefix in groups) {
@@ -241,7 +255,6 @@
         return numbers;
     }
     
-    // ========== 随机打乱 ==========
     function shuffleArray(arr) {
         const shuffled = [...arr];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -251,12 +264,8 @@
         return shuffled;
     }
     
-    // ========== 去重 ==========
-    function uniqueArray(arr) {
-        return [...new Set(arr)];
-    }
+    function uniqueArray(arr) { return [...new Set(arr)]; }
     
-    // ========== 下载文件 ==========
     function downloadFile(blob, filename) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -273,7 +282,7 @@
         return new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/octet-stream' });
     }
     
-    // ========== 更新文件名建议 ==========
+    // 更新文件名建议
     let lastManualValue = '';
     function updateFilenameSuggestion() {
         const text = document.getElementById('dataInput').value;
@@ -284,8 +293,9 @@
             if (match) prefixes.push(match[1]);
         }
         
-        const enableArea = document.getElementById('enableAreaCode').checked;
+        const enableArea = document.getElementById('enableAreaCodeGenerate').checked;
         const filenameInput = document.getElementById('filenameInput');
+        const hintDiv = document.getElementById('filenameAutoHint');
         
         if (prefixes.length > 0) {
             let suggestion;
@@ -302,24 +312,25 @@
                 filenameInput.value = suggestion;
                 lastManualValue = suggestion;
             }
-            document.getElementById('filenameAutoHint').innerHTML = enableArea ? `✅ 识别区号: ${prefixes.map(p => getAreaName(p) || p).join('、')}` : `📋 检测到开头: ${prefixes.join('、')}`;
+            hintDiv.innerHTML = enableArea ? `✅ 识别区号: ${prefixes.map(p => getAreaName(p) || p).join('、')}` : `📋 检测到开头: ${prefixes.join('、')}`;
         } else {
-            document.getElementById('filenameAutoHint').innerHTML = '📋 请输入号码段开头';
+            hintDiv.innerHTML = '📋 请输入号码段开头';
         }
     }
     
-    // ========== 核心生成函数 ==========
+    // 核心生成函数
     function generateFiles(format) {
         const inputText = document.getElementById('dataInput').value;
         let filename = document.getElementById('filenameInput').value.trim() || '号码数据';
         const perFile = (parseInt(document.getElementById('numbersPerFile').value) || 10) * 10000;
-        const colPos = document.querySelector('input[name="columnPosition"]:checked').value;
-        
-        const progressBar = document.getElementById('progressBar');
-        const fileListDiv = document.getElementById('fileList');
+        const colPos = document.querySelector('input[name="genColumnPosition"]:checked').value;
+        const progressBar = document.getElementById('generateProgressBar');
+        const fileListDiv = document.getElementById('generateFileList');
+        const statusDiv = document.getElementById('generateStatus');
         
         progressBar.style.width = '10%';
         fileListDiv.innerHTML = '';
+        statusDiv.textContent = '解析号码段...';
         
         setTimeout(() => {
             try {
@@ -330,15 +341,19 @@
                 if (totalGroups === 0) {
                     alert('未识别到有效号码段！\n正确格式示例：\n开头\n023\n110-119');
                     progressBar.style.width = '0%';
+                    statusDiv.textContent = '解析失败';
                     return;
                 }
                 
+                statusDiv.textContent = '生成号码序列...';
                 progressBar.style.width = '30%';
                 const allNumbers = generateAllNumbers(groups);
                 
+                statusDiv.textContent = '打乱数据...';
                 progressBar.style.width = '50%';
                 const shuffled = shuffleArray(allNumbers);
                 
+                statusDiv.textContent = '去重...';
                 progressBar.style.width = '70%';
                 const unique = uniqueArray(shuffled);
                 const totalFiles = Math.ceil(unique.length / perFile);
@@ -348,6 +363,7 @@
                 document.getElementById('groupCount').innerText = totalGroups;
                 document.getElementById('uniqueCount').innerText = unique.length.toLocaleString();
                 
+                statusDiv.textContent = '生成文件...';
                 progressBar.style.width = '85%';
                 
                 for (let i = 0; i < totalFiles; i++) {
@@ -367,29 +383,34 @@
                     
                     const item = document.createElement('div');
                     item.className = 'file-item';
-                    item.innerHTML = `<span>${fileName}</span><span>${fileNumbers.length} 条</span>`;
+                    item.innerHTML = `<div class="file-info"><div class="file-name">${fileName}</div><div class="file-size">${fileNumbers.length} 条</div></div>`;
                     fileListDiv.appendChild(item);
                     
                     progressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
+                    statusDiv.textContent = `文件 ${i+1}/${totalFiles}`;
                 }
                 
+                statusDiv.textContent = '完成！';
                 progressBar.style.width = '100%';
-                setTimeout(() => { progressBar.style.width = '0%'; }, 1000);
+                setTimeout(() => { progressBar.style.width = '0%'; }, 2000);
                 
             } catch (e) {
                 alert('生成失败：' + e.message);
                 progressBar.style.width = '0%';
+                statusDiv.textContent = '生成失败';
             }
         }, 50);
     }
     
-    // ========== 事件绑定 ==========
-    // 重置按钮
+    // 事件绑定
+    document.getElementById('generateTxtBtn').onclick = () => generateFiles('txt');
+    document.getElementById('generateExcelBtn').onclick = () => generateFiles('excel');
+    
     document.getElementById('resetBtn').onclick = () => {
         document.getElementById('filenameInput').value = '';
         document.getElementById('numbersPerFile').value = '10';
         document.getElementById('dataInput').value = '开头\n023\n110-119\n6380-9\n0755-0759';
-        document.getElementById('fileList').innerHTML = '';
+        document.getElementById('generateFileList').innerHTML = '';
         document.getElementById('totalCount').innerText = '0';
         document.getElementById('fileCount').innerText = '0';
         document.getElementById('groupCount').innerText = '0';
@@ -398,11 +419,6 @@
         updateFilenameSuggestion();
     };
     
-    // 生成按钮
-    document.getElementById('generateTxtBtn').onclick = () => generateFiles('txt');
-    document.getElementById('generateExcelBtn').onclick = () => generateFiles('excel');
-    
-    // 添加开头按钮
     document.getElementById('addPrefixBtn').onclick = () => {
         const ta = document.getElementById('dataInput');
         let val = ta.value;
@@ -411,19 +427,16 @@
         updateFilenameSuggestion();
     };
     
-    // 数据输入变化时更新文件名建议
     document.getElementById('dataInput').addEventListener('input', () => setTimeout(updateFilenameSuggestion, 100));
     document.getElementById('filenameInput').addEventListener('input', () => { lastManualValue = document.getElementById('filenameInput').value; });
     
-    // 区号开关
-    document.getElementById('enableAreaCode').addEventListener('change', function() {
-        const statusSpan = document.getElementById('areaCodeStatus');
+    document.getElementById('enableAreaCodeGenerate').addEventListener('change', function() {
+        const statusSpan = document.getElementById('generateAreaCodeStatus');
         statusSpan.innerText = this.checked ? '开启' : '关闭';
         statusSpan.style.color = this.checked ? '#34a853' : '#999';
         updateFilenameSuggestion();
     });
     
-    // 快速选择数据量
     document.querySelectorAll('.quick-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
@@ -432,12 +445,11 @@
         });
     });
     
-    // 列位置选择
-    document.querySelectorAll('.column-quick-btn').forEach(btn => {
+    document.querySelectorAll('#panel-generate .column-quick-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.column-quick-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#panel-generate .column-quick-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            const targetId = this.dataset.target === 'colFirst' ? 'colFirst' : 'colSecond';
+            const targetId = this.dataset.target === 'genColFirst' ? 'genColFirst' : 'genColSecond';
             document.getElementById(targetId).checked = true;
         });
     });
@@ -453,7 +465,6 @@
         });
     });
     
-    // 初始化
     updateFilenameSuggestion();
 })();
 </script>
