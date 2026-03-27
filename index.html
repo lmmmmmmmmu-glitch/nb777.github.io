@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>⚡ 极速数据处理 - 手机稳定版</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -430,7 +430,7 @@
 6380-9  (代表6380-6389)
             </div>
         </div>
-        <div class="note">⚡ 完整功能 | 手机模式已稳定 | 支持连续操作不刷新</div>
+        <div class="note">⚡ 完整功能 | 手机模式已修复 | 支持连续操作</div>
     </div>
 
     <script>
@@ -694,7 +694,7 @@
             },50);
         }
         
-        // 事件委托：动态生成的下载按钮
+        // 【关键修复】使用事件委托处理动态生成的下载按钮
         generateFileList.addEventListener('click', function(e) {
             let btn = e.target.closest('.download-btn');
             if(btn) {
