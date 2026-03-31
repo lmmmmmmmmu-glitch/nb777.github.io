@@ -6,6 +6,7 @@
     <title>⚡ 极速数据处理</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
+        /* ... 保持原有样式不变 ... */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
@@ -1193,6 +1194,18 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        .first-col-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -2136,24 +2149,50 @@
                 }
             }
             
-            // 重置文件输入
+            // 重置文件输入的关键修复：创建全新的input元素替换旧的
             function resetFileInput(inputElement) {
-                if (inputElement) inputElement.value = '';
+                if (inputElement) {
+                    // 创建新的input元素替换旧的，彻底清除状态
+                    const newInput = inputElement.cloneNode(true);
+                    newInput.value = '';
+                    inputElement.parentNode.replaceChild(newInput, inputElement);
+                    return newInput;
+                }
+                return inputElement;
             }
             
-            // 通用上传设置
+            // 通用上传设置 - 修复重复上传问题
             function setupFileUpload(areaElement, fileInputElement, selectBtnElement, onFilesSelected) {
+                // 确保每次选择文件时都能触发change事件
+                const refreshInput = () => {
+                    if (fileInputElement) {
+                        const newInput = resetFileInput(fileInputElement);
+                        // 更新全局引用
+                        if (areaElement.id === 'deduplicateUploadArea') DOM.deduplicateFileInput = newInput;
+                        else if (areaElement.id === 'classificationArea') DOM.classifyFileInput = newInput;
+                        else if (areaElement.id === 'dataOpUploadArea') DOM.dataOpFileInput = newInput;
+                        else if (areaElement.id === 'firstColUploadArea') DOM.firstColFileInput = newInput;
+                        fileInputElement = newInput;
+                        
+                        // 重新绑定change事件
+                        fileInputElement.addEventListener('change', (e) => {
+                            const files = Array.from(e.target.files);
+                            if (files.length > 0 && onFilesSelected) onFilesSelected(files);
+                        });
+                    }
+                };
+                
                 if (selectBtnElement) {
                     selectBtnElement.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        resetFileInput(fileInputElement);
+                        refreshInput();
                         fileInputElement.click();
                     });
                 }
                 if (areaElement) {
                     areaElement.addEventListener('click', (e) => {
                         if (e.target.tagName !== 'BUTTON' && e.target !== selectBtnElement) {
-                            resetFileInput(fileInputElement);
+                            refreshInput();
                             fileInputElement.click();
                         }
                     });
@@ -2162,13 +2201,13 @@
                     fileInputElement.addEventListener('change', (e) => {
                         const files = Array.from(e.target.files);
                         if (files.length > 0 && onFilesSelected) onFilesSelected(files);
-                        resetFileInput(fileInputElement);
                     });
                 }
                 if (areaElement) {
                     areaElement.addEventListener('dragover', (e) => e.preventDefault());
                     areaElement.addEventListener('drop', (e) => {
                         e.preventDefault();
+                        refreshInput();
                         const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
                         if (files.length > 0 && onFilesSelected) onFilesSelected(files);
                     });
@@ -2556,10 +2595,15 @@
                 });
             }
             
-            setupFileUpload(DOM.deduplicateUploadArea, DOM.deduplicateFileInput, DOM.selectDeduplicateFilesBtn, (files) => {
+            // 修复setupFileUpload的调用，传入正确的参数
+            // 由于setupFileUpload内部会替换input，需要确保变量更新
+            let deduplicateInput = DOM.deduplicateFileInput;
+            setupFileUpload(DOM.deduplicateUploadArea, deduplicateInput, DOM.selectDeduplicateFilesBtn, (files) => {
                 deduplicateFilesList = files;
                 updateDeduplicateFileList();
                 processDeduplicateFiles(files);
+                // 更新input引用
+                deduplicateInput = DOM.deduplicateFileInput;
             });
             
             DOM.resetDeduplicateBtn.addEventListener('click', () => {
@@ -2567,9 +2611,14 @@
                 DOM.deduplicateFilesList.style.display = 'none';
                 DOM.deduplicateResults.style.display = 'none';
                 DOM.deduplicateStatus.innerHTML = '等待上传文件...';
-                resetFileInput(DOM.deduplicateFileInput);
                 DOM.deduplicatePreviewArea.style.display = 'none';
                 DOM.deduplicateProgressBar.style.width = '0%';
+                // 重置文件输入
+                if (deduplicateInput) {
+                    const newInput = resetFileInput(deduplicateInput);
+                    deduplicateInput = newInput;
+                    DOM.deduplicateFileInput = newInput;
+                }
             });
             
             // ========== 前缀分类（优化版）==========
@@ -2589,10 +2638,12 @@
                 showColumnPreview(DOM.classifyPreviewArea, classifyFiles, colPos === 'first' ? 0 : 1);
             }
             
-            setupFileUpload(DOM.classificationArea, DOM.classifyFileInput, DOM.selectClassifyFileBtn, (files) => {
+            let classifyInput = DOM.classifyFileInput;
+            setupFileUpload(DOM.classificationArea, classifyInput, DOM.selectClassifyFileBtn, (files) => {
                 classifyFiles = files;
                 updateClassifyFileList();
                 parseAllClassifyFilesFast();
+                classifyInput = DOM.classifyFileInput;
             });
             
             DOM.classifyColBtns.forEach(btn => {
@@ -2751,9 +2802,13 @@
                 DOM.classifyUploadedFilesList.style.display = 'none';
                 DOM.classificationResults.style.display = 'none';
                 DOM.classifyStatus.innerHTML = '等待上传文件...';
-                resetFileInput(DOM.classifyFileInput);
                 DOM.classifyPreviewArea.style.display = 'none';
                 DOM.classifyProgressBar.style.width = '0%';
+                if (classifyInput) {
+                    const newInput = resetFileInput(classifyInput);
+                    classifyInput = newInput;
+                    DOM.classifyFileInput = newInput;
+                }
             });
             
             // ========== 双文件去重（优化版）==========
@@ -2766,8 +2821,17 @@
                 DOM.duplicatePreviewArea.innerHTML = html.join('');
                 DOM.duplicatePreviewArea.style.display = html.length ? 'block' : 'none';
             }
+            
+            let duplicateInput1 = DOM.duplicateFile1Input;
+            let duplicateInput2 = DOM.duplicateFile2Input;
+            
             function setupDuplicateUpload(box, input, nameSpan, errorSpan, fileKey) {
-                box.addEventListener('click', () => { resetFileInput(input); input.click(); });
+                box.addEventListener('click', () => { 
+                    const newInput = resetFileInput(input);
+                    if (fileKey === 'file1') duplicateInput1 = newInput;
+                    else duplicateInput2 = newInput;
+                    newInput.click();
+                });
                 input.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
@@ -2778,7 +2842,6 @@
                         else { const numbers = []; for (let i = 0; i < data.length; i++) { const val = data[i][0]?.toString().trim() || ''; if (val) numbers.push(val); } duplicateFileData[fileKey] = { name: file.name, data: numbers, rawData: data }; }
                         showDuplicatePreview(); checkDuplicateFilesReady();
                     });
-                    resetFileInput(input);
                 });
                 box.addEventListener('dragover', (e) => e.preventDefault());
                 box.addEventListener('drop', (e) => {
@@ -2794,8 +2857,9 @@
                     });
                 });
             }
-            setupDuplicateUpload(DOM.duplicateUploadBox1, DOM.duplicateFile1Input, DOM.duplicateFile1Name, DOM.duplicateError1, 'file1');
-            setupDuplicateUpload(DOM.duplicateUploadBox2, DOM.duplicateFile2Input, DOM.duplicateFile2Name, DOM.duplicateError2, 'file2');
+            setupDuplicateUpload(DOM.duplicateUploadBox1, duplicateInput1, DOM.duplicateFile1Name, DOM.duplicateError1, 'file1');
+            setupDuplicateUpload(DOM.duplicateUploadBox2, duplicateInput2, DOM.duplicateFile2Name, DOM.duplicateError2, 'file2');
+            
             DOM.duplicateClearBtn.addEventListener('click', () => {
                 duplicateFileData = { file1: { name: '', data: [], rawData: [] }, file2: { name: '', data: [], rawData: [] } };
                 DOM.duplicateFile1Name.textContent = '未选择文件';
@@ -2803,11 +2867,17 @@
                 DOM.duplicateDownloadSection.style.display = 'none';
                 DOM.duplicateStatus.innerHTML = '等待上传文件...';
                 DOM.duplicateProgressBar.style.width = '0%';
-                resetFileInput(DOM.duplicateFile1Input);
-                resetFileInput(DOM.duplicateFile2Input);
+                // 重置文件输入
+                const newInput1 = resetFileInput(duplicateInput1);
+                const newInput2 = resetFileInput(duplicateInput2);
+                duplicateInput1 = newInput1;
+                duplicateInput2 = newInput2;
+                DOM.duplicateFile1Input = newInput1;
+                DOM.duplicateFile2Input = newInput2;
                 DOM.duplicateProcessBtn.disabled = true;
                 DOM.duplicatePreviewArea.style.display = 'none';
             });
+            
             DOM.duplicateProcessBtn.addEventListener('click', () => {
                 DOM.duplicateStatus.innerHTML = '处理中...';
                 DOM.duplicateProgressBar.style.width = '30%';
@@ -2854,9 +2924,11 @@
                 showColumnPreview(DOM.dataOpPreviewArea, dataOpFilesList, colPos === 'first' ? 0 : 1);
             }
             
-            setupFileUpload(DOM.dataOpUploadArea, DOM.dataOpFileInput, DOM.selectDataOpFilesBtn, (files) => {
+            let dataOpInput = DOM.dataOpFileInput;
+            setupFileUpload(DOM.dataOpUploadArea, dataOpInput, DOM.selectDataOpFilesBtn, (files) => {
                 dataOpFilesList = files;
                 updateDataOpFileList();
+                dataOpInput = DOM.dataOpFileInput;
             });
             
             DOM.dataOpActionBtns.forEach(btn => {
@@ -2904,9 +2976,13 @@
                 DOM.dataOpFilesList.style.display = 'none';
                 DOM.dataOpResults.style.display = 'none';
                 DOM.dataOpStatus.innerHTML = '等待上传文件...';
-                resetFileInput(DOM.dataOpFileInput);
                 DOM.dataOpPreviewArea.style.display = 'none';
                 DOM.dataOpProgressBar.style.width = '0%';
+                if (dataOpInput) {
+                    const newInput = resetFileInput(dataOpInput);
+                    dataOpInput = newInput;
+                    DOM.dataOpFileInput = newInput;
+                }
             });
             
             // ========== 首列编辑（优化版）==========
@@ -2921,9 +2997,11 @@
                 showColumnPreview(DOM.firstColPreviewArea, firstColFilesList, 0);
             }
             
-            setupFileUpload(DOM.firstColUploadArea, DOM.firstColFileInput, DOM.selectFirstColFilesBtn, (files) => {
+            let firstColInput = DOM.firstColFileInput;
+            setupFileUpload(DOM.firstColUploadArea, firstColInput, DOM.selectFirstColFilesBtn, (files) => {
                 firstColFilesList = files;
                 updateFirstColFileList();
+                firstColInput = DOM.firstColFileInput;
             });
             
             function processFirstCol(action) {
@@ -2967,9 +3045,13 @@
                 DOM.firstColFilesList.style.display = 'none';
                 DOM.firstColResults.style.display = 'none';
                 DOM.firstColStatus.innerHTML = '等待上传文件...';
-                resetFileInput(DOM.firstColFileInput);
                 DOM.firstColPreviewArea.style.display = 'none';
                 DOM.firstColProgressBar.style.width = '0%';
+                if (firstColInput) {
+                    const newInput = resetFileInput(firstColInput);
+                    firstColInput = newInput;
+                    DOM.firstColFileInput = newInput;
+                }
             });
             
             // 滑块开关状态
