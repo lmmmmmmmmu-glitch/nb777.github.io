@@ -2,3091 +2,454 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>⚡ 极速数据处理</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南海自用小工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* ... 保持原有样式不变 ... */
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            margin: 0;
-            padding: 0;
+        .drag-over {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
         }
-        
-        body {
-            background: linear-gradient(135deg, #e6f0fa 0%, #b8d9f5 100%);
-            margin: 0;
-            padding: 10px;
-            color: #333;
-            min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
+        .toast-enter {
+            animation: slideIn 0.3s ease-out;
         }
-        
-        .container {
-            width: 100%;
-            max-width: 1300px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
+        .toast-exit {
+            animation: slideOut 0.3s ease-in;
         }
-        
-        @media (min-width: 768px) {
-            .container {
-                padding: 35px;
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
         }
-        
-        @media (max-width: 480px) {
-            .container {
-                padding: 15px;
-                border-radius: 12px;
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
             }
-            body {
-                padding: 5px;
-            }
-        }
-        
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, #4d90fe, #34a853, #fbbc05, #ea4335);
-        }
-        
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-top: 0;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eaeaea;
-            font-weight: 700;
-            position: relative;
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
-        }
-        
-        @media (max-width: 480px) {
-            h1 {
-                padding-bottom: 10px;
-                margin-bottom: 15px;
+            to {
+                transform: translateX(100%);
+                opacity: 0;
             }
         }
-        
-        h1::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            max-width: 30%;
-            height: 4px;
-            background: linear-gradient(90deg, #4d90fe, #34a853);
-            border-radius: 2px;
-        }
-        
-        .tool-tabs {
-            display: flex;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 12px;
-            padding: 5px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
-        .tool-tab {
-            flex: 1 1 auto;
-            min-width: 120px;
-            padding: 12px 15px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.3s;
-            color: #666;
-            font-size: clamp(0.9rem, 3vw, 1rem);
-            white-space: nowrap;
-        }
-        
-        @media (max-width: 600px) {
-            .tool-tab {
-                min-width: calc(50% - 5px);
-                white-space: normal;
-                padding: 10px 8px;
-                font-size: 0.9rem;
-            }
-        }
-        
-        @media (max-width: 380px) {
-            .tool-tab {
-                min-width: 100%;
-            }
-        }
-        
-        .tool-tab:hover {
-            background-color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .tool-tab.active {
-            background-color: white;
-            color: #4d90fe;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .tool-panel {
-            display: none;
-        }
-        
-        .tool-panel.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .input-section {
-            margin-bottom: 25px;
-        }
-        
-        .input-row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .input-group {
-            flex: 1 1 250px;
-            min-width: 250px;
-        }
-        
-        @media (max-width: 600px) {
-            .input-group {
-                min-width: 100%;
-            }
-            .input-row {
-                gap: 15px;
-            }
-        }
-        
-        .input-label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #444;
-            font-size: clamp(0.95rem, 3vw, 1rem);
-        }
-        
-        .filename-input, .number-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        
-        @media (max-width: 480px) {
-            .filename-input, .number-input {
-                padding: 10px 12px;
-                font-size: 15px;
-            }
-        }
-        
-        .filename-input:focus, .number-input:focus {
-            border-color: #4d90fe;
-            box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
-            outline: none;
-        }
-        
-        .filename-hint {
-            font-size: 13px;
-            color: #666;
-            margin-top: 6px;
-        }
-        
-        .quick-buttons, .column-quick-buttons, .action-buttons, .filename-prefix-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        .quick-btn, .column-quick-btn, .action-btn, .prefix-btn {
-            padding: 6px 12px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border: 1px solid #d0d7de;
-            border-radius: 16px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #444;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: 0 1 auto;
-        }
-        
-        @media (max-width: 480px) {
-            .quick-btn, .column-quick-btn, .action-btn, .prefix-btn {
-                padding: 8px 10px;
-                font-size: 13px;
-                flex: 1 1 calc(33.333% - 6px);
-                text-align: center;
-            }
-        }
-        
-        .quick-btn:hover, .column-quick-btn:hover, .action-btn:hover, .prefix-btn:hover {
-            background: linear-gradient(135deg, #e2e6ea, #d0d7de);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .quick-btn.active, .column-quick-btn.active, .prefix-btn.active {
-            background: linear-gradient(135deg, #4d90fe, #357ae8);
-            color: white;
-            border-color: #4d90fe;
-        }
-        
-        .action-btn.add-zero {
-            background: linear-gradient(135deg, #34a853, #2e8b47);
-            color: white;
-            border-color: #2e8b47;
-        }
-        
-        .action-btn.remove-zero {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-            color: white;
-            border-color: #d32f2f;
-        }
-        
-        .action-btn.insert-first {
-            background: linear-gradient(135deg, #4d90fe, #357ae8);
-            color: white;
-            border-color: #357ae8;
-        }
-        
-        .action-btn.delete-first {
-            background: linear-gradient(135deg, #ea4335, #d32f2f);
-            color: white;
-            border-color: #d32f2f;
-        }
-        
-        .column-radio-hidden {
-            display: none;
-        }
-        
-        .label-with-btn {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        
-        .label-with-btn .input-label {
-            margin-bottom: 0;
-        }
-        
-        .add-prefix-btn {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-            color: white;
-            border: none;
-            border-radius: 24px;
-            padding: 5px 18px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 6px rgba(244, 67, 54, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            letter-spacing: 0.5px;
-            line-height: 1.4;
-        }
-        
-        .add-prefix-btn:hover {
-            background: linear-gradient(135deg, #e53935, #c62828);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
-        }
-        
-        .filename-auto-hint {
-            font-size: 12px;
-            color: #4d90fe;
-            margin-top: 4px;
-            font-style: italic;
-            font-weight: 500;
-        }
-        
-        textarea {
-            width: 100%;
-            min-height: 250px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            line-height: 1.5;
-            resize: vertical;
-            transition: all 0.3s;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        
-        @media (max-width: 480px) {
-            textarea {
-                min-height: 180px;
-                padding: 12px;
-                font-size: 15px;
-            }
-        }
-        
-        textarea:focus {
-            border-color: #4d90fe;
-            box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.2);
-            outline: none;
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex: 0 1 auto;
-            min-width: 140px;
-        }
-        
-        @media (max-width: 600px) {
-            button {
-                width: 100%;
-                padding: 12px 16px;
-                font-size: 15px;
-                min-width: auto;
-            }
-            .controls {
-                gap: 10px;
-            }
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .generate-btn, .download-btn, .upload-btn { 
-            background: linear-gradient(135deg, #4d90fe, #357ae8); 
-            color: white; 
-        }
-
-        .generate-txt-btn {
-            background: linear-gradient(135deg, #34a853, #2e8b47);
-            color: white;
-        }
-        
-        .reset-btn { 
-            background: white; 
-            color: #444; 
-            border: 2px solid #e0e0e0; 
-        }
-        
-        .sort-btn { 
-            background: white; 
-            color: #444; 
-            border: 2px solid #e0e0e0; 
-        }
-        
-        .sort-btn.active { 
-            background: linear-gradient(135deg, #4d90fe, #357ae8); 
-            color: white; 
-            border-color: #4d90fe; 
-        }
-        
-        .duplicate-btn { 
-            background: linear-gradient(135deg, #4ecdc4, #44a08d); 
-            color: white; 
-        }
-        
-        .download-clean-btn, .download-all-btn { 
-            background: linear-gradient(135deg, #34a853, #2e8b47); 
-            color: white; 
-        }
-        
-        .status-section {
-            margin-top: 25px;
-        }
-        
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .status-title {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: clamp(1rem, 3vw, 1.1rem);
-        }
-        
-        .status-text {
-            font-weight: 600;
-            color: #4d90fe;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-        }
-        
-        .progress-container {
-            height: 10px;
-            background-color: #e0e0e0;
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4d90fe, #34a853);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 5px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin: 20px 0;
-        }
-        
-        @media (max-width: 480px) {
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-        }
-        
-        .stat-box {
-            background: linear-gradient(135deg, #f8f9fa, #f0f2f5);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #eaeaea;
-        }
-        
-        @media (max-width: 480px) {
-            .stat-box {
-                padding: 10px;
-            }
-        }
-        
-        .stat-value {
-            font-size: clamp(1.2rem, 4vw, 1.5rem);
-            font-weight: 800;
-            color: #4d90fe;
-            margin-bottom: 5px;
-            word-break: break-word;
-        }
-        
-        .stat-label {
-            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-            color: #666;
-        }
-        
-        .filter-stat-box {
-            background: linear-gradient(135deg, #ffebee, #ffcdd2);
-            border-color: #ef9a9a;
-        }
-        
-        .filter-stat-value {
-            color: #d32f2f;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4d90fe;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px auto;
-        }
-        
-        .loading-text {
-            font-size: 16px;
-            font-weight: 600;
-            color: #444;
-        }
-        
-        .file-list {
-            margin-top: 25px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #eaeaea;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        
-        .file-list-header {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: clamp(1rem, 3vw, 1.1rem);
-            margin-bottom: 15px;
-        }
-        
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            transition: all 0.2s;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .file-item:last-child {
-            border-bottom: none;
-        }
-        
-        @media (max-width: 480px) {
-            .file-item {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 12px 10px;
-            }
-            .file-item .download-btn {
-                align-self: flex-end;
-                width: 100%;
-                text-align: center;
-                padding: 10px;
-            }
-        }
-        
-        .file-item:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .file-name {
-            font-weight: 600;
-            word-break: break-all;
-        }
-        
-        .file-size {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .upload-section, .classification-section, .duplicate-removal-section, .data-op-section, .first-col-section {
-            margin-top: 30px;
-        }
-        
-        .upload-header, .classification-header, .duplicate-header, .data-op-header, .first-col-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .upload-title, .classification-title, .duplicate-title, .data-op-title, .first-col-title {
-            font-weight: 700;
-            color: #2c3e50;
-            font-size: clamp(1rem, 3vw, 1.1rem);
-        }
-        
-        .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box {
-            border: 2px dashed #c3cfe2;
-            border-radius: 10px;
-            padding: 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 480px) {
-            .upload-area, .classification-area, .duplicate-upload-box, .first-col-upload-box {
-                padding: 15px;
-            }
-        }
-        
-        .upload-area:hover, .classification-area:hover, .duplicate-upload-box:hover, .first-col-upload-box:hover {
-            border-color: #4d90fe;
-            background-color: #f5f7fa;
-        }
-        
-        .upload-icon, .classification-icon, .duplicate-upload-icon, .first-col-upload-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-        
-        @media (max-width: 480px) {
-            .upload-icon, .classification-icon, .duplicate-upload-icon, .first-col-upload-icon {
-                font-size: 36px;
-            }
-        }
-        
-        .upload-icon { color: #4d90fe; }
-        .classification-icon { color: #ea4335; }
-        .duplicate-upload-icon { color: #ccc; }
-        .first-col-upload-icon { color: #34a853; }
-        
-        .upload-text, .classification-text, .duplicate-upload-text, .first-col-upload-text {
-            font-size: clamp(0.95rem, 3vw, 1.1rem);
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .upload-hint, .classification-hint, .first-col-hint {
-            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-            color: #888;
-        }
-        
-        .file-list-container {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #eaeaea;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 20px;
-            background-color: white;
-        }
-        
-        .file-list-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .file-list-item:last-child {
-            border-bottom: none;
-        }
-        
-        .file-list-name {
-            font-weight: 600;
-            color: #333;
-            word-break: break-all;
-            flex: 1 1 auto;
-        }
-        
-        .file-list-count {
-            color: #4d90fe;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .column-preview {
-            background: #f0f7ff;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 10px 0 15px 0;
-            border: 1px solid #cce5ff;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .preview-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .preview-badge {
-            background: #4d90fe;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-        }
-        
-        .preview-detail {
-            color: #333;
-        }
-        
-        .preview-zero {
-            background: #ffd966;
-            color: #333;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 12px;
-        }
-        
-        .multi-file-results {
-            margin-top: 20px;
-        }
-        
-        .result-card {
-            background-color: white;
-            border: 1px solid #eaeaea;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .result-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f0f0f0;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .result-card-title {
-            font-weight: 700;
-            color: #2c3e50;
-            word-break: break-all;
-        }
-        
-        .result-card-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-        }
-        
-        @media (max-width: 480px) {
-            .result-card-actions {
-                flex-direction: column;
-            }
-            .result-download-btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-        
-        .result-download-btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .result-download-txt {
-            background: #4d90fe;
-            color: white;
-        }
-        
-        .result-download-xlsx {
-            background: #34a853;
-            color: white;
-        }
-        
-        .result-download-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-        
-        .classification-options {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .option-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .option-label {
-            font-weight: 600;
-            color: #444;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-        }
-        
-        .prefix-length-select {
-            padding: 8px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-            background-color: white;
-            cursor: pointer;
-        }
-        
-        @media (max-width: 480px) {
-            .prefix-length-select {
-                width: 100%;
-            }
-            .option-group {
-                width: 100%;
-            }
-        }
-        
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
-            margin: 0 5px;
-        }
-        
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #34a853;
-            transition: 0.3s;
-            border-radius: 34px;
-        }
-        
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .toggle-slider {
-            background-color: #ccc;
-        }
-        
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-        }
-        
-        .classification-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 480px) {
-            .classification-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-        }
-        
-        .classification-stat {
-            background: linear-gradient(135deg, #f8f9fa, #f0f2f5);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #eaeaea;
-        }
-        
-        .stat-number {
-            font-size: clamp(1.1rem, 3.5vw, 1.3rem);
-            font-weight: 800;
-            color: #ea4335;
-            margin-bottom: 5px;
-            word-break: break-word;
-        }
-        
-        .stat-desc {
-            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-            color: #666;
-        }
-        
-        .classification-list {
-            max-height: 350px;
-            overflow-y: auto;
-            border: 1px solid #eaeaea;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        
-        .classification-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        
-        .classification-item:last-child {
-            border-bottom: none;
-        }
-        
-        @media (max-width: 480px) {
-            .classification-item {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 12px 10px;
-            }
-            .download-buttons-group {
-                align-self: flex-end;
-            }
-        }
-        
-        .prefix-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .prefix-badge {
-            background: linear-gradient(135deg, #4d90fe, #357ae8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-weight: 600;
-            min-width: 60px;
-            text-align: center;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-        }
-        
-        .prefix-count {
-            font-weight: 600;
-            color: #444;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-        }
-        
-        .download-buttons-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .download-classify-btn-txt, .download-classify-btn-xlsx {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        
-        @media (max-width: 480px) {
-            .download-classify-btn-txt, .download-classify-btn-xlsx {
-                white-space: normal;
-            }
-        }
-        
-        .download-classify-btn-txt {
-            background: #4d90fe;
-            color: white;
-        }
-        
-        .download-classify-btn-xlsx {
-            background: #34a853;
-            color: white;
-        }
-        
-        .download-classify-btn-txt:hover, .download-classify-btn-xlsx:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-        
-        .actions-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        @media (max-width: 480px) {
-            .actions-row {
-                flex-direction: column;
-            }
-            .actions-row button,
-            .actions-row .download-all-btn {
-                width: 100%;
-            }
-        }
-        
-        .duplicate-info-box {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-        }
-        
-        .duplicate-upload-section {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .duplicate-upload-box {
-            flex: 1 1 300px;
-            min-width: 250px;
-        }
-        
-        .duplicate-controls {
-            text-align: center;
-            margin: 20px 0;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .duplicate-download-btns {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        @media (max-width: 480px) {
-            .duplicate-download-btns {
-                flex-direction: column;
-            }
-            .duplicate-download-btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-        
-        .duplicate-download-btn {
-            background: linear-gradient(135deg, #a8edea, #fed6e3);
-            color: #333;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-block;
-            transition: all 0.2s;
-        }
-        
-        .duplicate-download-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
-        }
-        
-        .duplicate-error-message {
-            color: #dc3545;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .example-section {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #34a853;
-        }
-        
-        @media (max-width: 480px) {
-            .example-section {
-                padding: 15px;
-            }
-        }
-        
-        .example-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: clamp(0.95rem, 3vw, 1.1rem);
-        }
-        
-        .example-content {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 6px;
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            line-height: 1.5;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        
-        .note {
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            color: #888;
-            margin-top: 25px;
-            text-align: center;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            border-left: 4px solid #fbbc05;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .first-col-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .tab-active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>⚡ 极速数据处理</h1>
-        
-        <div class="tool-tabs">
-            <div class="tool-tab active" data-tool="generate">📁 批量生成</div>
-            <div class="tool-tab" data-tool="deduplicate">🔍 单文件去重</div>
-            <div class="tool-tab" data-tool="classify">📂 前缀分类</div>
-            <div class="tool-tab" data-tool="duplicate">🔄 双文件去重</div>
-            <div class="tool-tab" data-tool="dataop">0️⃣ 加减前导0</div>
-            <div class="tool-tab" data-tool="firstcol">⬅️ 首列编辑</div>
-        </div>
-        
-        <!-- 面板1: 批量生成 -->
-        <div id="panel-generate" class="tool-panel active">
-            <div class="input-section">
-                <div class="input-row">
-                    <div class="input-group">
-                        <label class="input-label">📁 输出文件名称：</label>
-                        <input type="text" id="filenameInput" class="filename-input" placeholder="例如: 023" value="">
-                        <div class="filename-hint">自动识别所有开头并用"-"连接，可手动编辑</div>
-                        <div class="filename-auto-hint" id="filenameAutoHint">等待输入开头...</div>
-                        
-                        <div style="margin-top: 15px;">
-                            <label class="input-label" style="margin-bottom: 5px;">📊 数据列位置：</label>
-                            <div class="column-quick-buttons">
-                                <span class="column-quick-btn active" data-target="genColFirst">第一列</span>
-                                <span class="column-quick-btn" data-target="genColSecond">第二列</span>
-                            </div>
-                            <input type="radio" name="genColumnPosition" id="genColFirst" value="first" checked class="column-radio-hidden">
-                            <input type="radio" name="genColumnPosition" id="genColSecond" value="second" class="column-radio-hidden">
-                        </div>
-                        
-                        <div style="margin-top: 15px;">
-                            <div class="option-group">
-                                <span class="option-label">🏢 区号识别命名：</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="enableAreaCodeGenerate" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <span id="generateAreaCodeStatus" style="font-size: 12px; color: #34a853;">开启</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label class="input-label">🔢 每文件数据量：</label>
-                        <input type="number" id="numbersPerFile" class="number-input" min="5" max="50" value="10" step="5">
-                        <div class="filename-hint">默认10万条，可调整为5-50万</div>
-                        <div class="quick-buttons">
-                            <span class="quick-btn" data-value="5">5万</span>
-                            <span class="quick-btn active" data-value="10">10万</span>
-                            <span class="quick-btn" data-value="20">20万</span>
-                            <span class="quick-btn" data-value="30">30万</span>
-                            <span class="quick-btn" data-value="40">40万</span>
-                            <span class="quick-btn" data-value="50">50万</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <div class="label-with-btn">
-                        <label class="input-label">📝 请输入号码段规则：</label>
-                        <button class="add-prefix-btn" id="addPrefixBtn" type="button">➕ 添加开头</button>
-                    </div>
-                    <textarea id="dataInput" placeholder="示例：
-开头
-023
-110-119
-或
-110～119
-或
-110到119">开头</textarea>
-                    <div class="filename-hint">只保留"开头"两字，后面直接跟数字或范围</div>
-                </div>
-            </div>
-            
-            <div class="controls">
-                <button class="generate-txt-btn" id="generateTxtBtn">📄 生成TXT文件</button>
-                <button class="generate-btn" id="generateExcelBtn">📊 生成Excel文件</button>
-                <button class="reset-btn" id="resetBtn">🔄 重置</button>
-            </div>
-            
-            <div class="status-section">
-                <div class="status-header">
-                    <div class="status-title">生成状态</div>
-                    <div id="generateStatus" class="status-text">等待生成...</div>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-bar" id="generateProgressBar"></div>
-                </div>
-                
-                <div class="stats">
-                    <div class="stat-box">
-                        <div class="stat-value" id="totalCount">0</div>
-                        <div class="stat-label">总数据量</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="fileCount">0</div>
-                        <div class="stat-label">文件数量</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="groupCount">0</div>
-                        <div class="stat-label">号码组数</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="uniqueCount">0</div>
-                        <div class="stat-label">去重后</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value" id="fileSize">10万</div>
-                        <div class="stat-label">每文件量</div>
-                    </div>
-                </div>
-                
-                <div class="loading" id="generateLoading">
-                    <div class="spinner"></div>
-                    <div class="loading-text">正在生成数据，请稍候...</div>
-                </div>
-            </div>
-            
-            <div class="file-list">
-                <div class="file-list-header">生成的文件列表</div>
-                <div id="generateFileList"></div>
-            </div>
-        </div>
-        
-        <!-- 面板2: 单文件去重 -->
-        <div id="panel-deduplicate" class="tool-panel">
-            <div class="upload-section">
-                <div class="upload-header">
-                    <div class="upload-title">🔍 单文件去重工具</div>
-                    <div id="deduplicateStatus" class="status-text">等待上传文件...</div>
-                </div>
-                
-                <div class="upload-area" id="deduplicateUploadArea">
-                    <div class="upload-icon">📤</div>
-                    <div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div>
-                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
-                    <button class="upload-btn" id="selectDeduplicateFilesBtn">📁 选择文件（可多选）</button>
-                    <input type="file" id="deduplicateFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
-                    
-                    <div id="deduplicateFilesList" class="file-list-container" style="display:none; margin-top:20px;">
-                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
-                        <div id="deduplicateFileListItems"></div>
-                    </div>
-                </div>
-                
-                <div id="deduplicatePreviewArea" class="column-preview" style="display:none;"></div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" id="deduplicateProgressBar"></div>
-                </div>
-                
-                <div id="deduplicateResults" class="multi-file-results" style="display:none;">
-                    <div class="file-list-header">去重结果</div>
-                    <div id="deduplicateResultCards"></div>
-                    
-                    <div class="actions-row" style="margin-top:20px;">
-                        <button class="download-all-btn" id="downloadAllDeduplicateTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
-                        <button class="download-all-btn" id="downloadAllDeduplicateXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
-                        <button class="reset-btn" id="resetDeduplicateBtn">🔄 清空所有</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 面板3: 前缀分类 -->
-        <div id="panel-classify" class="tool-panel">
-            <div class="classification-section">
-                <div class="classification-header">
-                    <div class="classification-title">📂 按号码开头自动分类</div>
-                    <div id="classifyStatus" class="status-text">等待上传文件...</div>
-                </div>
-                
-                <div class="classification-options">
-                    <div class="option-group">
-                        <span class="option-label">号码前缀长度：</span>
-                        <select id="prefixLength" class="prefix-length-select">
-                            <option value="3">3位</option>
-                            <option value="4" selected>4位</option>
-                            <option value="5">5位</option>
-                            <option value="6">6位</option>
-                            <option value="7">7位</option>
-                        </select>
-                    </div>
-                    
-                    <div class="option-group">
-                        <input type="checkbox" id="includeFullNumber" checked>
-                        <label for="includeFullNumber" class="option-label">包含完整号码</label>
-                    </div>
-                    
-                    <div class="option-group">
-                        <button id="sortAscBtn" class="sort-btn active">⬆️ 从小到大</button>
-                        <button id="sortShuffleBtn" class="sort-btn">🎲 打乱顺序</button>
-                    </div>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Toast 容器 -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-                    <div class="option-group">
-                        <span class="option-label">文件名前缀：</span>
-                        <div class="filename-prefix-buttons">
-                            <span class="prefix-btn active" data-prefix="none">无</span>
-                            <span class="prefix-btn" data-prefix="家庭">家庭</span>
-                            <span class="prefix-btn" data-prefix="公司">公司</span>
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">南海自用小工具</h1>
+        
+        <!-- 标签页 -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tab-dedup" class="px-6 py-3 font-medium text-gray-600 hover:text-blue-500 tab-active" onclick="switchTab('dedup')">
+                数据去重
+            </button>
+            <button id="tab-excel" class="px-6 py-3 font-medium text-gray-600 hover:text-blue-500" onclick="switchTab('excel')">
+                Excel批量处理
+            </button>
+        </div>
+
+        <!-- 数据去重模块 -->
+        <div id="module-dedup" class="module">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">数据去重模块</h2>
+                
+                <!-- 拖拽上传区域 -->
+                <div id="dropzone-dedup" 
+                     class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors mb-6"
+                     ondragover="handleDragOver(event, 'dedup')"
+                     ondragleave="handleDragLeave(event, 'dedup')"
+                     ondrop="handleDropDedup(event)"
+                     onclick="document.getElementById('file-input-dedup').click()">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="text-gray-600 mb-2">拖拽文件到此处或点击上传</p>
+                    <p class="text-sm text-gray-400">支持多个文本文件 (.txt)</p>
+                    <input type="file" id="file-input-dedup" multiple accept=".txt" class="hidden" onchange="handleFilesDedup(this.files)">
+                </div>
+
+                <!-- 文本粘贴区域 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">或直接粘贴数据：</label>
+                    <textarea id="paste-area" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="每行一条数据..."></textarea>
+                    <button onclick="processPastedData()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        处理粘贴的数据
+                    </button>
+                </div>
+
+                <!-- 统计信息 -->
+                <div id="stats-dedup" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-medium text-gray-700 mb-3">处理统计</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center">
+                            <div id="stat-files" class="text-2xl font-bold text-blue-600">0</div>
+                            <div class="text-sm text-gray-500">总文件数</div>
                         </div>
-                    </div>
-                    
-                    <div class="option-group">
-                        <span class="option-label">🏢 区号识别：</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="enableAreaCode" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span id="areaCodeStatus" style="font-size: 12px; color: #34a853;">开启</span>
+                        <div class="text-center">
+                            <div id="stat-total" class="text-2xl font-bold text-blue-600">0</div>
+                            <div class="text-sm text-gray-500">总行数</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-unique" class="text-2xl font-bold text-green-600">0</div>
+                            <div class="text-sm text-gray-500">去重后行数</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-removed" class="text-2xl font-bold text-red-600">0</div>
+                            <div class="text-sm text-gray-500">移除重复数</div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <label class="input-label">📊 提取数据列位置：</label>
-                    <div class="column-quick-buttons">
-                        <span class="column-quick-btn active" data-target="classifyColFirst">第一列</span>
-                        <span class="column-quick-btn" data-target="classifyColSecond">第二列</span>
-                    </div>
-                    <input type="radio" name="classifyColumnPosition" id="classifyColFirst" value="first" checked class="column-radio-hidden">
-                    <input type="radio" name="classifyColumnPosition" id="classifyColSecond" value="second" class="column-radio-hidden">
-                </div>
-                
-                <div class="classification-area" id="classificationArea">
-                    <div class="classification-icon">📁</div>
-                    <div class="classification-text">拖拽任意数量文件到此处（或点击选择）</div>
-                    <div class="classification-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
-                    <button class="classification-btn" id="selectClassifyFileBtn">📁 选择分类文件（可多选）</button>
-                    <input type="file" id="classifyFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
-                    
-                    <div id="classifyUploadedFilesList" class="file-list-container" style="display:none; margin-top:20px;">
-                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
-                        <div id="classifyFileListItems"></div>
-                    </div>
-                </div>
-                
-                <div id="classifyPreviewArea" class="column-preview" style="display:none;"></div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" id="classifyProgressBar"></div>
-                </div>
-                
-                <div id="classificationResults" class="classification-results" style="display: none;">
-                    <div class="results-header">分类结果</div>
-                    
-                    <div class="classification-stats">
-                        <div class="classification-stat">
-                            <div class="stat-number" id="totalFilesCount">0</div>
-                            <div class="stat-desc">上传文件数</div>
-                        </div>
-                        <div class="classification-stat">
-                            <div class="stat-number" id="totalNumbersCount">0</div>
-                            <div class="stat-desc">总号码数</div>
-                        </div>
-                        <div class="classification-stat">
-                            <div class="stat-number" id="uniquePrefixesCount">0</div>
-                            <div class="stat-desc">不同前缀数</div>
-                        </div>
-                        <div class="classification-stat">
-                            <div class="stat-number" id="maxNumbersPrefix">-</div>
-                            <div class="stat-desc">最多号码前缀</div>
-                        </div>
-                    </div>
-                    
-                    <div class="results-header">前缀分类详情</div>
-                    <div class="classification-list" id="classificationList"></div>
-                    
-                    <div class="actions-row">
-                        <button class="download-all-btn" id="downloadAllClassifyBtnTxt">📦 下载所有TXT</button>
-                        <button class="download-all-btn" id="downloadAllClassifyBtnXlsx">📦 下载所有Excel</button>
-                        <button class="reset-btn" id="resetClassifyBtn">🔄 重置分类</button>
-                    </div>
+
+                <!-- 下载按钮 -->
+                <div id="download-dedup" class="hidden text-center">
+                    <button onclick="downloadDedupResult()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
+                        📥 下载去重结果 (TXT)
+                    </button>
                 </div>
             </div>
         </div>
-        
-        <!-- 面板4: 双文件去重 -->
-        <div id="panel-duplicate" class="tool-panel">
-            <div class="duplicate-removal-section">
-                <div class="duplicate-header">
-                    <div class="duplicate-title">🔄 双文件重复号码删除</div>
-                    <div id="duplicateStatus" class="status-text">等待上传文件...</div>
+
+        <!-- Excel批量处理模块 -->
+        <div id="module-excel" class="module hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Excel批量处理模块</h2>
+                
+                <!-- 拖拽上传区域 -->
+                <div id="dropzone-excel" 
+                     class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors mb-6"
+                     ondragover="handleDragOver(event, 'excel')"
+                     ondragleave="handleDragLeave(event, 'excel')"
+                     ondrop="handleDropExcel(event)"
+                     onclick="document.getElementById('file-input-excel').click()">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="text-gray-600 mb-2">拖拽Excel文件到此处或点击上传</p>
+                    <p class="text-sm text-gray-400">支持 .xlsx, .xls 格式</p>
+                    <input type="file" id="file-input-excel" accept=".xlsx,.xls" class="hidden" onchange="handleFileExcel(this.files)">
                 </div>
-                
-                <div class="duplicate-info-box">
-                    <strong>📋 功能说明：</strong> 上传两个文件，工具会自动删除两个文件中均出现的重复号码。
+
+                <!-- 处理说明 -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-medium text-blue-700 mb-2">处理流程：</h3>
+                    <ul class="text-sm text-blue-600 space-y-1">
+                        <li>• 解放双手，自动删除前5行 + 过滤所有空行</li>
+                        <li>• 提取"原始名称"列为空的IP → 生成"删除ip.txt"</li>
+                        <li>• "IP地址"为空 → MAC地址列 = LS</li>
+                        <li>• 指定IP列表 → MAC地址列 = GQ</li>
+                        <li>• 正常没问题 → MAC地址列 = *</li>
+                        <li>• 有什么问题随时联系我，ip需要增加 联系我</li>
+                    </ul>
                 </div>
-                
-                <div class="duplicate-upload-section">
-                    <div class="duplicate-upload-box" id="duplicateUploadBox1">
-                        <div class="duplicate-upload-icon">📁</div>
-                        <div class="duplicate-upload-text">拖拽或点击上传文件1</div>
-                        <div class="duplicate-file-name" id="duplicateFile1Name">未选择文件</div>
-                        <div class="duplicate-error-message" id="duplicateError1"></div>
-                    </div>
-                    <div class="duplicate-upload-box" id="duplicateUploadBox2">
-                        <div class="duplicate-upload-icon">📁</div>
-                        <div class="duplicate-upload-text">拖拽或点击上传文件2</div>
-                        <div class="duplicate-file-name" id="duplicateFile2Name">未选择文件</div>
-                        <div class="duplicate-error-message" id="duplicateError2"></div>
-                    </div>
-                </div>
-                
-                <input type="file" id="duplicateFile1Input" accept=".txt,.csv,.xlsx" style="display:none;">
-                <input type="file" id="duplicateFile2Input" accept=".txt,.csv,.xlsx" style="display:none;">
-                
-                <div id="duplicatePreviewArea" class="column-preview" style="display:none;"></div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" id="duplicateProgressBar"></div>
-                </div>
-                
-                <div class="duplicate-controls">
-                    <button class="duplicate-btn" id="duplicateProcessBtn" disabled>🔍 处理并生成下载</button>
-                    <button class="duplicate-btn" id="duplicateClearBtn">🗑️ 清空</button>
-                </div>
-                
-                <div class="duplicate-download-section" id="duplicateDownloadSection" style="display: none;">
-                    <div class="duplicate-download-title">✅ 处理完成！点击下方按钮下载结果文件</div>
-                    <div class="duplicate-download-btns">
-                        <a class="duplicate-download-btn" id="duplicateDownload1Txt" download="">⬇️ 文件1 (TXT)</a>
-                        <a class="duplicate-download-btn" id="duplicateDownload1Excel" download="">⬇️ 文件1 (Excel)</a>
-                        <a class="duplicate-download-btn" id="duplicateDownload2Txt" download="">⬇️ 文件2 (TXT)</a>
-                        <a class="duplicate-download-btn" id="duplicateDownload2Excel" download="">⬇️ 文件2 (Excel)</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 面板5: 加减前导0 -->
-        <div id="panel-dataop" class="tool-panel">
-            <div class="data-op-section">
-                <div class="data-op-header">
-                    <div class="data-op-title">0️⃣ 加减前导0工具</div>
-                    <div id="dataOpStatus" class="status-text">等待上传文件...</div>
-                </div>
-                
-                <div class="upload-area" id="dataOpUploadArea">
-                    <div class="upload-icon">📤</div>
-                    <div class="upload-text">拖拽任意数量文件到此处（或点击选择）</div>
-                    <div class="upload-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
-                    <button class="upload-btn" id="selectDataOpFilesBtn">📁 选择文件（可多选）</button>
-                    <input type="file" id="dataOpFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
-                    
-                    <div id="dataOpFilesList" class="file-list-container" style="display:none; margin-top:20px;">
-                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
-                        <div id="dataOpFileListItems"></div>
+
+                <!-- 统计信息 -->
+                <div id="stats-excel" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-medium text-gray-700 mb-3">处理统计</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="text-center">
+                            <div id="stat-total-rows" class="text-2xl font-bold text-blue-600">0</div>
+                            <div class="text-sm text-gray-500">有效数据行数</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-ls" class="text-2xl font-bold text-yellow-600">0</div>
+                            <div class="text-sm text-gray-500">标记 LS 行数</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-gq" class="text-2xl font-bold text-purple-600">0</div>
+                            <div class="text-sm text-gray-500">标记 GQ 行数</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-normal" class="text-2xl font-bold text-green-600">0</div>
+                            <div class="text-sm text-gray-500">正常标记 * 行数</div>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="dataOpPreviewArea" class="column-preview" style="display:none;"></div>
-                
-                <div style="margin: 20px 0;">
-                    <label class="input-label">📊 选择操作列：</label>
-                    <div class="column-quick-buttons">
-                        <span class="column-quick-btn active" data-target="dataOpColFirst">第一列</span>
-                        <span class="column-quick-btn" data-target="dataOpColSecond">第二列</span>
-                    </div>
-                    <input type="radio" name="dataOpColumnPosition" id="dataOpColFirst" value="first" checked class="column-radio-hidden">
-                    <input type="radio" name="dataOpColumnPosition" id="dataOpColSecond" value="second" class="column-radio-hidden">
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <div class="action-buttons">
-                        <span class="action-btn add-zero" data-action="add">➕ 添加前导0</span>
-                        <span class="action-btn remove-zero" data-action="remove">➖ 删除前导0</span>
-                    </div>
-                </div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" id="dataOpProgressBar"></div>
-                </div>
-                
-                <div id="dataOpResults" class="multi-file-results" style="display:none;">
-                    <div class="file-list-header">处理结果</div>
-                    <div id="dataOpResultCards"></div>
-                    
-                    <div class="actions-row" style="margin-top:20px;">
-                        <button class="download-all-btn" id="downloadAllDataOpTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
-                        <button class="download-all-btn" id="downloadAllDataOpXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
-                        <button class="reset-btn" id="resetDataOpBtn">🔄 清空所有</button>
+
+                <!-- 下载按钮区域 -->
+                <div id="download-excel" class="hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="downloadDeleteIp()" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">
+                            📥 下载删除IP列表 (TXT)
+                        </button>
+                        <button onclick="downloadProcessedExcel()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
+                            📥 下载处理后Excel
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- 面板6: 首列编辑 -->
-        <div id="panel-firstcol" class="tool-panel">
-            <div class="first-col-section">
-                <div class="first-col-header">
-                    <div class="first-col-title">⬅️ 首列编辑 · 智能识别空列</div>
-                    <div id="firstColStatus" class="status-text">等待上传文件...</div>
-                </div>
-                
-                <div class="first-col-upload-box" id="firstColUploadArea">
-                    <div class="first-col-upload-icon">📤</div>
-                    <div class="first-col-upload-text">拖拽任意数量文件到此处（或点击选择）</div>
-                    <div class="first-col-hint">支持 Excel(.xlsx, .xls) 或文本文件(.txt, .csv)，可多选</div>
-                    <button class="upload-btn" id="selectFirstColFilesBtn">📁 选择文件（可多选）</button>
-                    <input type="file" id="firstColFileInput" accept=".xlsx,.xls,.txt,.csv" multiple style="display:none;">
-                    
-                    <div id="firstColFilesList" class="file-list-container" style="display:none; margin-top:20px;">
-                        <div style="font-weight:600; margin-bottom:10px;">已上传文件：</div>
-                        <div id="firstColFileListItems"></div>
-                    </div>
-                </div>
-                
-                <div id="firstColPreviewArea" class="column-preview" style="display:none;"></div>
-                
-                <div id="firstColWarning" class="first-col-warning" style="display: none;">
-                    <span>⚠️</span>
-                    <span id="firstColWarningText"></span>
-                </div>
-                
-                <div style="margin: 25px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <button class="action-btn insert-first" id="insertFirstColBtn" style="font-size: 1.1rem; padding: 15px 35px;">➕ 在第一列前插入空白列</button>
-                    <button class="action-btn delete-first" id="deleteFirstColBtn" style="font-size: 1.1rem; padding: 15px 35px;">✖ 删除第一列</button>
-                </div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" id="firstColProgressBar"></div>
-                </div>
-                
-                <div id="firstColResults" class="multi-file-results" style="display:none;">
-                    <div class="file-list-header">处理完成</div>
-                    <div id="firstColResultCards"></div>
-                    
-                    <div class="actions-row" style="margin-top:20px;">
-                        <button class="download-all-btn" id="downloadAllFirstColTxt" style="background: #4d90fe; color: white;">📦 下载所有TXT</button>
-                        <button class="download-all-btn" id="downloadAllFirstColXlsx" style="background: #34a853; color: white;">📦 下载所有Excel</button>
-                        <button class="reset-btn" id="resetFirstColBtn">🔄 清空所有</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="example-section">
-            <div class="example-title">📝 批量生成格式示例：</div>
-            <div class="example-content">
-开头023
-110-119      
-213-9   (代表213-219)
-6380-9  (代表6380-6389)
-            </div>
-        </div>
-        
-        <div class="note">
-            ⚡ 完整功能 | 区号识别：开启后自动匹配城市名称并命名文件
         </div>
     </div>
 
     <script>
-        (function() {
-            // ========== 扩展区号映射表（包含所有地区及县级市）==========
-            const areaCodeMap = {
-    '010': '北京市',
-    '020': '广东广州市',
-    '021': '上海市',
-    '022': '天津市',
-    '023': '重庆市',
-    '024': '辽宁沈阳市',
-    '025': '江苏南京市',
-    '027': '湖北武汉市',
-    '028': '四川成都市',
-    '029': '陕西西安市',
-    '0310': '河北邯郸市',
-    '0311': '河北石家庄市',
-    '0312': '河北保定市',
-    '0313': '河北张家口市',
-    '0314': '河北承德市',
-    '0315': '河北唐山市',
-    '0316': '河北廊坊市',
-    '0317': '河北沧州市',
-    '0318': '河北衡水市',
-    '0319': '河北邢台市',
-    '0329': '河北辛集市',
-    '0335': '河北秦皇岛市',
-    '0349': '山西朔州市',
-    '0350': '山西忻州市',
-    '0351': '山西太原市',
-    '0352': '山西大同市',
-    '0353': '山西阳泉市',
-    '0354': '山西晋中市',
-    '0355': '山西长治市',
-    '0356': '山西晋城市',
-    '0357': '山西临汾市',
-    '0358': '山西吕梁市',
-    '0359': '山西运城市',
-    '0370': '河南商丘市',
-    '0371': '河南郑州市',
-    '0372': '河南安阳市',
-    '0373': '河南新乡市',
-    '0374': '河南许昌市',
-    '0375': '河南平顶山市',
-    '0376': '河南信阳市',
-    '0377': '河南南阳市',
-    '0378': '河南开封市',
-    '0379': '河南洛阳市',
-    '0391': '河南焦作市',
-    '0392': '河南鹤壁市',
-    '0393': '河南濮阳市',
-    '0394': '河南周口市',
-    '0395': '河南漯河市',
-    '0396': '河南驻马店市',
-    '0398': '河南三门峡市',
-    '0399': '河南济源市',
-    '0411': '辽宁大连市',
-    '0412': '辽宁鞍山市',
-    '0413': '辽宁抚顺市',
-    '0414': '辽宁本溪市',
-    '0415': '辽宁丹东市',
-    '0416': '辽宁锦州市',
-    '0417': '辽宁营口市',
-    '0418': '辽宁阜新市',
-    '0419': '辽宁辽阳市',
-    '0421': '辽宁朝阳市',
-    '0427': '辽宁盘锦市',
-    '0429': '辽宁葫芦岛市',
-    '0431': '吉林长春市',
-    '0432': '吉林吉林市',
-    '0433': '吉林延边',
-    '0434': '吉林四平市',
-    '0435': '吉林通化市',
-    '0436': '吉林白城市',
-    '0437': '吉林辽源市',
-    '0438': '吉林松原市',
-    '0439': '吉林白山市',
-    '0451': '黑龙江哈尔滨市',
-    '0452': '黑龙江齐齐哈尔市',
-    '0453': '黑龙江牡丹江市',
-    '0454': '黑龙江佳木斯市',
-    '0455': '黑龙江绥化市',
-    '0456': '黑龙江黑河市',
-    '0457': '黑龙江大兴安岭',
-    '0458': '黑龙江伊春市',
-    '0459': '黑龙江大庆市',
-    '0464': '黑龙江七台河市',
-    '0467': '黑龙江鸡西市',
-    '0468': '黑龙江鹤岗市',
-    '0469': '黑龙江双鸭山市',
-    '0470': '内蒙古呼伦贝尔市',
-    '0471': '内蒙古呼和浩特市',
-    '0472': '内蒙古包头市',
-    '0473': '内蒙古乌海市',
-    '0474': '内蒙古乌兰察布市',
-    '0475': '内蒙古通辽市',
-    '0476': '内蒙古赤峰市',
-    '0477': '内蒙古鄂尔多斯市',
-    '0478': '内蒙古巴彦淖尔市',
-    '0479': '内蒙古锡林郭勒',
-    '0482': '内蒙古兴安',
-    '0483': '内蒙古阿拉善',
-    '0510': '江苏无锡市',
-    '0511': '江苏镇江市',
-    '0512': '江苏苏州市',
-    '0513': '江苏南通市',
-    '0514': '江苏扬州市',
-    '0515': '江苏盐城市',
-    '0516': '江苏徐州市',
-    '0517': '江苏淮安市',
-    '0518': '江苏连云港市',
-    '0519': '江苏常州市',
-    '0523': '江苏泰州市',
-    '0527': '江苏宿迁市',
-    '0530': '山东菏泽市',
-    '0531': '山东济南市',
-    '0532': '山东青岛市',
-    '0533': '山东淄博市',
-    '0534': '山东德州市',
-    '0535': '山东烟台市',
-    '0536': '山东潍坊市',
-    '0537': '山东济宁市',
-    '0538': '山东泰安市',
-    '0539': '山东临沂市',
-    '0543': '山东滨州市',
-    '0546': '山东东营市',
-    '0550': '安徽滁州市',
-    '0551': '安徽合肥市',
-    '0552': '安徽蚌埠市',
-    '0553': '安徽芜湖市',
-    '0554': '安徽淮南市',
-    '0555': '安徽马鞍山市',
-    '0556': '安徽安庆市',
-    '0557': '安徽宿州市',
-    '0558': '安徽阜阳市',
-    '0559': '安徽黄山市',
-    '0561': '安徽淮北市',
-    '0562': '安徽铜陵市',
-    '0563': '安徽宣城市',
-    '0564': '安徽六安市',
-    '0565': '安徽巢湖市',
-    '0566': '安徽池州市',
-    '0567': '安徽亳州市',
-    '0570': '浙江衢州市',
-    '0571': '浙江杭州市',
-    '0572': '浙江湖州市',
-    '0573': '浙江嘉兴市',
-    '0574': '浙江宁波市',
-    '0575': '浙江绍兴市',
-    '0576': '浙江台州市',
-    '0577': '浙江温州市',
-    '0578': '浙江丽水市',
-    '0579': '浙江金华市',
-    '0580': '浙江舟山市',
-    '0591': '福建福州市',
-    '0592': '福建厦门市',
-    '0593': '福建宁德市',
-    '0594': '福建莆田市',
-    '0595': '福建泉州市',
-    '0596': '福建漳州市',
-    '0597': '福建龙岩市',
-    '0598': '福建三明市',
-    '0599': '福建南平市',
-    '0631': '山东威海市',
-    '0632': '山东枣庄市',
-    '0633': '山东日照市',
-    '0634': '山东莱芜市',
-    '0635': '山东聊城市',
-    '0660': '广东汕尾市',
-    '0662': '广东阳江市',
-    '0663': '广东揭阳市',
-    '0668': '广东茂名市',
-    '0691': '云南西双版纳',
-    '0692': '云南德宏',
-    '0701': '江西鹰潭市',
-    '0730': '湖南岳阳市',
-    '0731': '湖南长沙市',
-    '0732': '湖南湘潭市',
-    '0733': '湖南株洲市',
-    '0734': '湖南衡阳市',
-    '0735': '湖南郴州市',
-    '0736': '湖南常德市',
-    '0737': '湖南益阳市',
-    '0738': '湖南娄底市',
-    '0739': '湖南邵阳市',
-    '0743': '湖南湘西',
-    '0744': '湖南张家界市',
-    '0745': '湖南怀化市',
-    '0746': '湖南永州市',
-    '0750': '广东江门市',
-    '0751': '广东韶关市',
-    '0752': '广东惠州市',
-    '0753': '广东梅州市',
-    '0754': '广东汕头市',
-    '0755': '广东深圳市',
-    '0756': '广东珠海市',
-    '0757': '广东佛山市',
-    '0758': '广东肇庆市',
-    '0759': '广东湛江市',
-    '0760': '广东中山市',
-    '0762': '广东河源市',
-    '0763': '广东清远市',
-    '0766': '广东云浮市',
-    '0768': '广东潮州市',
-    '0769': '广东东莞市',
-    '0770': '广西防城港市',
-    '0771': '广西南宁市',
-    '0772': '广西柳州市',
-    '0773': '广西桂林市',
-    '0774': '广西梧州市',
-    '0775': '广西玉林市',
-    '0776': '广西百色市',
-    '0777': '广西钦州市',
-    '0778': '广西河池市',
-    '0779': '广西北海市',
-    '0780': '广西崇左市',
-    '0781': '广西来宾市',
-    '0782': '广西贺州市',
-    '0783': '广西贵港市',
-    '0790': '江西新余市',
-    '0791': '江西南昌市',
-    '0792': '江西九江市',
-    '0793': '江西上饶市',
-    '0794': '江西抚州市',
-    '0795': '江西宜春市',
-    '0796': '江西吉安市',
-    '0797': '江西赣州市',
-    '0798': '江西景德镇市',
-    '0799': '江西萍乡市',
-    '0812': '四川攀枝花市',
-    '0813': '四川自贡市',
-    '0816': '四川绵阳市',
-    '0817': '四川南充市',
-    '0818': '四川达州市',
-    '0825': '四川遂宁市',
-    '0826': '四川广安市',
-    '0827': '四川巴中市',
-    '0830': '四川泸州市',
-    '0831': '四川宜宾市',
-    '0832': '四川内江市',
-    '0833': '四川乐山市',
-    '0834': '四川凉山',
-    '0835': '四川雅安市',
-    '0836': '四川甘孜',
-    '0837': '四川阿坝',
-    '0838': '四川德阳市',
-    '0839': '四川广元市',
-    '0840': '四川眉山市',
-    '0841': '四川资阳市',
-    '0851': '贵州贵阳市',
-    '0852': '贵州遵义市',
-    '0853': '贵州安顺市',
-    '0854': '贵州黔南',
-    '0855': '贵州黔东南',
-    '0856': '贵州铜仁市',
-    '0857': '贵州毕节市',
-    '0858': '贵州六盘水市',
-    '0859': '贵州黔西南',
-    '0870': '云南昭通市',
-    '0871': '云南昆明市',
-    '0872': '云南大理',
-    '0873': '云南红河',
-    '0874': '云南曲靖市',
-    '0875': '云南保山市',
-    '0876': '云南文山',
-    '0877': '云南玉溪市',
-    '0878': '云南楚雄',
-    '0879': '云南普洱市',
-    '0883': '云南临沧市',
-    '0886': '云南怒江',
-    '0887': '云南迪庆',
-    '0888': '云南丽江市',
-    '0891': '西藏拉萨市',
-    '0892': '西藏日喀则市',
-    '0893': '西藏山南市',
-    '0894': '西藏林芝市',
-    '0895': '西藏昌都市',
-    '0896': '西藏那曲市',
-    '0897': '西藏阿里',
-    '0898': '海南海口市',
-    '0899': '海南三亚市',
-    '0930': '甘肃临夏',
-    '0931': '甘肃兰州市',
-    '0932': '甘肃定西市',
-    '0933': '甘肃平凉市',
-    '0934': '甘肃庆阳市',
-    '0935': '甘肃金昌市',
-    '0936': '甘肃张掖市',
-    '0937': '甘肃酒泉市',
-    '0938': '甘肃天水市',
-    '0939': '甘肃陇南市',
-    '0941': '甘肃甘南',
-    '0943': '甘肃白银市',
-    '0945': '甘肃嘉峪关市',
-    '0951': '宁夏银川市',
-    '0952': '宁夏石嘴山市',
-    '0953': '宁夏吴忠市',
-    '0954': '宁夏固原市',
-    '0955': '宁夏中卫市',
-    '0970': '青海海北',
-    '0971': '青海西宁市',
-    '0972': '青海海东市',
-    '0973': '青海黄南',
-    '0974': '青海海南',
-    '0975': '青海果洛',
-    '0976': '青海玉树',
-    '0977': '青海海西',
-    '0979': '青海格尔木市',
-    '0901': '新疆塔城',
-    '0902': '新疆哈密市',
-    '0903': '新疆和田',
-    '0906': '新疆阿勒泰',
-    '0908': '新疆克州',
-    '0909': '新疆博尔塔拉',
-    '0990': '新疆克拉玛依市',
-    '0991': '新疆乌鲁木齐市',
-    '0992': '新疆伊犁',
-    '0993': '新疆石河子市',
-    '0994': '新疆昌吉',
-    '0995': '新疆吐鲁番市',
-    '0996': '新疆巴州',
-    '0997': '新疆阿克苏',
-    '0998': '新疆喀什',
-    '0999': '新疆伊宁市'
-            };
+        // 全局变量
+        let dedupResult = [];
+        let processedWorkbook = null;
+        let deleteIpList = [];
+        let excelStats = { total: 0, ls: 0, gq: 0, normal: 0, deleteIp: 0 };
+
+        // GQ IP 列表
+        const GQ_IPS = [
+            "103.218.240.184", "103.224.182.213", "103.224.212.200", "104.160.190.62",
+            "104.247.81.99", "128.14.74.107", "128.14.74.124", "13.223.25.84",
+            "13.248.169.48", "13.248.213.45", "15.197.148.33", "15.197.240.20",
+            "160.251.64.80", "172.234.199.15", "172.237.145.27", "172.233.221.214","172.65.211.209","185.53.179.128","52.20.84.62",
+            "172.232.112.221", "172.233.219.49", "172.233.219.78", "172.233.219.123",
+            "172.237.146.8", "172.237.146.25", "172.237.146.38", "172.65.190.172",
+            "172.65.44.124", "172.65.185.109", "185.53.178.99", "199.59.243.228",
+            "3.33.130.190", "34.195.60.139", "44.232.173.249", "44.233.250.75",
+            "52.38.196.63", "54.243.117.197", "64.190.63.222", "76.223.54.146",
+            "76.223.67.189", "91.195.240.12", "172.239.57.117", "172.234.24.211",
+            "162.255.119.6", "192.64.119.245"
+        ].map(ip => ip.trim());
+
+        // Toast 提示
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg toast-enter flex items-center`;
+            toast.innerHTML = `
+                <span class="mr-2">${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span>
+                ${message}
+            `;
+            container.appendChild(toast);
             
-            function getAreaName(prefix) {
-                if (!prefix) return null;
-                if (areaCodeMap[prefix]) return areaCodeMap[prefix];
-                if (prefix.length >= 3 && areaCodeMap[prefix.substring(0, 3)]) return areaCodeMap[prefix.substring(0, 3)];
-                if (prefix.length >= 4 && areaCodeMap[prefix.substring(0, 4)]) return areaCodeMap[prefix.substring(0, 4)];
-                if (prefix.length >= 5 && areaCodeMap[prefix.substring(0, 5)]) return areaCodeMap[prefix.substring(0, 5)];
-                return null;
-            }
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 标签页切换
+        function switchTab(tab) {
+            document.querySelectorAll('.module').forEach(m => m.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.remove('tab-active'));
             
-            // DOM元素缓存
-            const DOM = {
-                toolTabs: document.querySelectorAll('.tool-tab'),
-                toolPanels: {
-                    generate: document.getElementById('panel-generate'),
-                    deduplicate: document.getElementById('panel-deduplicate'),
-                    classify: document.getElementById('panel-classify'),
-                    duplicate: document.getElementById('panel-duplicate'),
-                    dataop: document.getElementById('panel-dataop'),
-                    firstcol: document.getElementById('panel-firstcol')
-                },
-                filenameInput: document.getElementById('filenameInput'),
-                dataInput: document.getElementById('dataInput'),
-                numbersPerFile: document.getElementById('numbersPerFile'),
-                genColFirst: document.getElementById('genColFirst'),
-                genColSecond: document.getElementById('genColSecond'),
-                genColBtns: document.querySelectorAll('#panel-generate .column-quick-btn'),
-                generateTxtBtn: document.getElementById('generateTxtBtn'),
-                generateExcelBtn: document.getElementById('generateExcelBtn'),
-                resetBtn: document.getElementById('resetBtn'),
-                generateStatus: document.getElementById('generateStatus'),
-                generateProgressBar: document.getElementById('generateProgressBar'),
-                totalCount: document.getElementById('totalCount'),
-                fileCount: document.getElementById('fileCount'),
-                groupCount: document.getElementById('groupCount'),
-                uniqueCount: document.getElementById('uniqueCount'),
-                fileSize: document.getElementById('fileSize'),
-                generateLoading: document.getElementById('generateLoading'),
-                generateFileList: document.getElementById('generateFileList'),
-                filenameAutoHint: document.getElementById('filenameAutoHint'),
-                addPrefixBtn: document.getElementById('addPrefixBtn'),
-                quickBtns: document.querySelectorAll('.quick-btn'),
-                enableAreaCodeGenerate: document.getElementById('enableAreaCodeGenerate'),
-                generateAreaCodeStatus: document.getElementById('generateAreaCodeStatus'),
-                deduplicateUploadArea: document.getElementById('deduplicateUploadArea'),
-                deduplicateFileInput: document.getElementById('deduplicateFileInput'),
-                selectDeduplicateFilesBtn: document.getElementById('selectDeduplicateFilesBtn'),
-                deduplicateFilesList: document.getElementById('deduplicateFilesList'),
-                deduplicateFileListItems: document.getElementById('deduplicateFileListItems'),
-                deduplicateStatus: document.getElementById('deduplicateStatus'),
-                deduplicateProgressBar: document.getElementById('deduplicateProgressBar'),
-                deduplicateResults: document.getElementById('deduplicateResults'),
-                deduplicateResultCards: document.getElementById('deduplicateResultCards'),
-                downloadAllDeduplicateTxt: document.getElementById('downloadAllDeduplicateTxt'),
-                downloadAllDeduplicateXlsx: document.getElementById('downloadAllDeduplicateXlsx'),
-                resetDeduplicateBtn: document.getElementById('resetDeduplicateBtn'),
-                deduplicatePreviewArea: document.getElementById('deduplicatePreviewArea'),
-                classificationArea: document.getElementById('classificationArea'),
-                classifyFileInput: document.getElementById('classifyFileInput'),
-                selectClassifyFileBtn: document.getElementById('selectClassifyFileBtn'),
-                classifyUploadedFilesList: document.getElementById('classifyUploadedFilesList'),
-                classifyFileListItems: document.getElementById('classifyFileListItems'),
-                classifyStatus: document.getElementById('classifyStatus'),
-                classifyProgressBar: document.getElementById('classifyProgressBar'),
-                classificationResults: document.getElementById('classificationResults'),
-                classificationList: document.getElementById('classificationList'),
-                totalFilesCount: document.getElementById('totalFilesCount'),
-                totalNumbersCount: document.getElementById('totalNumbersCount'),
-                uniquePrefixesCount: document.getElementById('uniquePrefixesCount'),
-                maxNumbersPrefix: document.getElementById('maxNumbersPrefix'),
-                prefixLength: document.getElementById('prefixLength'),
-                includeFullNumber: document.getElementById('includeFullNumber'),
-                sortAscBtn: document.getElementById('sortAscBtn'),
-                sortShuffleBtn: document.getElementById('sortShuffleBtn'),
-                classifyColFirst: document.getElementById('classifyColFirst'),
-                classifyColSecond: document.getElementById('classifyColSecond'),
-                classifyColBtns: document.querySelectorAll('#panel-classify .column-quick-btn'),
-                downloadAllClassifyBtnTxt: document.getElementById('downloadAllClassifyBtnTxt'),
-                downloadAllClassifyBtnXlsx: document.getElementById('downloadAllClassifyBtnXlsx'),
-                resetClassifyBtn: document.getElementById('resetClassifyBtn'),
-                filenamePrefixBtns: document.querySelectorAll('.filename-prefix-buttons .prefix-btn'),
-                classifyPreviewArea: document.getElementById('classifyPreviewArea'),
-                enableAreaCode: document.getElementById('enableAreaCode'),
-                areaCodeStatus: document.getElementById('areaCodeStatus'),
-                duplicateUploadBox1: document.getElementById('duplicateUploadBox1'),
-                duplicateUploadBox2: document.getElementById('duplicateUploadBox2'),
-                duplicateFile1Input: document.getElementById('duplicateFile1Input'),
-                duplicateFile2Input: document.getElementById('duplicateFile2Input'),
-                duplicateFile1Name: document.getElementById('duplicateFile1Name'),
-                duplicateFile2Name: document.getElementById('duplicateFile2Name'),
-                duplicateError1: document.getElementById('duplicateError1'),
-                duplicateError2: document.getElementById('duplicateError2'),
-                duplicateProcessBtn: document.getElementById('duplicateProcessBtn'),
-                duplicateClearBtn: document.getElementById('duplicateClearBtn'),
-                duplicateDownloadSection: document.getElementById('duplicateDownloadSection'),
-                duplicateDownload1Txt: document.getElementById('duplicateDownload1Txt'),
-                duplicateDownload1Excel: document.getElementById('duplicateDownload1Excel'),
-                duplicateDownload2Txt: document.getElementById('duplicateDownload2Txt'),
-                duplicateDownload2Excel: document.getElementById('duplicateDownload2Excel'),
-                duplicateStatus: document.getElementById('duplicateStatus'),
-                duplicateProgressBar: document.getElementById('duplicateProgressBar'),
-                duplicatePreviewArea: document.getElementById('duplicatePreviewArea'),
-                dataOpUploadArea: document.getElementById('dataOpUploadArea'),
-                dataOpFileInput: document.getElementById('dataOpFileInput'),
-                selectDataOpFilesBtn: document.getElementById('selectDataOpFilesBtn'),
-                dataOpFilesList: document.getElementById('dataOpFilesList'),
-                dataOpFileListItems: document.getElementById('dataOpFileListItems'),
-                dataOpStatus: document.getElementById('dataOpStatus'),
-                dataOpProgressBar: document.getElementById('dataOpProgressBar'),
-                dataOpResults: document.getElementById('dataOpResults'),
-                dataOpResultCards: document.getElementById('dataOpResultCards'),
-                dataOpColFirst: document.getElementById('dataOpColFirst'),
-                dataOpColSecond: document.getElementById('dataOpColSecond'),
-                dataOpColBtns: document.querySelectorAll('#panel-dataop .column-quick-btn'),
-                dataOpActionBtns: document.querySelectorAll('#panel-dataop .action-btn'),
-                downloadAllDataOpTxt: document.getElementById('downloadAllDataOpTxt'),
-                downloadAllDataOpXlsx: document.getElementById('downloadAllDataOpXlsx'),
-                resetDataOpBtn: document.getElementById('resetDataOpBtn'),
-                dataOpPreviewArea: document.getElementById('dataOpPreviewArea'),
-                firstColUploadArea: document.getElementById('firstColUploadArea'),
-                firstColFileInput: document.getElementById('firstColFileInput'),
-                selectFirstColFilesBtn: document.getElementById('selectFirstColFilesBtn'),
-                firstColFilesList: document.getElementById('firstColFilesList'),
-                firstColFileListItems: document.getElementById('firstColFileListItems'),
-                firstColStatus: document.getElementById('firstColStatus'),
-                firstColProgressBar: document.getElementById('firstColProgressBar'),
-                firstColResults: document.getElementById('firstColResults'),
-                firstColResultCards: document.getElementById('firstColResultCards'),
-                firstColWarning: document.getElementById('firstColWarning'),
-                firstColWarningText: document.getElementById('firstColWarningText'),
-                insertFirstColBtn: document.getElementById('insertFirstColBtn'),
-                deleteFirstColBtn: document.getElementById('deleteFirstColBtn'),
-                downloadAllFirstColTxt: document.getElementById('downloadAllFirstColTxt'),
-                downloadAllFirstColXlsx: document.getElementById('downloadAllFirstColXlsx'),
-                resetFirstColBtn: document.getElementById('resetFirstColBtn'),
-                firstColPreviewArea: document.getElementById('firstColPreviewArea')
-            };
+            document.getElementById(`module-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+        }
+
+        // 拖拽处理
+        function handleDragOver(e, type) {
+            e.preventDefault();
+            document.getElementById(`dropzone-${type}`).classList.add('drag-over');
+        }
+
+        function handleDragLeave(e, type) {
+            e.preventDefault();
+            document.getElementById(`dropzone-${type}`).classList.remove('drag-over');
+        }
+
+        // ========== 数据去重模块 ==========
+        let dedupFilesCount = 0;
+        let allLines = [];
+
+        function handleDropDedup(e) {
+            e.preventDefault();
+            document.getElementById('dropzone-dedup').classList.remove('drag-over');
+            handleFilesDedup(e.dataTransfer.files);
+        }
+
+        function handleFilesDedup(files) {
+            if (files.length === 0) return;
             
-            // 高性能去重函数 - 使用Set
-            function uniqueArrayFast(arr) {
-                return [...new Set(arr)];
-            }
-            
-            // 安全下载
-            function safeDownload(blob, filename) {
-                if (!blob || !filename) return;
-                try {
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = filename;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                    }, 150);
-                } catch (e) {
-                    console.error('下载失败:', e);
+            for (let file of files) {
+                if (!file.name.endsWith('.txt')) {
+                    showToast(`文件 ${file.name} 不是TXT文件`, 'error');
+                    continue;
                 }
-            }
-            
-            // 重置文件输入的关键修复：创建全新的input元素替换旧的
-            function resetFileInput(inputElement) {
-                if (inputElement) {
-                    // 创建新的input元素替换旧的，彻底清除状态
-                    const newInput = inputElement.cloneNode(true);
-                    newInput.value = '';
-                    inputElement.parentNode.replaceChild(newInput, inputElement);
-                    return newInput;
-                }
-                return inputElement;
-            }
-            
-            // 通用上传设置 - 修复重复上传问题
-            function setupFileUpload(areaElement, fileInputElement, selectBtnElement, onFilesSelected) {
-                // 确保每次选择文件时都能触发change事件
-                const refreshInput = () => {
-                    if (fileInputElement) {
-                        const newInput = resetFileInput(fileInputElement);
-                        // 更新全局引用
-                        if (areaElement.id === 'deduplicateUploadArea') DOM.deduplicateFileInput = newInput;
-                        else if (areaElement.id === 'classificationArea') DOM.classifyFileInput = newInput;
-                        else if (areaElement.id === 'dataOpUploadArea') DOM.dataOpFileInput = newInput;
-                        else if (areaElement.id === 'firstColUploadArea') DOM.firstColFileInput = newInput;
-                        fileInputElement = newInput;
-                        
-                        // 重新绑定change事件
-                        fileInputElement.addEventListener('change', (e) => {
-                            const files = Array.from(e.target.files);
-                            if (files.length > 0 && onFilesSelected) onFilesSelected(files);
-                        });
-                    }
-                };
                 
-                if (selectBtnElement) {
-                    selectBtnElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        refreshInput();
-                        fileInputElement.click();
-                    });
-                }
-                if (areaElement) {
-                    areaElement.addEventListener('click', (e) => {
-                        if (e.target.tagName !== 'BUTTON' && e.target !== selectBtnElement) {
-                            refreshInput();
-                            fileInputElement.click();
-                        }
-                    });
-                }
-                if (fileInputElement) {
-                    fileInputElement.addEventListener('change', (e) => {
-                        const files = Array.from(e.target.files);
-                        if (files.length > 0 && onFilesSelected) onFilesSelected(files);
-                    });
-                }
-                if (areaElement) {
-                    areaElement.addEventListener('dragover', (e) => e.preventDefault());
-                    areaElement.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        refreshInput();
-                        const files = Array.from(e.dataTransfer.files).filter(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
-                        if (files.length > 0 && onFilesSelected) onFilesSelected(files);
-                    });
-                }
-            }
-            
-            // 高性能解析文件
-            function parseFileFast(file, colIndex, callback) {
                 const reader = new FileReader();
-                const ext = file.name.split('.').pop().toLowerCase();
-                reader.onload = (e) => {
-                    try {
-                        let data = [];
-                        if (ext === 'xlsx' || ext === 'xls') {
-                            const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
-                            const sheet = wb.Sheets[wb.SheetNames[0]];
-                            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-                            for (let i = 0; i < rows.length; i++) {
-                                const cell = rows[i][colIndex];
-                                if (cell != null && cell.toString().trim() !== '') data.push(cell.toString().trim());
-                            }
-                        } else {
-                            const text = e.target.result;
-                            const lines = text.split(/\r\n|\n|\r/);
-                            for (let i = 0; i < lines.length; i++) {
-                                const line = lines[i].trim();
-                                if (line) data.push(line);
-                            }
-                        }
-                        callback(null, data);
-                    } catch (err) { callback(err, null); }
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const lines = content.split('\n').filter(line => line.trim() !== '');
+                    allLines = allLines.concat(lines);
+                    dedupFilesCount++;
+                    showToast(`文件 "${file.name}" 上传成功`, 'success');
+                    processDedupData();
                 };
-                if (ext === 'xlsx' || ext === 'xls') reader.readAsBinaryString(file);
-                else reader.readAsText(file, 'UTF-8');
+                reader.readAsText(file);
             }
+        }
+
+        function processPastedData() {
+            const content = document.getElementById('paste-area').value;
+            if (!content.trim()) {
+                showToast('请先粘贴数据', 'error');
+                return;
+            }
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            allLines = allLines.concat(lines);
+            processDedupData();
+            showToast('粘贴数据处理完成', 'success');
+        }
+
+        function processDedupData() {
+            const totalLines = allLines.length;
+            dedupResult = [...new Set(allLines.map(line => line.trim()))];
+            const uniqueLines = dedupResult.length;
+            const removedLines = totalLines - uniqueLines;
+
+            document.getElementById('stats-dedup').classList.remove('hidden');
+            document.getElementById('stat-files').textContent = dedupFilesCount;
+            document.getElementById('stat-total').textContent = totalLines;
+            document.getElementById('stat-unique').textContent = uniqueLines;
+            document.getElementById('stat-removed').textContent = removedLines;
+            document.getElementById('download-dedup').classList.remove('hidden');
+        }
+
+        function downloadDedupResult() {
+            const content = dedupResult.join('\n');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '去重结果.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('去重结果已下载', 'success');
+        }
+
+        // ========== Excel处理模块（核心修改：标记写到MAC地址列，公司名称不动） ==========
+        function handleDropExcel(e) {
+            e.preventDefault();
+            document.getElementById('dropzone-excel').classList.remove('drag-over');
+            handleFileExcel(e.dataTransfer.files);
+        }
+
+        function handleFileExcel(files) {
+            if (files.length === 0) return;
             
-            function parseFileFullFast(file, callback) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'xlsx' || ext === 'xls') {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
-                            const sheet = wb.Sheets[wb.SheetNames[0]];
-                            const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-                            callback(null, data);
-                        } catch (err) { callback(err, null); }
-                    };
-                    reader.readAsBinaryString(file);
+            const file = files[0];
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                showToast('请上传Excel文件 (.xlsx 或 .xls)', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    processExcel(workbook);
+                    showToast(`文件 "${file.name}" 上传并处理完成`, 'success');
+                } catch (err) {
+                    showToast('文件处理失败: ' + err.message, 'error');
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcel(workbook) {
+            // 重置统计
+            excelStats = { total: 0, ls: 0, gq: 0, normal: 0, deleteIp: 0 };
+            deleteIpList = [];
+
+            // 获取第一个工作表
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // 转换为数组格式
+            let jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            // 删除前5行
+            jsonData = jsonData.slice(5);
+            
+            // 过滤所有空行
+            function isRowEmpty(row) {
+                return row.every(cell => String(cell || '').trim() === '');
+            }
+            jsonData = jsonData.filter(row => !isRowEmpty(row));
+            
+            // 从第2行开始处理数据（第1行是表头）
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                
+                // 确保行有足够的列
+                while (row.length < 6) {
+                    row.push('');
+                }
+
+                const ipAddress = String(row[1] || '').trim();
+                const originalName = String(row[3] || '').trim();
+                
+                // 1. 原始名称为空 → 提取IP到删除列表
+                if (originalName === '' && ipAddress !== '') {
+                    deleteIpList.push(ipAddress);
+                    excelStats.deleteIp++;
+                }
+                
+                // ============== 核心修改：标记写到 MAC 地址列（索引4），公司名称列（索引5）完全不动 ==============
+                if (ipAddress === '') {
+                    // IP为空 → MAC地址列写 LS
+                    row[4] = 'LS';
+                    excelStats.ls++;
+                } else if (GQ_IPS.includes(ipAddress)) {
+                    // IP在黑名单 → MAC地址列写 GQ
+                    row[4] = 'GQ';
+                    excelStats.gq++;
                 } else {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const text = e.target.result;
-                            const lines = text.split(/\r\n|\n|\r/);
-                            const data = [];
-                            for (let i = 0; i < lines.length; i++) {
-                                if (lines[i].trim() !== '') data.push([lines[i].trim()]);
-                            }
-                            callback(null, data);
-                        } catch (err) { callback(err, null); }
-                    };
-                    reader.readAsText(file, 'UTF-8');
+                    // 正常没问题 → MAC地址列写 *
+                    row[4] = '*';
+                    excelStats.normal++;
                 }
-            }
-            
-            function createExcelBlobFast(data, isArray) {
-                const worksheetData = isArray ? data.map(v => [v]) : data;
-                const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-                if (ws['!ref']) {
-                    const range = XLSX.utils.decode_range(ws['!ref']);
-                    for (let R = range.s.r; R <= range.e.r; R++) {
-                        for (let C = range.s.c; C <= range.e.c; C++) {
-                            const cellRef = XLSX.utils.encode_cell({r: R, c: C});
-                            if (ws[cellRef]) ws[cellRef].t = 's';
-                        }
-                    }
-                }
-                ws['!cols'] = Array(worksheetData[0]?.length || 1).fill({ wch: 15 });
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "数据");
-                return new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/octet-stream' });
-            }
-            
-            function showColumnPreview(container, files, colIndex) {
-                if (!files || files.length === 0) { container.style.display = 'none'; return; }
-                const file = files[0];
-                parseFileFast(file, colIndex, (err, data) => {
-                    if (err || !data || data.length === 0) { container.style.display = 'none'; return; }
-                    const sample = data.slice(0, 5);
-                    const hasZero = sample.some(v => v.startsWith('0'));
-                    let html = `<div class="preview-item"><span class="preview-badge">${file.name}</span><span class="preview-detail">共 ${data.length} 条数据</span>`;
-                    html += hasZero ? `<span class="preview-zero">⚠️ 存在以0开头的数据</span>` : `<span class="preview-zero">✅ 无前导0</span>`;
-                    html += `</div><div style="margin-top:8px; font-family:monospace;">预览: ${sample.join(' · ')}</div>`;
-                    container.innerHTML = html;
-                    container.style.display = 'block';
-                });
-            }
-            
-            // ========== 批量生成（优化版）==========
-            function updateFilenameSuggestion() {
-                const prefixes = [];
-                const text = DOM.dataInput.value;
-                const lines = text.split(/\r?\n/);
-                for (let line of lines) {
-                    line = line.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-                    const prefixMatch = line.match(/^开头\s*(\d+)/);
-                    if (prefixMatch) prefixes.push(prefixMatch[1]);
-                }
-                const uniquePrefixes = [...new Set(prefixes)];
-                if (uniquePrefixes.length > 0) {
-                    let suggestion;
-                    const enableArea = DOM.enableAreaCodeGenerate ? DOM.enableAreaCodeGenerate.checked : false;
-                    if (enableArea) {
-                        const names = uniquePrefixes.map(p => {
-                            const area = getAreaName(p);
-                            return area ? `${p}(${area})` : p;
-                        });
-                        suggestion = names.join('-');
-                    } else {
-                        suggestion = uniquePrefixes.join('-');
-                    }
-                    if (!lastManualValue || DOM.filenameInput.value === lastManualValue || DOM.filenameInput.value === '') {
-                        DOM.filenameInput.value = suggestion;
-                        DOM.filenameAutoHint.innerHTML = enableArea ? `✅ 自动识别: ${suggestion} (含区号)` : `✅ 自动识别: ${suggestion}`;
-                        lastManualValue = suggestion;
-                    } else {
-                        DOM.filenameAutoHint.innerHTML = `📋 检测到开头: ${uniquePrefixes.join('、')}`;
-                    }
-                } else {
-                    DOM.filenameAutoHint.innerHTML = DOM.filenameInput.value ? '✏️ 手动输入' : '⏳ 等待输入开头...';
-                }
-            }
-            
-            function parseInputDataFast(text) {
-                text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
-                const lines = text.split(/\r?\n/);
-                const data = {};
-                let currentPrefix = null;
-                for (let line of lines) {
-                    line = line.trim();
-                    if (line === '') continue;
-                    if (line === '开头') { currentPrefix = null; continue; }
-                    const prefixMatch = line.match(/^开头\s*(\d+)/);
-                    if (prefixMatch) {
-                        currentPrefix = prefixMatch[1];
-                        if (!data[currentPrefix]) data[currentPrefix] = [];
-                        continue;
-                    }
-                    if (/^\d+$/.test(line)) {
-                        if (currentPrefix === null) {
-                            currentPrefix = line;
-                            if (!data[currentPrefix]) data[currentPrefix] = [];
-                        } else {
-                            data[currentPrefix].push(line.padStart(3, '0'));
-                        }
-                        continue;
-                    }
-                    const rangeMatch = line.match(/^(\d+)\s*(?:-|～|到)\s*(\d+)$/);
-                    if (rangeMatch && currentPrefix) {
-                        let start = rangeMatch[1];
-                        let end = rangeMatch[2];
-                        if (end.length < start.length) {
-                            const prefix = start.substring(0, start.length - end.length);
-                            end = prefix + end;
-                        }
-                        const startNum = parseInt(start, 10);
-                        const endNum = parseInt(end, 10);
-                        if (startNum <= endNum) {
-                            for (let i = startNum; i <= endNum; i++) {
-                                data[currentPrefix].push(i.toString().padStart(3, '0'));
-                            }
-                        }
-                        continue;
-                    }
-                    if (currentPrefix) {
-                        const numbers = line.match(/\d+/g);
-                        if (numbers) {
-                            for (let num of numbers) {
-                                if (num.length >= 2 && num.length <= 4) data[currentPrefix].push(num.padStart(3, '0'));
-                            }
-                        }
-                    }
-                }
-                return data;
-            }
-            
-            function generateAllNumbersFast(data) {
-                const numbers = [];
-                for (let prefix in data) {
-                    const middles = data[prefix];
-                    for (let middle of middles) {
-                        const prefixMiddle = prefix + middle;
-                        for (let k = 1; k <= 9999; k++) {
-                            numbers.push(prefixMiddle + k.toString().padStart(4, '0'));
-                        }
-                    }
-                }
-                return numbers;
-            }
-            
-            function shuffleArrayFast(arr) {
-                const shuffled = arr.slice();
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                return shuffled;
-            }
-            
-            let lastManualValue = '';
-            let filenameUpdateTimer = null;
-            
-            function generateFilesCore(format) {
-                const inputText = DOM.dataInput.value;
-                let filename = DOM.filenameInput.value.trim() || '号码数据';
-                const perFile = parseInt(DOM.numbersPerFile.value, 10) || 10;
-                const colPos = document.querySelector('input[name="genColumnPosition"]:checked').value;
-                const perFileCount = perFile * 10000;
-                DOM.generateLoading.style.display = 'block';
-                DOM.generateFileList.innerHTML = '';
-                DOM.generateStatus.textContent = '解析输入...';
-                DOM.generateProgressBar.style.width = '10%';
-                setTimeout(() => {
-                    try {
-                        const parsed = parseInputDataFast(inputText);
-                        let totalGroups = 0;
-                        for (let m in parsed) totalGroups += parsed[m].length;
-                        if (totalGroups === 0) {
-                            alert('未解析到有效号码段！请检查输入格式。\n\n正确示例：\n开头\n023\n110-119');
-                            DOM.generateLoading.style.display = 'none';
-                            DOM.generateProgressBar.style.width = '0%';
-                            return;
-                        }
-                        DOM.generateStatus.textContent = '生成号码序列...';
-                        DOM.generateProgressBar.style.width = '30%';
-                        const allNumbers = generateAllNumbersFast(parsed);
-                        DOM.generateStatus.textContent = '打乱数据...';
-                        DOM.generateProgressBar.style.width = '50%';
-                        const shuffled = shuffleArrayFast(allNumbers);
-                        DOM.generateStatus.textContent = '去重...';
-                        DOM.generateProgressBar.style.width = '70%';
-                        const unique = uniqueArrayFast(shuffled);
-                        const totalFiles = Math.ceil(unique.length / perFileCount);
-                        DOM.totalCount.textContent = allNumbers.length.toLocaleString();
-                        DOM.fileCount.textContent = totalFiles;
-                        DOM.groupCount.textContent = totalGroups;
-                        DOM.uniqueCount.textContent = unique.length.toLocaleString();
-                        DOM.generateStatus.textContent = '生成文件...';
-                        DOM.generateProgressBar.style.width = '85%';
-                        for (let i = 0; i < totalFiles; i++) {
-                            const start = i * perFileCount;
-                            const end = Math.min(start + perFileCount, unique.length);
-                            const fileNumbers = unique.slice(start, end);
-                            const colSuffix = colPos === 'second' ? '_第二列' : '';
-                            const fileExt = format === 'txt' ? '.txt' : '.xlsx';
-                            const fileName = i === 0 ? `${filename}${colSuffix}${fileExt}` : `${filename}${colSuffix}_${i+1}${fileExt}`;
-                            if (format === 'txt') {
-                                const content = colPos === 'first' ? fileNumbers.join('\n') : fileNumbers.map(v => '\t' + v).join('\n');
-                                const blob = new Blob([content], { type: 'text/plain' });
-                                safeDownload(blob, fileName);
-                            } else {
-                                const data = colPos === 'first' ? fileNumbers.map(v => [v]) : fileNumbers.map(v => ['', v]);
-                                const blob = createExcelBlobFast(data, false);
-                                safeDownload(blob, fileName);
-                            }
-                            const item = document.createElement('div');
-                            item.className = 'file-item';
-                            item.innerHTML = `<div class="file-info"><div class="file-name">${fileName}</div><div class="file-size">${fileNumbers.length} 条</div></div><button class="download-btn" data-filename="${fileName}" data-content='${JSON.stringify(fileNumbers)}' data-format="${format}" data-colpos="${colPos}">⬇️ 下载</button>`;
-                            DOM.generateFileList.appendChild(item);
-                            const downloadBtn = item.querySelector('.download-btn');
-                            downloadBtn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                const fn = this.dataset.filename;
-                                const nums = JSON.parse(this.dataset.content);
-                                const fmt = this.dataset.format;
-                                const cp = this.dataset.colpos;
-                                if (fmt === 'txt') {
-                                    const content = cp === 'first' ? nums.join('\n') : nums.map(v => '\t' + v).join('\n');
-                                    const blob = new Blob([content], { type: 'text/plain' });
-                                    safeDownload(blob, fn);
-                                } else {
-                                    const data = cp === 'first' ? nums.map(v => [v]) : nums.map(v => ['', v]);
-                                    const blob = createExcelBlobFast(data, false);
-                                    safeDownload(blob, fn);
-                                }
-                            });
-                            DOM.generateProgressBar.style.width = 85 + ((i + 1) / totalFiles * 15) + '%';
-                            DOM.generateStatus.textContent = `文件 ${i+1}/${totalFiles}`;
-                        }
-                        DOM.generateStatus.textContent = '完成！';
-                        DOM.generateProgressBar.style.width = '100%';
-                        DOM.generateLoading.style.display = 'none';
-                    } catch (e) {
-                        alert('错误：' + e.message);
-                        DOM.generateLoading.style.display = 'none';
-                        DOM.generateProgressBar.style.width = '0%';
-                    }
-                }, 50);
-            }
-            
-            DOM.generateTxtBtn.addEventListener('click', () => generateFilesCore('txt'));
-            DOM.generateExcelBtn.addEventListener('click', () => generateFilesCore('excel'));
-            DOM.resetBtn.addEventListener('click', () => {
-                DOM.filenameInput.value = '';
-                DOM.numbersPerFile.value = '10';
-                DOM.dataInput.value = '开头';
-                DOM.generateFileList.innerHTML = '';
-                DOM.totalCount.textContent = '0';
-                DOM.fileCount.textContent = '0';
-                DOM.groupCount.textContent = '0';
-                DOM.uniqueCount.textContent = '0';
-                DOM.generateStatus.textContent = '等待生成...';
-                DOM.generateProgressBar.style.width = '0%';
-                DOM.fileSize.textContent = '10万';
-                lastManualValue = '';
-                DOM.filenameAutoHint.innerHTML = '等待输入开头...';
-            });
-            DOM.addPrefixBtn.addEventListener('click', () => {
-                let val = DOM.dataInput.value;
-                if (val.trim() !== '' && !val.endsWith('\n')) val += '\n';
-                DOM.dataInput.value = val + '开头';
-                DOM.dataInput.focus();
-                updateFilenameSuggestion();
-            });
-            DOM.dataInput.addEventListener('input', () => { clearTimeout(filenameUpdateTimer); filenameUpdateTimer = setTimeout(updateFilenameSuggestion, 100); });
-            DOM.filenameInput.addEventListener('input', () => { lastManualValue = DOM.filenameInput.value; DOM.filenameAutoHint.innerHTML = '✏️ 手动编辑模式'; });
-            DOM.quickBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    DOM.quickBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    DOM.numbersPerFile.value = this.dataset.value;
-                    DOM.fileSize.textContent = this.dataset.value + '万';
-                });
-            });
-            DOM.genColBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    DOM.genColBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    DOM[this.dataset.target === 'genColFirst' ? 'genColFirst' : 'genColSecond'].checked = true;
-                });
-            });
-            
-            // ========== 单文件去重（优化版 - 使用Set快速去重）==========
-            let deduplicateFilesList = [];
-            function updateDeduplicateFileList() {
-                if (deduplicateFilesList.length === 0) { DOM.deduplicateFilesList.style.display = 'none'; DOM.deduplicatePreviewArea.style.display = 'none'; return; }
-                DOM.deduplicateFilesList.style.display = 'block';
-                let html = '';
-                deduplicateFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span><span class="file-list-count">${(f.size/1024).toFixed(1)} KB</span></div>`; });
-                DOM.deduplicateFileListItems.innerHTML = html;
-                DOM.deduplicateStatus.innerHTML = `已上传 ${deduplicateFilesList.length} 个文件`;
-                const colPos = document.querySelector('input[name="genColumnPosition"]:checked')?.value || 'first';
-                showColumnPreview(DOM.deduplicatePreviewArea, deduplicateFilesList, colPos === 'first' ? 0 : 1);
-            }
-            
-            function processDeduplicateFiles(files) {
-                DOM.deduplicateResults.style.display = 'block';
-                DOM.deduplicateResultCards.innerHTML = '';
-                const colPos = document.querySelector('input[name="genColumnPosition"]:checked')?.value || 'first';
-                const colIndex = colPos === 'first' ? 0 : 1;
-                let processedCount = 0;
-                files.forEach(file => {
-                    parseFileFast(file, colIndex, (err, data) => {
-                        if (err) { DOM.deduplicateResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; processedCount++; return; }
-                        const unique = uniqueArrayFast(data);
-                        const uniqueCount = unique.length;
-                        const card = document.createElement('div');
-                        card.className = 'result-card';
-                        card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>原: ${data.length} → 去重后: ${uniqueCount}</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重_${uniqueCount}条.txt" data-content='${JSON.stringify(unique)}'>下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_去重_${uniqueCount}条.xlsx" data-content='${JSON.stringify(unique)}'>下载 Excel</button></div>`;
-                        DOM.deduplicateResultCards.appendChild(card);
-                        const txtBtn = card.querySelector('.result-download-txt');
-                        const xlsxBtn = card.querySelector('.result-download-xlsx');
-                        txtBtn.addEventListener('click', () => {
-                            const blob = new Blob([unique.join('\n')], { type: 'text/plain' });
-                            safeDownload(blob, txtBtn.dataset.filename);
-                        });
-                        xlsxBtn.addEventListener('click', () => {
-                            const blob = createExcelBlobFast(unique);
-                            safeDownload(blob, xlsxBtn.dataset.filename);
-                        });
-                        processedCount++;
-                        DOM.deduplicateProgressBar.style.width = (processedCount / files.length * 100) + '%';
-                    });
-                });
-            }
-            
-            // 修复setupFileUpload的调用，传入正确的参数
-            // 由于setupFileUpload内部会替换input，需要确保变量更新
-            let deduplicateInput = DOM.deduplicateFileInput;
-            setupFileUpload(DOM.deduplicateUploadArea, deduplicateInput, DOM.selectDeduplicateFilesBtn, (files) => {
-                deduplicateFilesList = files;
-                updateDeduplicateFileList();
-                processDeduplicateFiles(files);
-                // 更新input引用
-                deduplicateInput = DOM.deduplicateFileInput;
-            });
-            
-            DOM.resetDeduplicateBtn.addEventListener('click', () => {
-                deduplicateFilesList = [];
-                DOM.deduplicateFilesList.style.display = 'none';
-                DOM.deduplicateResults.style.display = 'none';
-                DOM.deduplicateStatus.innerHTML = '等待上传文件...';
-                DOM.deduplicatePreviewArea.style.display = 'none';
-                DOM.deduplicateProgressBar.style.width = '0%';
-                // 重置文件输入
-                if (deduplicateInput) {
-                    const newInput = resetFileInput(deduplicateInput);
-                    deduplicateInput = newInput;
-                    DOM.deduplicateFileInput = newInput;
-                }
-            });
-            
-            // ========== 前缀分类（优化版）==========
-            let classifyFiles = [];
-            let classifyRawNumbers = [];
-            let currentSortMode = 'asc';
-            let currentFilenamePrefix = 'none';
-            
-            function updateClassifyFileList() {
-                if (classifyFiles.length === 0) { DOM.classifyUploadedFilesList.style.display = 'none'; DOM.classifyPreviewArea.style.display = 'none'; return; }
-                DOM.classifyUploadedFilesList.style.display = 'block';
-                let html = '';
-                classifyFiles.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span><span class="file-list-count">${(f.size/1024).toFixed(1)} KB</span></div>`; });
-                DOM.classifyFileListItems.innerHTML = html;
-                DOM.classifyStatus.innerHTML = `已上传 ${classifyFiles.length} 个文件`;
-                const colPos = document.querySelector('input[name="classifyColumnPosition"]:checked').value;
-                showColumnPreview(DOM.classifyPreviewArea, classifyFiles, colPos === 'first' ? 0 : 1);
-            }
-            
-            let classifyInput = DOM.classifyFileInput;
-            setupFileUpload(DOM.classificationArea, classifyInput, DOM.selectClassifyFileBtn, (files) => {
-                classifyFiles = files;
-                updateClassifyFileList();
-                parseAllClassifyFilesFast();
-                classifyInput = DOM.classifyFileInput;
-            });
-            
-            DOM.classifyColBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    DOM.classifyColBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    const targetId = this.dataset.target;
-                    if (targetId) document.getElementById(targetId).checked = true;
-                    if (classifyFiles.length > 0) {
-                        const colIndex = targetId === 'classifyColFirst' ? 0 : 1;
-                        showColumnPreview(DOM.classifyPreviewArea, classifyFiles, colIndex);
-                        parseAllClassifyFilesFast();
-                    }
-                });
-            });
-            
-            function parseAllClassifyFilesFast() {
-                const colPos = document.querySelector('input[name="classifyColumnPosition"]:checked').value;
-                const colIndex = colPos === 'first' ? 0 : 1;
-                let allNumbers = [];
-                let filesProcessed = 0;
-                if (classifyFiles.length === 0) return;
-                DOM.classificationResults.style.display = 'block';
-                DOM.classifyProgressBar.style.width = '10%';
-                classifyFiles.forEach(file => {
-                    parseFileFast(file, colIndex, (err, data) => {
-                        if (!err && data) allNumbers = allNumbers.concat(data);
-                        filesProcessed++;
-                        DOM.classifyProgressBar.style.width = 10 + (filesProcessed / classifyFiles.length * 40) + '%';
-                        if (filesProcessed === classifyFiles.length) {
-                            classifyRawNumbers = allNumbers;
-                            renderClassificationResultsFast();
-                            DOM.classifyProgressBar.style.width = '100%';
-                            setTimeout(() => { DOM.classifyProgressBar.style.width = '0%'; }, 500);
-                        }
-                    });
-                });
-            }
-            
-            function renderClassificationResultsFast() {
-                if (!classifyRawNumbers || classifyRawNumbers.length === 0) { DOM.classificationResults.style.display = 'none'; return; }
-                const prefixLen = parseInt(DOM.prefixLength.value, 10);
-                const includeFull = DOM.includeFullNumber.checked;
-                const filePrefix = currentFilenamePrefix === 'none' ? '' : currentFilenamePrefix + '_';
-                const enableArea = DOM.enableAreaCode ? DOM.enableAreaCode.checked : false;
+                // row[5] 公司名称列，完全不做任何修改，保持原样！
                 
-                DOM.classificationResults.style.display = 'block';
-                DOM.totalFilesCount.textContent = classifyFiles.length;
-                DOM.totalNumbersCount.textContent = classifyRawNumbers.length;
-                
-                const groups = {};
-                for (let num of classifyRawNumbers) {
-                    if (num.length >= prefixLen) {
-                        const key = num.substring(0, prefixLen);
-                        if (!groups[key]) groups[key] = [];
-                        groups[key].push(num);
-                    }
-                }
-                
-                DOM.uniquePrefixesCount.textContent = Object.keys(groups).length;
-                let maxPrefix = '-', maxCount = 0;
-                for (let k in groups) {
-                    if (groups[k].length > maxCount) { maxCount = groups[k].length; maxPrefix = k; }
-                }
-                DOM.maxNumbersPrefix.textContent = maxPrefix;
-                
-                let entriesToShow = Object.entries(groups);
-                if (currentSortMode === 'asc') {
-                    entriesToShow.sort((a, b) => a[0].localeCompare(b[0]));
-                } else if (currentSortMode === 'shuffle') {
-                    for (let i = entriesToShow.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [entriesToShow[i], entriesToShow[j]] = [entriesToShow[j], entriesToShow[i]];
-                    }
-                }
-                
-                DOM.classificationList.innerHTML = '';
-                for (let [key, nums] of entriesToShow) {
-                    let displayKey = key;
-                    let areaName = '';
-                    if (enableArea) {
-                        const area = getAreaName(key);
-                        if (area) { areaName = area; displayKey = `${key} (${area})`; }
-                    }
-                    const item = document.createElement('div');
-                    item.className = 'classification-item';
-                    item.innerHTML = `<div class="prefix-info"><span class="prefix-badge">${displayKey}</span><span class="prefix-count">${nums.length} 个号码</span></div><div class="download-buttons-group"><button class="download-classify-btn-txt" data-prefix="${key}" data-nums='${JSON.stringify(nums)}' data-area="${areaName}">TXT</button><button class="download-classify-btn-xlsx" data-prefix="${key}" data-nums='${JSON.stringify(nums)}' data-area="${areaName}">Excel</button></div>`;
-                    DOM.classificationList.appendChild(item);
-                    const txtBtn = item.querySelector('.download-classify-btn-txt');
-                    const xlsxBtn = item.querySelector('.download-classify-btn-xlsx');
-                    const buildFileName = (key, area, ext) => {
-                        let namePart = key;
-                        if (enableArea && area) namePart = `${key}_${area}`;
-                        return filePrefix + namePart + '_' + nums.length + '个' + ext;
-                    };
-                    txtBtn.addEventListener('click', () => {
-                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArrayFast(nums) : [...nums].sort((a, b) => a.localeCompare(b));
-                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                        safeDownload(blob, buildFileName(key, txtBtn.dataset.area, '.txt'));
-                    });
-                    xlsxBtn.addEventListener('click', () => {
-                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArrayFast(nums) : [...nums].sort((a, b) => a.localeCompare(b));
-                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                        const blob = createExcelBlobFast(data, true);
-                        safeDownload(blob, buildFileName(key, xlsxBtn.dataset.area, '.xlsx'));
-                    });
-                }
-                
-                DOM.downloadAllClassifyBtnTxt.onclick = () => {
-                    for (let [key, nums] of entriesToShow) {
-                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArrayFast(nums) : [...nums].sort((a, b) => a.localeCompare(b));
-                        const blob = new Blob([sortedNums.join('\n')], { type: 'text/plain' });
-                        let areaName = '';
-                        if (enableArea) { const area = getAreaName(key); if (area) areaName = `_${area}`; }
-                        safeDownload(blob, filePrefix + key + areaName + '_' + nums.length + '个.txt');
-                    }
-                };
-                DOM.downloadAllClassifyBtnXlsx.onclick = () => {
-                    for (let [key, nums] of entriesToShow) {
-                        let sortedNums = currentSortMode === 'shuffle' ? shuffleArrayFast(nums) : [...nums].sort((a, b) => a.localeCompare(b));
-                        const data = includeFull ? sortedNums.map(n => [n]) : [[`前缀 ${key}`]];
-                        const blob = createExcelBlobFast(data, true);
-                        let areaName = '';
-                        if (enableArea) { const area = getAreaName(key); if (area) areaName = `_${area}`; }
-                        safeDownload(blob, filePrefix + key + areaName + '_' + nums.length + '个.xlsx');
-                    }
-                };
+                excelStats.total++;
             }
             
-            DOM.sortAscBtn.addEventListener('click', function() {
-                DOM.sortAscBtn.classList.add('active');
-                DOM.sortShuffleBtn.classList.remove('active');
-                currentSortMode = 'asc';
-                if (classifyFiles.length > 0) renderClassificationResultsFast();
-            });
-            DOM.sortShuffleBtn.addEventListener('click', function() {
-                DOM.sortShuffleBtn.classList.add('active');
-                DOM.sortAscBtn.classList.remove('active');
-                currentSortMode = 'shuffle';
-                if (classifyFiles.length > 0) renderClassificationResultsFast();
-            });
-            DOM.filenamePrefixBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    DOM.filenamePrefixBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentFilenamePrefix = this.dataset.prefix;
-                    if (classifyFiles.length > 0) renderClassificationResultsFast();
-                });
-            });
-            DOM.prefixLength.addEventListener('change', () => { if (classifyFiles.length > 0) renderClassificationResultsFast(); });
-            DOM.includeFullNumber.addEventListener('change', () => { if (classifyFiles.length > 0) renderClassificationResultsFast(); });
+            // 生成新工作表
+            const newWorksheet = XLSX.utils.aoa_to_sheet(jsonData);
+            workbook.Sheets[sheetName] = newWorksheet;
+            processedWorkbook = workbook;
             
-            DOM.resetClassifyBtn.addEventListener('click', () => {
-                classifyFiles = [];
-                classifyRawNumbers = [];
-                DOM.classifyUploadedFilesList.style.display = 'none';
-                DOM.classificationResults.style.display = 'none';
-                DOM.classifyStatus.innerHTML = '等待上传文件...';
-                DOM.classifyPreviewArea.style.display = 'none';
-                DOM.classifyProgressBar.style.width = '0%';
-                if (classifyInput) {
-                    const newInput = resetFileInput(classifyInput);
-                    classifyInput = newInput;
-                    DOM.classifyFileInput = newInput;
-                }
-            });
-            
-            // ========== 双文件去重（优化版）==========
-            let duplicateFileData = { file1: { name: '', data: [], rawData: [] }, file2: { name: '', data: [], rawData: [] } };
-            function checkDuplicateFilesReady() { DOM.duplicateProcessBtn.disabled = !(duplicateFileData.file1.data.length && duplicateFileData.file2.data.length); }
-            function showDuplicatePreview() {
-                let html = [];
-                if (duplicateFileData.file1.data.length) html.push(`<div class="preview-item"><span class="preview-badge">文件1</span> ${duplicateFileData.file1.name} | 共 ${duplicateFileData.file1.data.length} 条</div>`);
-                if (duplicateFileData.file2.data.length) html.push(`<div class="preview-item"><span class="preview-badge">文件2</span> ${duplicateFileData.file2.name} | 共 ${duplicateFileData.file2.data.length} 条</div>`);
-                DOM.duplicatePreviewArea.innerHTML = html.join('');
-                DOM.duplicatePreviewArea.style.display = html.length ? 'block' : 'none';
+            // 更新统计显示
+            document.getElementById('stats-excel').classList.remove('hidden');
+            document.getElementById('stat-total-rows').textContent = excelStats.total;
+            document.getElementById('stat-ls').textContent = excelStats.ls;
+            document.getElementById('stat-gq').textContent = excelStats.gq;
+            document.getElementById('stat-normal').textContent = excelStats.normal;
+            document.getElementById('download-excel').classList.remove('hidden');
+        }
+
+        function downloadDeleteIp() {
+            if (deleteIpList.length === 0) {
+                showToast('没有需要删除的IP', 'info');
+                return;
             }
-            
-            let duplicateInput1 = DOM.duplicateFile1Input;
-            let duplicateInput2 = DOM.duplicateFile2Input;
-            
-            function setupDuplicateUpload(box, input, nameSpan, errorSpan, fileKey) {
-                box.addEventListener('click', () => { 
-                    const newInput = resetFileInput(input);
-                    if (fileKey === 'file1') duplicateInput1 = newInput;
-                    else duplicateInput2 = newInput;
-                    newInput.click();
-                });
-                input.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    nameSpan.textContent = file.name;
-                    errorSpan.style.display = 'none';
-                    parseFileFullFast(file, (err, data) => {
-                        if (err) { errorSpan.textContent = '解析失败'; errorSpan.style.display = 'block'; duplicateFileData[fileKey] = { name: '', data: [], rawData: [] }; }
-                        else { const numbers = []; for (let i = 0; i < data.length; i++) { const val = data[i][0]?.toString().trim() || ''; if (val) numbers.push(val); } duplicateFileData[fileKey] = { name: file.name, data: numbers, rawData: data }; }
-                        showDuplicatePreview(); checkDuplicateFilesReady();
-                    });
-                });
-                box.addEventListener('dragover', (e) => e.preventDefault());
-                box.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    const file = Array.from(e.dataTransfer.files).find(f => /\.(xlsx|xls|txt|csv)$/i.test(f.name));
-                    if (!file) return;
-                    nameSpan.textContent = file.name;
-                    errorSpan.style.display = 'none';
-                    parseFileFullFast(file, (err, data) => {
-                        if (err) { errorSpan.textContent = '解析失败'; errorSpan.style.display = 'block'; duplicateFileData[fileKey] = { name: '', data: [], rawData: [] }; }
-                        else { const numbers = []; for (let i = 0; i < data.length; i++) { const val = data[i][0]?.toString().trim() || ''; if (val) numbers.push(val); } duplicateFileData[fileKey] = { name: file.name, data: numbers, rawData: data }; }
-                        showDuplicatePreview(); checkDuplicateFilesReady();
-                    });
-                });
+            const content = deleteIpList.join('\n');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '删除ip.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('删除IP列表已下载', 'success');
+        }
+
+        function downloadProcessedExcel() {
+            if (!processedWorkbook) {
+                showToast('没有处理后的Excel文件', 'error');
+                return;
             }
-            setupDuplicateUpload(DOM.duplicateUploadBox1, duplicateInput1, DOM.duplicateFile1Name, DOM.duplicateError1, 'file1');
-            setupDuplicateUpload(DOM.duplicateUploadBox2, duplicateInput2, DOM.duplicateFile2Name, DOM.duplicateError2, 'file2');
-            
-            DOM.duplicateClearBtn.addEventListener('click', () => {
-                duplicateFileData = { file1: { name: '', data: [], rawData: [] }, file2: { name: '', data: [], rawData: [] } };
-                DOM.duplicateFile1Name.textContent = '未选择文件';
-                DOM.duplicateFile2Name.textContent = '未选择文件';
-                DOM.duplicateDownloadSection.style.display = 'none';
-                DOM.duplicateStatus.innerHTML = '等待上传文件...';
-                DOM.duplicateProgressBar.style.width = '0%';
-                // 重置文件输入
-                const newInput1 = resetFileInput(duplicateInput1);
-                const newInput2 = resetFileInput(duplicateInput2);
-                duplicateInput1 = newInput1;
-                duplicateInput2 = newInput2;
-                DOM.duplicateFile1Input = newInput1;
-                DOM.duplicateFile2Input = newInput2;
-                DOM.duplicateProcessBtn.disabled = true;
-                DOM.duplicatePreviewArea.style.display = 'none';
-            });
-            
-            DOM.duplicateProcessBtn.addEventListener('click', () => {
-                DOM.duplicateStatus.innerHTML = '处理中...';
-                DOM.duplicateProgressBar.style.width = '30%';
-                const set1 = new Set(duplicateFileData.file1.data);
-                const set2 = new Set(duplicateFileData.file2.data);
-                const common = new Set();
-                for (let x of set1) { if (set2.has(x)) common.add(x); }
-                const filtered1 = duplicateFileData.file1.rawData.filter(row => {
-                    const val = row[0]?.toString().trim() || '';
-                    return val && !common.has(val);
-                });
-                const filtered2 = duplicateFileData.file2.rawData.filter(row => {
-                    const val = row[0]?.toString().trim() || '';
-                    return val && !common.has(val);
-                });
-                DOM.duplicateProgressBar.style.width = '80%';
-                const blob1Txt = new Blob([filtered1.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                const blob1Xlsx = createExcelBlobFast(filtered1, false);
-                const blob2Txt = new Blob([filtered2.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                const blob2Xlsx = createExcelBlobFast(filtered2, false);
-                DOM.duplicateDownload1Txt.href = URL.createObjectURL(blob1Txt);
-                DOM.duplicateDownload1Txt.download = duplicateFileData.file1.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
-                DOM.duplicateDownload1Excel.href = URL.createObjectURL(blob1Xlsx);
-                DOM.duplicateDownload1Excel.download = duplicateFileData.file1.name.replace(/\.[^/.]+$/, '') + '_去重.xlsx';
-                DOM.duplicateDownload2Txt.href = URL.createObjectURL(blob2Txt);
-                DOM.duplicateDownload2Txt.download = duplicateFileData.file2.name.replace(/\.[^/.]+$/, '') + '_去重.txt';
-                DOM.duplicateDownload2Excel.href = URL.createObjectURL(blob2Xlsx);
-                DOM.duplicateDownload2Excel.download = duplicateFileData.file2.name.replace(/\.[^/.]+$/, '') + '_去重.xlsx';
-                DOM.duplicateProgressBar.style.width = '100%';
-                DOM.duplicateDownloadSection.style.display = 'block';
-                DOM.duplicateStatus.innerHTML = '处理完成';
-            });
-            
-            // ========== 加减前导0（优化版）==========
-            let dataOpFilesList = [];
-            function updateDataOpFileList() {
-                if (dataOpFilesList.length === 0) { DOM.dataOpFilesList.style.display = 'none'; DOM.dataOpPreviewArea.style.display = 'none'; return; }
-                DOM.dataOpFilesList.style.display = 'block';
-                let html = '';
-                dataOpFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span></div>`; });
-                DOM.dataOpFileListItems.innerHTML = html;
-                DOM.dataOpStatus.innerHTML = `已上传 ${dataOpFilesList.length} 个文件`;
-                const colPos = document.querySelector('input[name="dataOpColumnPosition"]:checked').value;
-                showColumnPreview(DOM.dataOpPreviewArea, dataOpFilesList, colPos === 'first' ? 0 : 1);
-            }
-            
-            let dataOpInput = DOM.dataOpFileInput;
-            setupFileUpload(DOM.dataOpUploadArea, dataOpInput, DOM.selectDataOpFilesBtn, (files) => {
-                dataOpFilesList = files;
-                updateDataOpFileList();
-                dataOpInput = DOM.dataOpFileInput;
-            });
-            
-            DOM.dataOpActionBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (dataOpFilesList.length === 0) { alert('请先上传文件'); return; }
-                    const action = this.dataset.action;
-                    const colPos = document.querySelector('input[name="dataOpColumnPosition"]:checked').value;
-                    const colIndex = colPos === 'first' ? 0 : 1;
-                    DOM.dataOpResults.style.display = 'block';
-                    DOM.dataOpResultCards.innerHTML = '';
-                    let processedCount = 0;
-                    dataOpFilesList.forEach(file => {
-                        parseFileFullFast(file, (err, data) => {
-                            if (err) { DOM.dataOpResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; processedCount++; return; }
-                            const processed = data.map(row => {
-                                if (row.length <= colIndex) return row;
-                                let val = row[colIndex]?.toString().trim() || '';
-                                if (action === 'add') { if (/^\d+$/.test(val)) row[colIndex] = '0' + val; }
-                                else { if (/^0+\d+$/.test(val)) row[colIndex] = val.replace(/^0+/, ''); }
-                                return row;
-                            });
-                            const card = document.createElement('div');
-                            card.className = 'result-card';
-                            card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>处理完成</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button></div>`;
-                            DOM.dataOpResultCards.appendChild(card);
-                            const txtBtn = card.querySelector('.result-download-txt');
-                            const xlsxBtn = card.querySelector('.result-download-xlsx');
-                            txtBtn.addEventListener('click', () => {
-                                const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                                safeDownload(blob, txtBtn.dataset.filename);
-                            });
-                            xlsxBtn.addEventListener('click', () => {
-                                const blob = createExcelBlobFast(processed, false);
-                                safeDownload(blob, xlsxBtn.dataset.filename);
-                            });
-                            processedCount++;
-                            DOM.dataOpProgressBar.style.width = (processedCount / dataOpFilesList.length * 100) + '%';
-                        });
-                    });
-                });
-            });
-            
-            DOM.resetDataOpBtn.addEventListener('click', () => {
-                dataOpFilesList = [];
-                DOM.dataOpFilesList.style.display = 'none';
-                DOM.dataOpResults.style.display = 'none';
-                DOM.dataOpStatus.innerHTML = '等待上传文件...';
-                DOM.dataOpPreviewArea.style.display = 'none';
-                DOM.dataOpProgressBar.style.width = '0%';
-                if (dataOpInput) {
-                    const newInput = resetFileInput(dataOpInput);
-                    dataOpInput = newInput;
-                    DOM.dataOpFileInput = newInput;
-                }
-            });
-            
-            // ========== 首列编辑（优化版）==========
-            let firstColFilesList = [];
-            function updateFirstColFileList() {
-                if (firstColFilesList.length === 0) { DOM.firstColFilesList.style.display = 'none'; DOM.firstColPreviewArea.style.display = 'none'; return; }
-                DOM.firstColFilesList.style.display = 'block';
-                let html = '';
-                firstColFilesList.forEach(f => { html += `<div class="file-list-item"><span class="file-list-name">${f.name}</span></div>`; });
-                DOM.firstColFileListItems.innerHTML = html;
-                DOM.firstColStatus.innerHTML = `已上传 ${firstColFilesList.length} 个文件`;
-                showColumnPreview(DOM.firstColPreviewArea, firstColFilesList, 0);
-            }
-            
-            let firstColInput = DOM.firstColFileInput;
-            setupFileUpload(DOM.firstColUploadArea, firstColInput, DOM.selectFirstColFilesBtn, (files) => {
-                firstColFilesList = files;
-                updateFirstColFileList();
-                firstColInput = DOM.firstColFileInput;
-            });
-            
-            function processFirstCol(action) {
-                if (firstColFilesList.length === 0) { alert('请先上传文件'); return; }
-                DOM.firstColResults.style.display = 'block';
-                DOM.firstColResultCards.innerHTML = '';
-                let processedCount = 0;
-                firstColFilesList.forEach(file => {
-                    parseFileFullFast(file, (err, data) => {
-                        if (err) { DOM.firstColResultCards.innerHTML += `<div class="result-card"><div class="result-card-title">${file.name}</div><div>解析失败</div></div>`; processedCount++; return; }
-                        let processed;
-                        if (action === 'insert') {
-                            processed = data.map(row => ['', ...row]);
-                        } else {
-                            processed = data.map(row => row.slice(1));
-                        }
-                        const card = document.createElement('div');
-                        card.className = 'result-card';
-                        card.innerHTML = `<div class="result-card-header"><span class="result-card-title">${file.name}</span><span>处理完成</span></div><div class="result-card-actions"><button class="result-download-btn result-download-txt" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.txt">下载 TXT</button><button class="result-download-btn result-download-xlsx" data-filename="${file.name.replace(/\.[^/.]+$/, '')}_处理后.xlsx">下载 Excel</button></div>`;
-                        DOM.firstColResultCards.appendChild(card);
-                        const txtBtn = card.querySelector('.result-download-txt');
-                        const xlsxBtn = card.querySelector('.result-download-xlsx');
-                        txtBtn.addEventListener('click', () => {
-                            const blob = new Blob([processed.map(r => r.join('\t')).join('\n')], { type: 'text/plain' });
-                            safeDownload(blob, txtBtn.dataset.filename);
-                        });
-                        xlsxBtn.addEventListener('click', () => {
-                            const blob = createExcelBlobFast(processed, false);
-                            safeDownload(blob, xlsxBtn.dataset.filename);
-                        });
-                        processedCount++;
-                        DOM.firstColProgressBar.style.width = (processedCount / firstColFilesList.length * 100) + '%';
-                    });
-                });
-            }
-            
-            DOM.insertFirstColBtn.addEventListener('click', () => processFirstCol('insert'));
-            DOM.deleteFirstColBtn.addEventListener('click', () => processFirstCol('delete'));
-            DOM.resetFirstColBtn.addEventListener('click', () => {
-                firstColFilesList = [];
-                DOM.firstColFilesList.style.display = 'none';
-                DOM.firstColResults.style.display = 'none';
-                DOM.firstColStatus.innerHTML = '等待上传文件...';
-                DOM.firstColPreviewArea.style.display = 'none';
-                DOM.firstColProgressBar.style.width = '0%';
-                if (firstColInput) {
-                    const newInput = resetFileInput(firstColInput);
-                    firstColInput = newInput;
-                    DOM.firstColFileInput = newInput;
-                }
-            });
-            
-            // 滑块开关状态
-            if (DOM.enableAreaCode && DOM.areaCodeStatus) {
-                DOM.enableAreaCode.addEventListener('change', function() {
-                    DOM.areaCodeStatus.textContent = this.checked ? '开启' : '关闭';
-                    DOM.areaCodeStatus.style.color = this.checked ? '#34a853' : '#999';
-                    if (classifyFiles.length > 0) renderClassificationResultsFast();
-                });
-                DOM.areaCodeStatus.textContent = DOM.enableAreaCode.checked ? '开启' : '关闭';
-                DOM.areaCodeStatus.style.color = DOM.enableAreaCode.checked ? '#34a853' : '#999';
-            }
-            if (DOM.enableAreaCodeGenerate && DOM.generateAreaCodeStatus) {
-                DOM.enableAreaCodeGenerate.addEventListener('change', function() {
-                    DOM.generateAreaCodeStatus.textContent = this.checked ? '开启' : '关闭';
-                    DOM.generateAreaCodeStatus.style.color = this.checked ? '#34a853' : '#999';
-                    updateFilenameSuggestion();
-                });
-                DOM.generateAreaCodeStatus.textContent = DOM.enableAreaCodeGenerate.checked ? '开启' : '关闭';
-                DOM.generateAreaCodeStatus.style.color = DOM.enableAreaCodeGenerate.checked ? '#34a853' : '#999';
-            }
-            
-            // 工具切换
-            DOM.toolTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tool = this.dataset.tool;
-                    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
-                    this.classList.add('active');
-                    if (DOM.toolPanels[tool]) DOM.toolPanels[tool].classList.add('active');
-                });
-            });
-            
-            updateFilenameSuggestion();
-        })();
+            XLSX.writeFile(processedWorkbook, '处理后文件.xlsx');
+            showToast('处理后Excel已下载', 'success');
+        }
     </script>
 </body>
 </html>
